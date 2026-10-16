@@ -45,10 +45,10 @@ export const teamGroups: TeamGroup[] = [
   {
     title: 'Die FSJler',
     members: [
-      { name: 'Melanie Hagen', role: 'FSJlerin' },
+      { name: 'Nick Diehl', role: 'FSJler' },
       { open: true, title: 'Bewirb dich jetzt!', text: 'Jeden September starten neue FSJler', href: '/mitmachen/#kontakt' },
       // TODO: surname missing in the concept.
-      { name: 'Mija', role: 'FSJlerin' },
+      { name: 'Cash Money', role: 'FSJler' },
     ],
   },
 ];
