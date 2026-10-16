@@ -1,0 +1,371 @@
+---
+/**
+ * The landing page's 3D campus: a toon-rendered diorama of the MatriX
+ * (src/scripts/campus) with the site's "+" markers and room cards.
+ * Every colour comes from the page: the scene's hue from --accent, its ground
+ * from --accent-tint, outlines from --ink — change the page accent and the
+ * whole diorama follows.
+ *
+ * Three.js loads only when the section comes near the viewport. Without
+ * WebGL (or JavaScript) a plain list of the rooms is shown instead.
+ */
+import Photo from './Photo.astro';
+import CourtIllustration from './CourtIllustration.astro';
+import { campusRooms } from '../data/campus';
+---
+
+<div class="mx-campus" data-campus>
+  <div class="mx-campus__panel" role="group" aria-label="Interaktives 3D-Modell der MatriX">
+    <div class="mx-campus__viewer" data-campus-viewer>
+      <p class="mx-campus__loading">Die kleine MatriX entsteht …</p>
+      <svg class="mx-campus__stems" data-campus-stems aria-hidden="true"></svg>
+
+      {
+        campusRooms.map((room) => (
+          <button
+            class="mx-hotspot"
+            type="button"
+            data-room={room.id}
+            data-anchor={JSON.stringify(room.anchor)}
+            data-outdoor={room.outdoor ? 'true' : undefined}
+            aria-label={`${room.title} entdecken`}
+            aria-expanded="false"
+            aria-controls={`mx-campus-card-${room.id}`}
+            hidden
+          >
+            <span aria-hidden="true">+</span>
+          </button>
+        ))
+      }
+
+      {
+        campusRooms.map((room) => (
+          <div class="mx-mapcard" id={`mx-campus-card-${room.id}`} data-card={room.id} role="region" aria-label={room.title} hidden>
+            <button class="mx-mapcard__close" type="button" data-card-close aria-label="Karte schließen">
+              <span aria-hidden="true">×</span>
+            </button>
+            <div class="mx-mapcard__media">
+              {room.image ? (
+                <>
+                  <Photo src={room.image} alt={room.alt ?? room.title} sizes="280px" widths={[280, 560]} />
+                  <span class="mx-mapcard__credit">© @aboutusmedia</span>
+                </>
+              ) : (
+                <CourtIllustration />
+              )}
+            </div>
+            <h3 class="mx-h4">{room.title}</h3>
+            <p>{room.text}</p>
+            {room.link && (
+              <a class="mx-link" href={room.link.href}>
+                {room.link.label}
+              </a>
+            )}
+          </div>
+        ))
+      }
+
+      <ul class="mx-campus__fallback">
+        {
+          campusRooms.map((room) => (
+            <li>
+              {room.link ? (
+                <a class="mx-link" href={room.link.href}>{room.title}</a>
+              ) : (
+                <span>{room.title}</span>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+
+  <div class="mx-campus__controls">
+    <div class="mx-campus__toggle" role="group" aria-label="Ansicht">
+      <button type="button" data-campus-mode="exterior" aria-pressed="true" title="Über das Haus fahren, um hineinzuschauen">Auto</button>
+      <button type="button" data-campus-mode="interior" aria-pressed="false" title="Innenansicht offen halten">Offen halten</button>
+    </div>
+    <p class="mx-campus__hint" data-campus-hint>Über das Haus fahren · Mit + entdecken</p>
+  </div>
+
+  <noscript><style>.mx-campus__loading { display: none; } .mx-campus__fallback { display: flex; }</style></noscript>
+</div>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-campus]');
+  if (root) {
+    root.dataset.state = 'loading';
+    const start = async () => {
+      try {
+        const { mountCampus } = await import('../scripts/campus/scene.js');
+        const app = mountCampus(root);
+        if (!app) {
+          root.dataset.state = 'unsupported';
+          return;
+        }
+        // Free the GPU right away when the page is really left (not on bfcache).
+        window.addEventListener('pagehide', (event) => {
+          if (!event.persisted) app.destroy();
+        });
+      } catch {
+        root.dataset.state = 'unsupported';
+      }
+    };
+    const near = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        near.disconnect();
+        start();
+      },
+      { rootMargin: '600px 0px' },
+    );
+    near.observe(root);
+  }
+</script>
+
+<style>
+  .mx-campus {
+    max-width: 1180px;
+    margin: 0 auto;
+    text-align: left;
+    color: var(--ink);
+  }
+
+  .mx-campus__panel {
+    position: relative;
+    height: clamp(460px, 54vw, 700px);
+    background: var(--accent-tint);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-press);
+    overflow: hidden;
+  }
+
+  .mx-campus__viewer {
+    position: absolute;
+    inset: 0;
+  }
+
+  .mx-campus__viewer :global(canvas) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: manipulation;
+  }
+
+  .mx-campus__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    font-size: var(--fs-small);
+    color: var(--ink-muted);
+  }
+  .mx-campus[data-state="ready"] .mx-campus__loading,
+  .mx-campus[data-state="unsupported"] .mx-campus__loading { display: none; }
+
+  .mx-campus__fallback {
+    display: none;
+    position: absolute;
+    inset: 0;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    gap: var(--space-3) var(--space-5);
+    margin: 0;
+    padding: var(--space-6);
+    list-style: none;
+    font-family: var(--font-display);
+    font-size: var(--fs-label);
+  }
+  .mx-campus[data-state="unsupported"] .mx-campus__fallback { display: flex; }
+
+  .mx-campus__stems {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .mx-campus__stems :global(line) {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    opacity: 0.45;
+  }
+
+  /* ---------- "+" markers ---------- */
+  .mx-hotspot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    padding: 0;
+    border-radius: 50%;
+    border: 0;
+    background: var(--white);
+    color: var(--accent-strong);
+    box-shadow: 0 0 0 6px var(--hotspot-halo), 0 2px 0 var(--ink);
+    display: grid;
+    place-items: center;
+    font: 28px/1 var(--font-display);
+    transition: translate var(--motion-fast) var(--ease-matrix);
+  }
+  .mx-hotspot[hidden] { display: none; }
+  .mx-hotspot span { transform: translateY(1px); }
+  .mx-hotspot:hover { translate: 0 -3px; z-index: 3; }
+  .mx-hotspot[aria-expanded="true"] { background: var(--ink); color: var(--white); z-index: 3; }
+
+  /* Until the first room is opened, the markers softly ping in turn. */
+  .mx-hotspot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid var(--white);
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .mx-campus:not(.is-explored) .mx-hotspot::after { animation: mx-campus-ping 2.8s ease-out infinite; }
+    .mx-campus:not(.is-explored) .mx-hotspot:nth-of-type(2n)::after { animation-delay: 0.7s; }
+    .mx-campus:not(.is-explored) .mx-hotspot:nth-of-type(3n)::after { animation-delay: 1.4s; }
+    .mx-mapcard:not([hidden]) { animation: mx-campus-card-pop var(--motion-slow) var(--ease-matrix); }
+  }
+
+  @keyframes mx-campus-ping {
+    0% { transform: scale(1); opacity: 0.8; }
+    45%, 100% { transform: scale(1.75); opacity: 0; }
+  }
+
+  @keyframes mx-campus-card-pop {
+    from { translate: 0 10px; rotate: -2deg; }
+    to { translate: 0 0; rotate: 0deg; }
+  }
+
+  /* ---------- Room card ---------- */
+  .mx-mapcard {
+    position: absolute;
+    z-index: 4;
+    width: 280px;
+    max-width: calc(100% - 32px);
+    padding: 12px 12px 20px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-press), var(--shadow-float);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .mx-mapcard[hidden] { display: none; }
+
+  .mx-mapcard__media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--accent) 22%, var(--white));
+  }
+  .mx-mapcard__media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .mx-mapcard__credit {
+    position: absolute;
+    right: 8px;
+    bottom: 5px;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--white);
+    text-shadow: 0 1px 3px rgba(19, 26, 34, 0.8);
+  }
+
+  .mx-mapcard__close {
+    position: absolute;
+    z-index: 1;
+    top: 18px;
+    right: 18px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 0 2px 0 var(--ink);
+    font: 22px/1 var(--font-display);
+  }
+  .mx-mapcard__close span { transform: translateY(1px); }
+
+  .mx-mapcard h3 { margin: 14px 8px 6px; color: var(--coral-600); }
+  .mx-mapcard p { margin: 0 8px; font-size: 15px; line-height: 22px; }
+  .mx-mapcard a { margin: 12px 8px 0; display: inline-block; }
+
+  /* ---------- Controls ---------- */
+  .mx-campus__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3) var(--space-5);
+    margin-top: var(--space-6);
+    visibility: hidden;
+  }
+  .mx-campus[data-state="ready"] .mx-campus__controls { visibility: visible; }
+
+  .mx-campus__toggle {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-press);
+  }
+  .mx-campus__toggle button {
+    border: 0;
+    border-radius: 16px;
+    padding: 9px 16px 7px;
+    background: none;
+    color: var(--ink);
+    font: var(--fs-label) / 1 var(--font-display);
+  }
+  .mx-campus__toggle button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+
+  .mx-campus__hint {
+    margin: 0;
+    font-size: var(--fs-small);
+    color: var(--white);
+  }
+
+  @media (max-width: 600px) {
+    .mx-campus__panel { height: clamp(300px, 84vw, 420px); }
+    .mx-hotspot { width: 34px; height: 34px; margin: -17px 0 0 -17px; font-size: 23px; box-shadow: 0 0 0 4px var(--hotspot-halo), 0 2px 0 var(--ink); }
+    .mx-campus__toggle button { font-size: 18px; padding: 8px 13px 6px; }
+
+    /* The room card opens as a bottom sheet over the page. */
+    .mx-mapcard {
+      position: fixed;
+      z-index: 30;
+      left: var(--space-3);
+      right: var(--space-3);
+      top: auto;
+      bottom: var(--space-3);
+      width: auto;
+      max-width: none;
+      max-height: min(72vh, 560px);
+    }
+    .mx-mapcard__media { aspect-ratio: 16 / 9; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mx-hotspot { transition: none; }
+  }
+</style>

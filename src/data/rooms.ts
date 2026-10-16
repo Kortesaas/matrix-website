@@ -10,11 +10,6 @@ import r119 from '../assets/photos/r119.jpg';
 import r55 from '../assets/photos/r55.jpg';
 import r74 from '../assets/photos/r74.jpg';
 import r46 from '../assets/photos/r46.jpg';
-import p10 from '../assets/photos/p10.jpg';
-import p11 from '../assets/photos/p11.jpg';
-import p13 from '../assets/photos/p13.jpg';
-import e5 from '../assets/photos/e5.jpg';
-import e6 from '../assets/photos/e6.jpg';
 
 export interface Room {
   slug: string;
@@ -83,60 +78,5 @@ export const rooms: Room[] = [
     accent: 'green',
     photos: [r46],
     alt: 'Der Gruppenraum mit Chesterfield-Sofas',
-  },
-];
-
-export interface MapSpot {
-  title: string;
-  /** Hotspot position in % of the map art. */
-  x: number;
-  y: number;
-  image: ImageMetadata;
-  alt: string;
-  text: string;
-  link: { label: string; href: string };
-}
-
-// Landing page campus map. Positions come from the design reference.
-export const mapSpots: MapSpot[] = [
-  {
-    title: 'Werkstatt', x: 18.7, y: 59.2, image: p3, alt: 'Die Werkstatt',
-    text: 'Siebdruck, Holz, Fahrrad und 3D-Druck – hier wird gebaut, gedruckt und geschraubt.',
-    link: { label: 'Zur Werkstatt', href: '/werkstatt/' },
-  },
-  {
-    title: 'Garten', x: 27.2, y: 42.2, image: e5, alt: 'Die MatriX von oben mit Garten',
-    text: 'Rund ums Haus ist Platz für Grillen, Sport und Sommerfeste unter freiem Himmel.',
-    link: { label: 'Zu den Räumen', href: '/raeume/' },
-  },
-  {
-    title: 'Saal', x: 44.6, y: 55.5, image: p10, alt: 'Der Saal',
-    text: 'Unser größter Raum: Konzerte, Partys, Tanz und Turniere.',
-    link: { label: 'Zum Saal', href: '/raeume/#saal' },
-  },
-  {
-    title: 'Theater-Bühne', x: 51.3, y: 38.4, image: r119, alt: 'Die Bühne im Saal',
-    text: 'Bühne, Licht und Technik – für Theater, Open Stage und deinen großen Auftritt.',
-    link: { label: 'Zum Saal', href: '/raeume/#saal' },
-  },
-  {
-    title: 'Studio', x: 61.0, y: 52.8, image: r55, alt: 'Das Tonstudio',
-    text: 'Tonstudio und Proberaum: Nimm deine Songs auf oder probe mit deiner Band.',
-    link: { label: 'Zum Studio', href: '/raeume/#studio-band' },
-  },
-  {
-    title: 'Dachterrasse', x: 68.8, y: 11.4, image: e6, alt: 'Die MatriX von oben',
-    text: 'Oben auf dem Haus: Aussicht, frische Luft und Platz für Sommerabende.',
-    link: { label: 'Zu den Räumen', href: '/raeume/' },
-  },
-  {
-    title: 'Chill-Lounge', x: 80.3, y: 46.1, image: p11, alt: 'Die Chill-Lounge',
-    text: 'Sofas, Kicker, Billard und Dart – hier triffst du deine Leute.',
-    link: { label: 'Zur Chill-Lounge', href: '/raeume/#chill-lounge' },
-  },
-  {
-    title: 'Eingang', x: 57.8, y: 82.7, image: p13, alt: 'Der Eingangsbereich mit der X-Bar',
-    text: 'Rein, Hallo sagen, umschauen. An der X-Bar gibt’s Getränke und Snacks.',
-    link: { label: 'Zu Theke & Küche', href: '/raeume/#theke-kueche' },
   },
 ];

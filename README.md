@@ -23,9 +23,10 @@ npm run preview   # den fertigen Build lokal ansehen
 src/
   pages/        eine Datei pro Seite (index, angebot, raeume, werkstatt, team, aktuelles, mitmachen, impressum, 404)
   layouts/      BaseLayout: <head>, Navigation, Footer
-  components/   wiederverwendbare Bausteine (Button, PageHero, PhotoFrame, FeatureRow, CampusMap …)
+  components/   wiederverwendbare Bausteine (Button, PageHero, PhotoFrame, FeatureRow, Campus3D …)
   data/         Inhalte: Angebote, Räume, Werkstatt, Events, Team, Kontaktdaten, Social Links
   styles/       tokens.css (Design-Tokens), fonts.css, global.css
+  scripts/campus/  3D-Modell der MatriX für die Startseite (Three.js, wird erst bei Bedarf geladen)
   assets/       Fotos & Bitmaps – werden beim Build optimiert (AVIF/WebP, mehrere Größen)
 public/
   graphics/     Sticker, Formen, Hero-Ebenen (SVG, unverändert aus dem Design)
@@ -36,7 +37,8 @@ public/
 
 - **Texte, Termine, Team, Angebote:** in `src/data/*.ts` – die Seiten lesen von dort.
 - **Fotos austauschen:** neue Datei nach `src/assets/photos/` legen und den Import in der passenden Datei in `src/data/` (bzw. der Seite) anpassen. Zuschnitt und Rahmen ergeben sich aus der Komponente.
-- **Seitenfarbe:** jede Seite setzt genau eine Akzentfarbe (`accent` im `BaseLayout`).
+- **Seitenfarbe:** jede Seite setzt genau eine Akzentfarbe (`accent` im `BaseLayout`). Das 3D-Modell auf der Startseite übernimmt seine Farben automatisch aus dieser Akzentfarbe.
+- **3D-Räume (Startseite):** Raumnamen, Texte, Fotos, Links und Marker-Positionen stehen in `src/data/campus.ts`.
 
 ### Design-System
 

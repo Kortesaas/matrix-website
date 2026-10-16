@@ -1,0 +1,42 @@
+---
+/** The basketball court card illustration, tinted from the page accent. */
+---
+
+<svg class="mx-court" viewBox="0 0 800 460" role="img" aria-label="Der runde Basketballplatz neben der MatriX">
+  <rect class="c-ground" width="800" height="460" />
+  <g class="c-ink" stroke-width="5" stroke-linejoin="round">
+    <path class="c-plot" d="M40 300 400 100 765 286 420 432Z" />
+    <ellipse class="c-court" cx="408" cy="274" rx="255" ry="117" />
+    <ellipse class="c-chalk" cx="408" cy="274" rx="239" ry="106" fill="none" />
+    <path class="c-chalk" d="M408 165v219" />
+    <ellipse class="c-chalk" cx="408" cy="274" rx="45" ry="27" fill="none" />
+    <path d="M208 280v-129m0 18 29 17" fill="none" />
+    <path class="c-board" d="m229 138 70 20v72l-70-22Z" />
+    <path d="m247 169 32 9v27l-32-9Z" fill="none" />
+    <ellipse class="c-shadow" cx="271" cy="219" rx="25" ry="10" />
+    <path d="m248 221 8 28 29 8 9-32m-38-1 9 27m9-25-1 29" fill="none" stroke-width="3" />
+    <path d="M627 283V145m0 24-26 18" fill="none" />
+    <path class="c-board" d="m607 135-69 21v72l69-22Z" />
+    <path d="m590 166-32 10v27l32-9Z" fill="none" />
+    <ellipse class="c-shadow" cx="566" cy="217" rx="25" ry="10" />
+    <path d="m542 219 9 29 29-7 9-27m-37 4 9 27m9-29-1 27" fill="none" stroke-width="3" />
+    <circle class="c-ball" cx="400" cy="320" r="23" />
+    <path d="M377 320h46m-23-23v46m-18-37q38 14 0 28m36-28q-38 14 0 28" fill="none" stroke-width="3" />
+  </g>
+  <g class="c-grass" fill="none" stroke-width="4" stroke-linecap="round">
+    <path d="m102 380 4-16 6 15 9-14 1 19m578-25 5-18 7 15 8-10" />
+  </g>
+</svg>
+
+<style>
+  .mx-court { display: block; width: 100%; height: 100%; }
+  .c-ground { fill: color-mix(in oklab, var(--accent) 22%, var(--white)); }
+  .c-ink { stroke: var(--ink); }
+  .c-plot { fill: color-mix(in oklab, var(--accent) 62%, var(--white)); }
+  .c-court { fill: color-mix(in oklab, var(--accent) 85%, var(--white)); }
+  .c-chalk { stroke: color-mix(in oklab, var(--accent) 6%, var(--white)); }
+  .c-board { fill: color-mix(in oklab, var(--accent) 6%, var(--white)); }
+  .c-shadow { fill: color-mix(in oklab, var(--accent) 38%, var(--white)); }
+  .c-ball { fill: color-mix(in oklab, var(--orange-500) 45%, var(--white)); }
+  .c-grass { stroke: color-mix(in oklab, var(--ink) 75%, var(--accent)); }
+</style>

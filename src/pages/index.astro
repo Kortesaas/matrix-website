@@ -1,14 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PhotoHero from '../components/PhotoHero.astro';
-import CampusMap from '../components/CampusMap.astro';
+import Campus3D from '../components/Campus3D.astro';
 import ChipList from '../components/ChipList.astro';
 import Button from '../components/Button.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import EventList from '../components/EventList.astro';
 import PhotoFrame from '../components/PhotoFrame.astro';
 import Graphic from '../components/Graphic.astro';
-import { mapSpots } from '../data/rooms';
 import { offers } from '../data/offers';
 import { eventColumns } from '../data/events';
 import p11 from '../assets/photos/p11.jpg';
@@ -36,9 +35,9 @@ const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, 
           MatriX Königsbrunn
         </h1>
         <p class="mx-lead">
-          Kreativangebote, Veranstaltungen, Tonstudio oder einfach chillen. Schau dich doch erstmal um – klick auf die Räume!
+          Kreativangebote, Veranstaltungen, Tonstudio oder einfach chillen. Schau dich doch erstmal um – öffne das Haus und klick auf die +!
         </p>
-        <CampusMap spots={mapSpots} alt="Illustrierter Lageplan der MatriX mit Werkstatt, Saal und Chill-Lounge" />
+        <Campus3D />
       </div>
     </div>
   </section>
