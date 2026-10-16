@@ -1,0 +1,123 @@
+---
+/**
+ * The MatriX button. One component so every CTA shares the exact same
+ * press interaction from the design spec:
+ *   rest   translateY(0)    drop 4px
+ *   hover  translateY(-2px) drop 6px
+ *   active translateY(3px)  drop 1px
+ *   transition: transform .12s ease, box-shadow .12s ease
+ * The drop is a hard (unblurred) shadow; outline/inverse variants add an
+ * inset 3px ring in the same box-shadow list so the motion is identical.
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+type Variant = 'primary' | 'outline' | 'inverse' | 'ink';
+
+interface BaseProps {
+  variant?: Variant;
+  size?: 'md' | 'sm';
+  class?: string;
+}
+
+type LinkProps = BaseProps & Omit<HTMLAttributes<'a'>, 'class'> & { href: string };
+type ButtonProps = BaseProps & Omit<HTMLAttributes<'button'>, 'class'> & { href?: undefined };
+type Props = LinkProps | ButtonProps;
+
+const { variant = 'primary', size = 'md', class: className, ...rest } = Astro.props;
+const classes = ['mx-btn', `mx-btn--${variant}`, size === 'sm' && 'mx-btn--sm', className];
+---
+
+{
+  'href' in rest && rest.href !== undefined ? (
+    <a class:list={classes} {...(rest as HTMLAttributes<'a'>)}>
+      <slot />
+    </a>
+  ) : (
+    <button class:list={classes} type="button" {...(rest as HTMLAttributes<'button'>)}>
+      <slot />
+    </button>
+  )
+}
+
+<style>
+  .mx-btn {
+    --btn-bg: var(--accent-strong);
+    --btn-fg: var(--white);
+    --btn-shadow: var(--ink);
+    --btn-ring: transparent;
+    --btn-ring-width: 0px;
+    --btn-drop: var(--press-drop-rest);
+    --btn-y: 0px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 12px 24px 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    font-family: var(--font-display);
+    font-size: var(--fs-button);
+    font-weight: 400;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow:
+      inset 0 0 0 var(--btn-ring-width) var(--btn-ring),
+      0 var(--btn-drop) 0 var(--btn-shadow);
+    transform: translateY(var(--btn-y));
+    transition:
+      transform var(--motion-fast) var(--ease-matrix),
+      box-shadow var(--motion-fast) var(--ease-matrix);
+  }
+
+  /* Hover lift only where a real pointer hovers, so a tap on a phone
+     doesn't leave the button stuck in its lifted state. */
+  @media (hover: hover) {
+    .mx-btn:hover {
+      --btn-drop: var(--press-drop-hover);
+      --btn-y: var(--press-lift-hover);
+    }
+  }
+
+  .mx-btn:active {
+    --btn-drop: var(--press-drop-active);
+    --btn-y: var(--press-sink-active);
+  }
+
+  /* ---------- Variants ---------- */
+  .mx-btn--outline {
+    --btn-bg: transparent;
+    --btn-fg: var(--accent-strong);
+    --btn-shadow: var(--accent-strong);
+    --btn-ring: var(--accent-strong);
+    --btn-ring-width: var(--press-ring);
+  }
+
+  .mx-btn--inverse {
+    --btn-bg: transparent;
+    --btn-fg: var(--white);
+    --btn-ring: var(--white);
+    --btn-ring-width: var(--press-ring);
+  }
+
+  .mx-btn--ink {
+    --btn-bg: var(--ink);
+    --btn-fg: var(--white);
+    --btn-shadow: var(--accent);
+  }
+
+  .mx-btn--sm {
+    min-height: 44px;
+    padding: 9px 18px 7px;
+    font-size: 21px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mx-btn { transition: none; }
+  }
+</style>
