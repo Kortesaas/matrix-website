@@ -1,0 +1,190 @@
+---
+/**
+ * Animated MatriX hand cursor for mouse users. Over anything clickable the
+ * hand pokes left and three tap lines draw in at the fingertip; holding the
+ * button pushes the poke all the way. Touch devices and pages without JS keep
+ * the static CSS cursors from global.css.
+ *
+ * Geometry matches the static cursor images: a 46×35 box with the hand at
+ * (10, 8) and the fingertip hotspot at (10, 10).
+ */
+---
+
+<div class="mx-cursor" aria-hidden="true" data-cursor hidden>
+  <div class="mx-cursor__hand">
+    <img src="/graphics/cursors/hand@2x.png" width="36" height="27" alt="" decoding="async" />
+  </div>
+  <svg class="mx-cursor__taps" viewBox="0 0 46 35" width="46" height="35">
+    <path d="M7 6 4 3" />
+    <path d="M6 10H2" />
+    <path d="M7 14 4 17" />
+  </svg>
+</div>
+
+<script>
+  const CLICKABLE = 'a[href], button:not(:disabled), [role="button"], summary, label[for], select';
+  const TEXT = 'input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]), textarea, [contenteditable]';
+  const HOTSPOT = 10;
+
+  const cursor = document.querySelector<HTMLElement>('[data-cursor]');
+  const mouse = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+  if (cursor && mouse.matches) {
+    const root = document.documentElement;
+    let x = 0;
+    let y = 0;
+    let frame = 0;
+
+    // Keep the cursor above modal dialogs (the mobile menu) via the top layer.
+    const usesTopLayer = 'showPopover' in cursor;
+    const raise = () => {
+      if (!usesTopLayer || !cursor.isConnected) return;
+      if (cursor.matches(':popover-open')) cursor.hidePopover();
+      cursor.showPopover();
+    };
+    if (usesTopLayer) cursor.setAttribute('popover', 'manual');
+    cursor.hidden = false;
+    raise();
+
+    new MutationObserver(raise).observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['open'],
+    });
+
+    const render = () => {
+      frame = 0;
+      cursor.style.transform = `translate3d(${x - HOTSPOT}px, ${y - HOTSPOT}px, 0)`;
+    };
+
+    const show = (visible: boolean) => {
+      cursor.classList.toggle('is-visible', visible);
+      root.classList.toggle('mx-has-cursor', visible);
+    };
+
+    const update = (target: Element | null) => {
+      const overText = !!target?.closest(TEXT);
+      cursor.classList.toggle('is-link', !overText && !!target?.closest(CLICKABLE));
+      show(!overText);
+    };
+
+    document.addEventListener(
+      'pointermove',
+      (event) => {
+        if (event.pointerType !== 'mouse') return show(false);
+        x = event.clientX;
+        y = event.clientY;
+        if (!frame) frame = requestAnimationFrame(render);
+
+        update(event.target instanceof Element ? event.target : null);
+      },
+      { passive: true },
+    );
+
+    // Scrolling moves new elements under a resting mouse.
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (cursor.classList.contains('is-visible')) update(document.elementFromPoint(x, y));
+      },
+      { passive: true },
+    );
+
+    document.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse') cursor.classList.add('is-down');
+    });
+    document.addEventListener('pointerup', () => cursor.classList.remove('is-down'));
+    root.addEventListener('pointerleave', () => show(false));
+    window.addEventListener('blur', () => show(false));
+  }
+</script>
+
+<style>
+  .mx-cursor {
+    position: fixed;
+    inset: 0 auto auto 0;
+    z-index: 2147483647;
+    width: 46px;
+    height: 35px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    overflow: visible;
+    pointer-events: none;
+    visibility: hidden;
+    will-change: transform;
+  }
+  .mx-cursor.is-visible { visibility: visible; }
+
+  /* The real cursor is hidden only while the hand is drawn. */
+  :global(html.mx-has-cursor),
+  :global(html.mx-has-cursor *) {
+    cursor: none !important;
+  }
+
+  .mx-cursor__hand {
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    width: 36px;
+    transform-origin: 90% 70%;
+    transition: transform var(--motion-fast) var(--ease-matrix);
+  }
+  .mx-cursor__hand img { width: 36px; height: auto; max-width: none; }
+
+  .mx-cursor__taps {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+  .mx-cursor__taps path {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2;
+    stroke-linecap: round;
+    /* Each line is drawn from the fingertip outwards. */
+    stroke-dasharray: 5;
+    stroke-dashoffset: 5;
+  }
+
+  /* ---------- Clickable: poke + tap lines ---------- */
+  .mx-cursor.is-link .mx-cursor__hand { animation: mx-poke 0.7s var(--ease-matrix) infinite; }
+  .mx-cursor.is-link .mx-cursor__taps path { animation: mx-tap 0.7s var(--ease-matrix) infinite; }
+  .mx-cursor.is-link .mx-cursor__taps path:nth-child(2) { animation-delay: 0.03s; }
+  .mx-cursor.is-link .mx-cursor__taps path:nth-child(3) { animation-delay: 0.06s; }
+
+  @keyframes mx-poke {
+    0%, 55%, 100% { transform: translateX(0) rotate(0); }
+    22% { transform: translateX(-3px) rotate(-4deg); }
+  }
+
+  @keyframes mx-tap {
+    0%, 12% { stroke-dashoffset: 5; }
+    26%, 44% { stroke-dashoffset: 0; }
+    60%, 100% { stroke-dashoffset: -5; }
+  }
+
+  /* ---------- Pressed: poke all the way in ---------- */
+  .mx-cursor.is-down .mx-cursor__hand {
+    animation: none;
+    transform: translateX(-4px) rotate(-6deg);
+  }
+  .mx-cursor.is-link.is-down .mx-cursor__taps path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  /* Reduced motion: no loop — the variant simply shows its tap pose. */
+  @media (prefers-reduced-motion: reduce) {
+    .mx-cursor__hand { transition: none; }
+    .mx-cursor.is-link .mx-cursor__hand {
+      animation: none;
+      transform: translateX(-3px) rotate(-4deg);
+    }
+    .mx-cursor.is-link .mx-cursor__taps path {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+</style>

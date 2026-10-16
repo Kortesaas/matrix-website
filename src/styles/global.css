@@ -26,6 +26,23 @@ body {
   overflow-x: clip;
 }
 
+/* ---------- Cursor ----------
+   The MatriX hand (hotspot on the fingertip). Clickable things get the
+   "tap" variant. This static version works without JavaScript; on mouse
+   devices Cursor.astro replaces it with the animated one. The image-set
+   line adds the sharp 2x version where supported. */
+html {
+  cursor: url("/graphics/cursors/hand.png") 1 2, auto;
+  cursor: image-set(url("/graphics/cursors/hand.png") 1x, url("/graphics/cursors/hand@2x.png") 2x) 1 2, auto;
+}
+:where(a[href], button:not(:disabled), [role="button"], summary, label[for], select) {
+  cursor: url("/graphics/cursors/hand-tap.png") 10 10, pointer;
+  cursor: image-set(url("/graphics/cursors/hand-tap.png") 1x, url("/graphics/cursors/hand-tap@2x.png") 2x) 10 10, pointer;
+}
+:where(input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]), textarea, [contenteditable]) {
+  cursor: text;
+}
+
 img, svg, picture { display: block; max-width: 100%; }
 img { height: auto; }
 figure { margin: 0; }
