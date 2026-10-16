@@ -17,7 +17,7 @@ const { current } = Astro.props;
 const isCurrent = (key: string) => key === current;
 ---
 
-<header class="mx-nav">
+<header class="mx-nav" data-nav>
   <div class="mx-container">
     <nav class="mx-nav__bar" aria-label="Hauptnavigation">
       <Logo />
@@ -69,6 +69,28 @@ const isCurrent = (key: string) => key === current;
 </header>
 
 <script>
+  // Sticky behaviour: compact after the first bit of scrolling; hidden while
+  // scrolling down (past the hero), shown again on any scroll up or focus.
+  const nav = document.querySelector<HTMLElement>('[data-nav]');
+  if (nav) {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      nav.classList.toggle('is-scrolled', y > 24);
+      if (nav.contains(document.activeElement) || document.documentElement.classList.contains('mx-menu-open')) {
+        nav.classList.remove('is-hidden');
+      } else if (y > lastY + 6 && y > 320) {
+        nav.classList.add('is-hidden');
+      } else if (y < lastY - 6 || y <= 320) {
+        nav.classList.remove('is-hidden');
+      }
+      lastY = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    nav.addEventListener('focusin', () => nav.classList.remove('is-hidden'));
+    onScroll();
+  }
+
   const sheet = document.querySelector<HTMLDialogElement>('#mx-menu');
   const opener = document.querySelector<HTMLButtonElement>('[data-menu-open]');
   const closer = sheet?.querySelector<HTMLButtonElement>('[data-menu-close]');
@@ -98,13 +120,19 @@ const isCurrent = (key: string) => key === current;
 </script>
 
 <style>
+  /* Floats over the hero at first, then stays with you: slimmer once you
+     scroll, out of the way while you scroll down, back as soon as you scroll up. */
   .mx-nav {
-    position: absolute;
+    position: fixed;
     z-index: 20;
     top: var(--space-4);
     left: 0;
     right: 0;
+    pointer-events: none;
+    transition: translate 0.28s var(--ease-matrix);
   }
+  .mx-nav > .mx-container { pointer-events: auto; }
+  .mx-nav.is-hidden { translate: 0 calc(-100% - var(--space-6)); }
 
   .mx-nav__bar {
     display: flex;
@@ -116,6 +144,13 @@ const isCurrent = (key: string) => key === current;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-press);
     view-transition-name: mx-nav;
+    transition:
+      height var(--motion-slow) var(--ease-matrix),
+      box-shadow var(--motion-slow) var(--ease-matrix);
+  }
+  .mx-nav.is-scrolled .mx-nav__bar {
+    height: var(--nav-height-compact);
+    box-shadow: var(--shadow-press), var(--shadow-float);
   }
 
   .mx-nav__links {
@@ -207,6 +242,7 @@ const isCurrent = (key: string) => key === current;
     color: var(--white);
     overflow: hidden auto;
     overscroll-behavior: contain;
+    pointer-events: auto;
   }
   .mx-sheet::backdrop { background: var(--purple-500); }
 
@@ -289,6 +325,8 @@ const isCurrent = (key: string) => key === current;
   :global(html.mx-menu-open) { overflow: hidden; }
 
   @media (prefers-reduced-motion: reduce) {
+    .mx-nav,
+    .mx-nav__bar { transition: none; }
     .mx-nav__links a::after { transition: none; }
     .mx-sheet[open] { animation: none; }
   }

@@ -65,6 +65,7 @@
   --grid-gutter: 32px;
   --page-margin: 40px;
   --nav-height: 72px;
+  --nav-height-compact: 60px;
   --measure-lead: 60ch;
   --measure-body: 62ch;
 
@@ -130,6 +131,7 @@
   :root {
     --grid-gutter: 24px;
     --nav-height: 64px;
+    --nav-height-compact: 56px;
   }
 }
 
