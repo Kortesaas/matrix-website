@@ -50,6 +50,7 @@ export interface SocialLink {
 export const socials: SocialLink[] = [
   { icon: 'facebook', label: 'Facebook', handle: '@MatriX', url: 'https://www.facebook.com/MatriX' },
   { icon: 'instagram', label: 'Instagram', handle: '@matrixkoenigsbrunn', url: 'https://www.instagram.com/matrixkoenigsbrunn/' },
+  { icon: 'tiktok', label: 'TikTok', handle: '@matrix.koenigsbrunn', url: 'https://www.tiktok.com/@matrix.koenigsbrunn' },
   { icon: 'twitch', label: 'Twitch', url: '' },
   { icon: 'youtube', label: 'YouTube', handle: '@DieMatriX', url: 'https://www.youtube.com/@DieMatriX' },
   { icon: 'discord', label: 'Discord', url: '' },

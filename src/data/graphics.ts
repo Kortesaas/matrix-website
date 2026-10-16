@@ -6,7 +6,7 @@ export const graphics = {
   "angebot-hero-deco": { src: "/graphics/heroes/angebot-hero-deco.svg", width: 1920, height: 1020 },
   "raeume-hero-deco": { src: "/graphics/heroes/raeume-hero-deco.svg", width: 1920, height: 1020 },
   "rainbow-clouds": { src: "/graphics/heroes/rainbow-clouds.svg", width: 1920, height: 1020 },
-  "rechtliches-hero-deco": { src: "/graphics/heroes/rechtliches-hero-deco.svg", width: 1920, height: 1020 },
+  "rechtliches-hero-deco": { src: "/graphics/heroes/rechtliches-hero-deco.svg", width: 1920, height: 1120 },
   "team-hero-deco": { src: "/graphics/heroes/team-hero-deco.svg", width: 1920, height: 1020 },
   "retro-computer": { src: "/graphics/illustrations/retro-computer.svg", width: 635, height: 509 },
   "x-mark": { src: "/graphics/logos/x-mark.svg", width: 203, height: 253 },

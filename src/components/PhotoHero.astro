@@ -1,8 +1,4 @@
 ---
-/**
- * Full-bleed photo hero. With a title: detail pages (Werkstatt).
- * Without a title: the landing variant with the white X mark centred.
- */
 import type { ImageMetadata } from 'astro';
 import Photo from './Photo.astro';
 import Graphic from './Graphic.astro';
@@ -10,35 +6,150 @@ import Graphic from './Graphic.astro';
 interface Props {
   image: ImageMetadata;
   alt: string;
-  /** Detail-page title. Omit for the landing variant (X mark). */
   title?: string;
-  /** Crop focus, e.g. "50% 40%". */
   position?: string;
+  gallery?: { image: ImageMetadata; alt: string; label: string }[];
 }
 
-const { image, alt, title, position } = Astro.props;
+const { image, alt, title, position, gallery = [] } = Astro.props;
 const landing = !title;
+const slides = [{ image, alt, label: 'Chill-Lounge' }, ...gallery];
+const interactive = landing && slides.length > 1;
 ---
 
-<section class:list={['mx-hero', landing && 'mx-hero--landing']}>
-  <Photo
-    src={image}
-    alt={alt}
-    class="mx-hero__photo"
-    sizes="100vw"
-    widths={[640, 960, 1280, 1600, 1920, 2400]}
-    loading="eager"
-    fetchpriority="high"
-    position={position}
-  />
-  {
-    landing ? (
-      <Graphic name="x-mark" class="mx-hero__mark" alt="MatriX" loading="eager" />
-    ) : (
-      <h1 class="mx-display mx-hero__title">{title}</h1>
-    )
-  }
+<section class:list={['mx-hero', landing && 'mx-hero--landing']} data-room-gallery={interactive || undefined}>
+  {slides.map((slide, index) => (
+    <div class="mx-hero__slide" data-slide data-label={slide.label} hidden={index > 0}>
+      <Photo
+        src={slide.image}
+        alt={slide.alt}
+        class="mx-hero__photo"
+        sizes="100vw"
+        widths={[640, 960, 1280, 1600, 1920, 2400]}
+        loading={index === 0 ? 'eager' : 'lazy'}
+        fetchpriority={index === 0 ? 'high' : 'low'}
+        position={position}
+      />
+    </div>
+  ))}
+  {landing ? (
+    <Graphic name="x-mark" class="mx-hero__mark" alt="MatriX" loading="eager" play={false} />
+  ) : (
+    <h1 class="mx-display mx-hero__title">{title}</h1>
+  )}
+  {interactive && (
+    <>
+      <button class="mx-hero__next" type="button" data-next-room aria-label="Nächstes Raumfoto anzeigen">
+        <span class="mx-hero__hint" aria-hidden="true">
+          <span class="mx-hero__room"><span data-room-name>Chill-Lounge</span><span data-room-count>01 / {String(slides.length).padStart(2, '0')}</span></span>
+          <span class="mx-hero__turn">Noch ’nen Raum? <svg viewBox="0 0 32 24" width="32" height="24" fill="none"><path d="M2 15c8 3 16 1 24-6M17 5l11 3-3 11" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </span>
+      </button>
+      <p class="mx-visually-hidden" role="status" data-gallery-status></p>
+      <button class="mx-hero__pause" type="button" data-gallery-pause aria-label="Automatischen Bildwechsel pausieren" aria-pressed="false"><span data-pause-icon aria-hidden="true">Ⅱ</span></button>
+    </>
+  )}
 </section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-room-gallery]').forEach((hero) => {
+    const slides = [...hero.querySelectorAll<HTMLElement>('[data-slide]')];
+    const button = hero.querySelector<HTMLButtonElement>('[data-next-room]');
+    const pause = hero.querySelector<HTMLButtonElement>('[data-gallery-pause]');
+    const label = hero.querySelector<HTMLElement>('[data-room-name]');
+    const count = hero.querySelector<HTMLElement>('[data-room-count]');
+    const hint = hero.querySelector<HTMLElement>('.mx-hero__hint');
+    const status = hero.querySelector<HTMLElement>('[data-gallery-status]');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let current = 0;
+    let busy = false;
+    let inView = false;
+    let paused = false;
+    let timer = 0;
+    const preloadNext = () => {
+      const img = slides[(current + 1) % slides.length].querySelector('img');
+      if (img) img.loading = 'eager';
+    };
+    const schedule = () => {
+      clearTimeout(timer);
+      if (paused || reduce.matches || !inView || document.hidden || hero.matches(':focus-within')) return;
+      timer = window.setTimeout(() => { void advance(true); }, 9000);
+    };
+    const advance = async (automatic = false) => {
+      if (busy) return;
+      clearTimeout(timer);
+      busy = true;
+      try {
+        const next = (current + 1) % slides.length;
+        const outgoing = slides[current];
+        const incoming = slides[next];
+        const img = incoming.querySelector('img');
+        if (img) { img.loading = 'eager'; await img.decode(); }
+        incoming.hidden = false;
+        incoming.style.zIndex = '1';
+        if (!automatic && !reduce.matches) {
+          hint?.querySelector('.mx-hero__turn')?.animate([
+            { scale: '1' },
+            { scale: '.96', offset: .35 },
+            { scale: '1.02', offset: .75 },
+            { scale: '1' },
+          ], { duration: 300, easing: 'ease-out' });
+        }
+        if (!reduce.matches) {
+          await incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' }).finished;
+        }
+        outgoing.hidden = true;
+        incoming.style.zIndex = '';
+        current = next;
+        if (label) label.textContent = incoming.dataset.label ?? '';
+        if (count) {
+          count.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+          if (!reduce.matches) count.animate([{ opacity: 0, translate: '0 5px' }, { opacity: 1, translate: '0 0' }], { duration: 180 });
+        }
+        if (status && !automatic) status.textContent = `${incoming.dataset.label} – Raumfoto ${current + 1} von ${slides.length}`;
+        preloadNext();
+      } catch {
+        if (status && !automatic) status.textContent = 'Das nächste Raumfoto konnte nicht geladen werden.';
+      } finally {
+        busy = false;
+        schedule();
+      }
+    };
+    hint?.addEventListener('pointermove', (event) => {
+      if (reduce.matches || event.pointerType !== 'mouse') return;
+      const rect = hint.getBoundingClientRect();
+      hint.style.setProperty('--nudge-x', `${((event.clientX - rect.left) / rect.width - .5) * 6}px`);
+      hint.style.setProperty('--nudge-y', `${((event.clientY - rect.top) / rect.height - .5) * 6}px`);
+    });
+    hint?.addEventListener('pointerleave', () => {
+      hint.style.removeProperty('--nudge-x');
+      hint.style.removeProperty('--nudge-y');
+    });
+    button?.addEventListener('click', () => { void advance(); });
+    pause?.addEventListener('click', () => {
+      paused = !paused;
+      pause.setAttribute('aria-pressed', String(paused));
+      pause.setAttribute('aria-label', paused ? 'Automatischen Bildwechsel fortsetzen' : 'Automatischen Bildwechsel pausieren');
+      const icon = pause.querySelector('[data-pause-icon]');
+      if (icon) icon.textContent = paused ? '▶' : 'Ⅱ';
+      schedule();
+    });
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.intersectionRatio >= 0.4;
+      if (inView) preloadNext();
+      schedule();
+    }, { threshold: [0, 0.4] });
+    observer.observe(hero);
+    for (const event of ['pointermove', 'pointerdown', 'keydown', 'scroll']) {
+      window.addEventListener(event, schedule, { passive: true });
+    }
+    hero.addEventListener('focusin', () => clearTimeout(timer));
+    hero.addEventListener('focusout', () => { window.setTimeout(schedule, 0); });
+    document.addEventListener('visibilitychange', schedule);
+    reduce.addEventListener('change', schedule);
+    window.addEventListener('pagehide', () => clearTimeout(timer));
+  });
+</script>
 
 <style>
   .mx-hero {
@@ -51,8 +162,10 @@ const landing = !title;
     padding: 0 var(--page-margin);
     overflow: hidden;
     background: var(--ink);
+    isolation: isolate;
   }
-
+  .mx-hero__slide { position: absolute; inset: 0; }
+  .mx-hero__slide[hidden] { display: none; }
   .mx-hero :global(.mx-hero__photo) {
     position: absolute;
     inset: 0;
@@ -61,31 +174,74 @@ const landing = !title;
     max-width: none;
     object-fit: cover;
   }
-
   .mx-hero::after {
     content: "";
     position: absolute;
+    z-index: 2;
     inset: 0;
+    pointer-events: none;
     background: linear-gradient(180deg, var(--ink-scrim-soft) 40%, var(--ink-scrim-strong) 100%);
   }
-
-  .mx-hero__title {
-    position: relative;
-    z-index: 3;
-  }
-
+  .mx-hero__title { position: relative; z-index: 3; }
   .mx-hero :global(.mx-hero__mark) {
     position: relative;
     z-index: 3;
     width: clamp(120px, 12vw, 200px);
     height: auto;
     filter: var(--shadow-mark);
+    pointer-events: none;
   }
-
-  @media (max-width: 860px) {
-    .mx-hero { height: 560px; }
+  .mx-hero__next { position: absolute; z-index: 4; inset: 0; width: 100%; border: 0; padding: 0; background: transparent; color: var(--white); }
+  .mx-hero__next:focus-visible { outline: 4px solid var(--yellow-500); outline-offset: -8px; }
+  .mx-hero__hint {
+    position: absolute;
+    right: calc(var(--page-margin) + 60px);
+    bottom: 30px;
+    display: grid;
+    gap: 6px;
+    width: 244px;
+    padding: 12px 18px 10px;
+    border: 2px solid var(--ink);
+    border-radius: 8px 14px 9px 12px;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+    rotate: -2deg;
+    transform: translate(var(--nudge-x, 0px), var(--nudge-y, 0px));
+    transition: rotate .2s, translate .2s, box-shadow .2s, background .2s, transform .15s ease-out;
   }
-
-  /* The landing hero stays taller than the detail heroes, also on phones. */
+  .mx-hero__room { display: flex; align-items: center; justify-content: space-between; gap: 20px; font: 12px/1.2 var(--font-sans); color: var(--ink-muted); }
+  .mx-hero__turn { display: flex; align-items: center; justify-content: space-between; gap: 20px; font: 24px/1 var(--font-display); }
+  .mx-hero__hint:hover, .mx-hero__next:focus-visible .mx-hero__hint { rotate: 1deg; translate: 0 -4px; background: color-mix(in srgb, var(--white) 94%, var(--ink)); box-shadow: 6px 7px 0 var(--ink); }
+  .mx-hero__hint:active { translate: 3px 3px; box-shadow: 1px 1px 0 var(--ink); }
+  .mx-hero__turn svg { transition: translate .2s, rotate .2s; }
+  .mx-hero__hint:hover .mx-hero__turn svg { translate: 5px -2px; rotate: -8deg; }
+  @media (prefers-reduced-motion: no-preference) {
+    .mx-hero__hint:hover .mx-hero__turn svg { animation: room-arrow .7s ease-in-out infinite alternate; }
+  }
+  @keyframes room-arrow { from { translate: 2px 0; } to { translate: 7px -2px; } }
+  .mx-hero__pause {
+    position: absolute;
+    z-index: 5;
+    right: var(--page-margin);
+    bottom: 32px;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    font: bold 20px/1 var(--font-sans);
+  }
+  @media (max-width: 860px) { .mx-hero { height: 560px; } }
+  @media (max-width: 600px) {
+    .mx-hero__hint { display: none; }
+    .mx-hero__pause { bottom: 20px; width: 36px; height: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mx-hero__hint { transition: none; } }
   .mx-hero--landing { height: clamp(640px, 52vw, 860px); }
 </style>

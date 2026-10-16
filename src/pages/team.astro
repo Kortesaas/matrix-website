@@ -30,7 +30,7 @@ const [wide, ...pair] = groupPhotos;
         teamGroups.map((group) => (
           <section class="team-group">
             <h2 class="mx-h2 team-group__title">{group.title}</h2>
-            <div class="mx-team">
+            <div class="mx-team" data-photo-gallery>
               {group.members.map((member) => (
                 <TeamCard member={member} />
               ))}
@@ -43,10 +43,10 @@ const [wide, ...pair] = groupPhotos;
         wide && (
           <section class="team-group">
             <h2 class="mx-h2 team-group__title">Die Jugendlichen</h2>
-            <div class="team-photos">
-              <PhotoFrame src={wide.image} alt={wide.alt} ratio="16/9" offset="tr" class="team-photos__wide" sizes="(max-width: 860px) 92vw, 1280px" />
+            <div class="team-photos" data-photo-gallery>
+              <PhotoFrame src={wide.image} alt={wide.alt} ratio={`${wide.image.width}/${wide.image.height}`} offset="tr" class="team-photos__wide" sizes="(max-width: 860px) 92vw, 1280px" />
               {pair.map((p, i) => (
-                <PhotoFrame src={p.image} alt={p.alt} ratio="4/3" offset={i === 0 ? 'bl' : 'br'} sizes="(max-width: 600px) 92vw, 620px" />
+                <PhotoFrame src={p.image} alt={p.alt} ratio={`${p.image.width}/${p.image.height}`} offset={i === 0 ? 'bl' : 'br'} sizes="(max-width: 600px) 92vw, 620px" />
               ))}
             </div>
           </section>

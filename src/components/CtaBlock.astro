@@ -1,24 +1,20 @@
 ---
 /** Closing invitation before the footer: question, one lead sentence, one primary button. */
 import Button from './Button.astro';
-import Graphic from './Graphic.astro';
 
 interface Props {
   title: string;
   lead: string;
   label: string;
   href: string;
-  /** The pointing hand aimed at the button. */
-  hand?: boolean;
 }
 
-const { title, lead, label, href, hand = true } = Astro.props;
+const { title, lead, label, href } = Astro.props;
 ---
 
 <section class="mx-section">
   <div class="mx-container">
     <div class="mx-cta">
-      {hand && <Graphic name="hand-point" class="mx-cta__hand" />}
       <h2 class="mx-h2">{title}</h2>
       <p class="mx-lead">{lead}</p>
       <Button href={href}>{label}</Button>
@@ -35,26 +31,4 @@ const { title, lead, label, href, hand = true } = Astro.props;
   }
   .mx-cta .mx-lead { margin: var(--space-4) 0 var(--space-6); }
 
-  .mx-cta :global(.mx-cta__hand) {
-    position: absolute;
-    left: -4%;
-    bottom: -6px;
-    width: 72px;
-    height: auto;
-    transform: rotate(-10deg);
-    pointer-events: none;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .mx-cta:has(:global(.mx-btn:hover)) :global(.mx-cta__hand) { animation: mx-nudge 0.5s ease-in-out infinite; }
-  }
-
-  @keyframes mx-nudge {
-    0%, 100% { translate: 0 0; }
-    50% { translate: 7px -3px; }
-  }
-
-  @media (max-width: 600px) {
-    .mx-cta :global(.mx-cta__hand) { left: 0; width: 56px; }
-  }
 </style>

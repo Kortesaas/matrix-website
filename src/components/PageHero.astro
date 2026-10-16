@@ -19,7 +19,7 @@ interface Props {
 const { deco, sticker, stickerSide = 'left' } = Astro.props;
 ---
 
-<section class="mx-hero">
+<section class:list={["mx-hero", deco === "rechtliches-hero-deco" && "mx-hero--legal"]}>
   <div class="mx-hero__deco">
     <Graphic name={deco} loading="eager" />
   </div>
@@ -55,6 +55,8 @@ const { deco, sticker, stickerSide = 'left' } = Astro.props;
     max-width: none;
     transform: translateX(-50%);
   }
+
+  .mx-hero--legal { z-index: 1; overflow: visible; }
 
   .mx-hero__title {
     position: relative;

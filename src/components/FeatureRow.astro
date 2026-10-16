@@ -30,7 +30,7 @@ const { id, kicker, title, text, photos, alt, flip = false, offset = 'br', accen
   <div class="mx-feature__text">
     {kicker && <span class="mx-feature__kicker">{kicker}</span>}
     <h3 class="mx-h3">{title}</h3>
-    <p class="mx-body">{text}</p>
+    {text.split('\n\n').map((paragraph) => <p class="mx-body">{paragraph}</p>)}
     {
       facts && facts.length > 0 && (
         <ul class="mx-feature__facts">
@@ -78,6 +78,7 @@ const { id, kicker, title, text, photos, alt, flip = false, offset = 'br', accen
 
   .mx-feature .mx-h3 { margin-bottom: var(--space-4); }
   .mx-feature .mx-body { max-width: var(--measure-body); }
+  .mx-feature .mx-body + .mx-body { margin-top: var(--space-4); }
 
   .mx-feature__facts {
     display: flex;

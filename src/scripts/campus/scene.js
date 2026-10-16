@@ -17,6 +17,7 @@ const planZ = (y) => (y - 620) * S;
  * @returns {{ destroy(): void } | null} null when WebGL is unavailable
  */
 export function mountCampus(root) {
+  const phone = matchMedia("(max-width: 600px)");
   const host = /** @type {HTMLElement} */ (root.querySelector("[data-campus-viewer]"));
   const hint = root.querySelector("[data-campus-hint]");
   const modeButtons = [...root.querySelectorAll("[data-campus-mode]")];
@@ -126,6 +127,10 @@ export function mountCampus(root) {
             ? "Über das Haus fahren · Mit + entdecken"
             : "„Offen halten“ tippen · Mit + entdecken";
     }
+    const mobileToggle = root.querySelector('[data-campus-toggle]');
+    mobileToggle?.setAttribute('aria-pressed', String(desired));
+    const toggleLabel = mobileToggle?.querySelector('[data-toggle-label]');
+    if (toggleLabel) toggleLabel.textContent = desired ? 'Haus schließen' : 'Haus öffnen';
     host.dataset.view = desired ? "inside" : "outside";
     kick();
   }
@@ -199,6 +204,21 @@ export function mountCampus(root) {
   let pinnedCard = false;
   let closeTimer = 0;
   let transitioning = false;
+  let restoringFocus = false;
+  const mobileButtons = [...root.querySelectorAll('[data-mobile-room]')];
+  const toggle = root.querySelector('[data-campus-toggle]');
+  const syncExpanded = (m, expanded) => {
+    m.button.setAttribute('aria-expanded', String(expanded));
+    for (const button of mobileButtons) {
+      if (button.dataset.mobileRoom === m.id) button.setAttribute('aria-expanded', String(expanded));
+    }
+  };
+  const restoreFocus = (m) => {
+    const button = phone.matches ? mobileButtons.find((button) => button.dataset.mobileRoom === m.id) : m.button;
+    restoringFocus = true;
+    button?.focus({ preventScroll: true });
+    restoringFocus = false;
+  };
 
   const cancelClose = () => clearTimeout(closeTimer);
   const scheduleClose = () => {
@@ -217,7 +237,7 @@ export function mountCampus(root) {
     if (active?.card) active.card.hidden = true;
     active = m;
     pinnedCard = pin;
-    for (const other of markers) other.button.setAttribute("aria-expanded", String(other === m));
+    for (const other of markers) syncExpanded(other, other === m);
     if (m.card) {
       m.card.hidden = false;
       positionCard();
@@ -231,42 +251,34 @@ export function mountCampus(root) {
     if (active?.card) active.card.hidden = true;
     active = null;
     pinnedCard = false;
-    for (const m of markers) m.button.setAttribute("aria-expanded", "false");
+    for (const m of markers) syncExpanded(m, false);
     highlights.select(null);
     refreshDesired();
   }
 
-  // Cards sit below their marker. When a marker is too low for the whole card,
-  // the card flips above it instead of being cut down to its title.
-  const phone = matchMedia("(max-width: 600px)");
+  // As in the original desktop view: center the card on its marker and
+  // prefer below, flipping above when needed. Mobile keeps its bottom sheet.
   function positionCard() {
     const card = active?.card;
     if (!card) return;
     if (phone.matches) {
-      // Phones: the card is a bottom sheet (see Campus3D.astro).
       card.style.left = card.style.top = card.style.maxHeight = "";
       return;
     }
     const margin = 16;
     const gap = 30;
-    card.style.maxHeight = "none";
+    const bounds = host.getBoundingClientRect();
+    const top = Math.max(margin, 100 - bounds.top);
+    const bottom = window.innerHeight - bounds.top - margin;
+    card.style.maxHeight = `${Math.max(180, bottom - top)}px`;
     const w = card.offsetWidth;
-    const natural = card.offsetHeight;
-    const below = host.clientHeight - (active.y + gap) - margin;
-    const above = active.y - gap - margin;
+    const h = card.offsetHeight;
     const x = Math.max(margin, Math.min(active.x - w / 2, host.clientWidth - w - margin));
-    let y;
-    let room;
-    if (natural <= below || below >= above) {
-      y = active.y + gap;
-      room = below;
-    } else {
-      room = above;
-      y = active.y - gap - Math.min(natural, room);
-    }
+    const below = active.y + gap;
+    const above = active.y - gap - h;
+    const preferred = below + h <= bottom ? below : above;
     card.style.left = `${x}px`;
-    card.style.top = `${y}px`;
-    card.style.maxHeight = `${Math.max(150, room)}px`;
+    card.style.top = `${Math.max(top, Math.min(preferred, bottom - h))}px`;
   }
 
   const listeners = [];
@@ -285,7 +297,7 @@ export function mountCampus(root) {
     let pressed = false;
     on(m.button, "pointerdown", () => (pressed = true));
     on(m.button, "focus", () => {
-      if (!pressed) open(m, false);
+      if (!pressed && !restoringFocus) open(m, false);
       pressed = false;
     });
     on(m.button, "blur", (e) => {
@@ -304,16 +316,49 @@ export function mountCampus(root) {
         if (!m.card.contains(e.relatedTarget) && e.relatedTarget !== m.button) scheduleClose();
       });
       const closeButton = m.card.querySelector("[data-card-close]");
-      if (closeButton) on(closeButton, "click", close);
+      if (closeButton) on(closeButton, "click", () => { close(); restoreFocus(m); });
     }
   }
   on(document, "keydown", (e) => {
     if (e.key !== "Escape" || !active) return;
-    const button = active.button;
+    const marker = active;
     close();
-    button.focus({ preventScroll: true });
+    restoreFocus(marker);
   });
-  on(canvas, "pointerdown", close);
+  on(canvas, "pointerdown", () => {
+    if (!phone.matches) close();
+  });
+  on(canvas, "click", () => {
+    if (phone.matches) {
+      const next = !desired;
+      close();
+      manualInside = next;
+      refreshDesired();
+    }
+  });
+  for (const button of mobileButtons) {
+    on(button, 'click', () => {
+      const marker = byId.get(button.dataset.mobileRoom);
+      if (!marker) return;
+      if (active === marker && pinnedCard) close();
+      else open(marker, true);
+    });
+  }
+  if (toggle) on(toggle, 'click', () => {
+    const next = !desired;
+    close();
+    manualInside = next;
+    refreshDesired();
+  });
+  on(phone, 'change', () => {
+    manualInside = false;
+    hoverInside = false;
+    pendingHover = null;
+    clearTimeout(hoverTimer);
+    pointerCamera.recenter();
+    close();
+    resize();
+  });
 
   for (const b of modeButtons) {
     on(b, "click", () => {
@@ -380,8 +425,9 @@ export function mountCampus(root) {
     host,
     "pointermove",
     (e) => {
-      if (e.pointerType === "touch") {
+      if (phone.matches || e.pointerType === "touch") {
         pointerCamera.recenter();
+        setHover(false);
         kick();
         return;
       }
@@ -426,6 +472,8 @@ export function mountCampus(root) {
     comic.resize(host.clientWidth, host.clientHeight);
     fit();
     boundsStale = true;
+    const rect = root.getBoundingClientRect();
+    inView = rect.bottom > 0 && rect.top < window.innerHeight;
     placeMarkers();
     positionCard();
     kick();

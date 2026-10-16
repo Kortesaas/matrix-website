@@ -1,63 +1,50 @@
 ---
-/** Large social icons with handles ("Hier folgen, um nichts zu verpassen"). */
 import Icon from './Icon.astro';
 import { activeSocials } from '../data/site';
-
 const links = activeSocials.filter((s) => s.handle);
 ---
 
 <ul class="mx-social">
-  {
-    links.map((s) => (
-      <li>
-        <a href={s.url} rel="noopener" target="_blank">
-          <Icon name={s.icon} />
-          <span>
-            <span class="mx-visually-hidden">{s.label}: </span>
-            {s.handle}
-          </span>
-        </a>
-      </li>
-    ))
-  }
+  {links.map((s) => (
+    <li>
+      <a href={s.url} rel="noopener" target="_blank" data-social-link={s.icon}>
+        <span class="mx-social__icon" aria-hidden="true"><Icon name={s.icon} /></span>
+        <span class="mx-social__handle"><span class="mx-visually-hidden">{s.label}: </span>{s.handle}</span>
+      </a>
+    </li>
+  ))}
 </ul>
 
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll<HTMLElement>('[data-social-link]').forEach((link) => {
+    link.addEventListener('click', () => {
+      if (reduce.matches) return;
+      link.querySelector('.mx-social__icon')?.animate([
+        { scale: '1' }, { scale: '.9', offset: .3 }, { scale: '1.06', offset: .7 }, { scale: '1' },
+      ], { duration: 300, easing: 'ease-out' });
+    });
+  });
+</script>
+
 <style>
-  .mx-social {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-8);
-    flex-wrap: wrap;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .mx-social { display: flex; justify-content: center; gap: var(--space-8); flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+  .mx-social a { display: grid; justify-items: center; gap: var(--space-3); color: var(--accent-strong); text-decoration: none; }
+  .mx-social__icon { display: grid; place-items: center; width: 92px; height: 92px; border: 2px solid transparent; border-radius: 22px; transition: background .2s, border-color .2s, box-shadow .2s, translate .2s; }
+  .mx-social__icon :global(svg) { width: 72px; height: 72px; }
+  .mx-social__handle { font-family: var(--font-display); font-size: 24px; line-height: 1; color: var(--ink); }
+  .mx-social a:is(:hover, :focus-visible) .mx-social__icon { background: var(--white); border-color: currentColor; box-shadow: 4px 4px 0 currentColor; translate: 0 -3px; }
+  .mx-social a:is(:hover, :focus-visible) .mx-social__handle { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 3px; text-underline-offset: 5px; }
+  .mx-social a:active .mx-social__icon { translate: 3px 2px; box-shadow: 1px 1px 0 currentColor; }
+  @media (prefers-reduced-motion: no-preference) {
+    .mx-social__icon :global(svg) { transition: rotate .25s, scale .25s, translate .25s; }
+    [data-social-link="facebook"]:is(:hover, :focus-visible) :global(svg) { animation: social-wave .6s ease-in-out; }
+    [data-social-link="instagram"]:is(:hover, :focus-visible) :global(svg) { rotate: -8deg; scale: 1.08; }
+    [data-social-link="youtube"]:is(:hover, :focus-visible) :global(svg) { translate: 4px 0; scale: 1.08; }
+    [data-social-link="tiktok"]:is(:hover, :focus-visible) :global(svg) { animation: social-groove .65s ease-in-out infinite alternate; }
   }
-
-  .mx-social a {
-    display: grid;
-    justify-items: center;
-    gap: var(--space-3);
-    color: var(--accent-strong);
-    text-decoration: none;
-  }
-
-  .mx-social :global(svg) { width: 72px; height: 72px; }
-
-  .mx-social a > span {
-    font-family: var(--font-display);
-    font-size: 24px;
-    line-height: 1;
-    color: var(--ink);
-  }
-  .mx-social a:hover > span {
-    text-decoration: underline;
-    text-decoration-color: var(--accent);
-    text-decoration-thickness: 3px;
-    text-underline-offset: 4px;
-  }
-
-  @media (max-width: 600px) {
-    .mx-social { gap: var(--space-6); }
-    .mx-social :global(svg) { width: 56px; height: 56px; }
-  }
+  @keyframes social-wave { 0%, 100% { rotate: 0deg; } 25% { rotate: -10deg; translate: 0 -3px; } 60% { rotate: 8deg; } 80% { rotate: -4deg; } }
+  @keyframes social-groove { from { rotate: -7deg; translate: -2px 1px; } to { rotate: 6deg; translate: 2px -3px; } }
+  @media (max-width: 600px) { .mx-social { gap: var(--space-6); } .mx-social__icon { width: 76px; height: 76px; border-radius: 18px; } .mx-social__icon :global(svg) { width: 56px; height: 56px; } }
+  @media (prefers-reduced-motion: reduce) { .mx-social__icon { transition: none; } }
 </style>

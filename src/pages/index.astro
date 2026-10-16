@@ -11,9 +11,19 @@ import Graphic from '../components/Graphic.astro';
 import { offers } from '../data/offers';
 import { eventColumns } from '../data/events';
 import p11 from '../assets/photos/p11.jpg';
-import r99 from '../assets/photos/r99.jpg';
+import teamGroup from '../assets/team/team-group.png';
+import { rooms } from '../data/rooms';
 
-const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, hot: o.hot }));
+const chips = [
+  ...offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, hot: o.hot })),
+  { label: 'Billard', href: '/raeume/#chill-lounge' },
+  { label: 'Kickern', href: '/raeume/#chill-lounge' },
+  { label: 'Dart', href: '/raeume/#chill-lounge' },
+  { label: 'Songs aufnehmen', href: '/raeume/#studio-band' },
+  { label: 'Bandprobe', href: '/raeume/#studio-band' },
+  { label: 'Zusammen chillen', href: '/raeume/#chill-lounge' },
+  { label: 'Kreativ werden', href: '/raeume/#werkstatt' },
+];
 ---
 
 <BaseLayout
@@ -22,7 +32,7 @@ const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, 
   accent="purple"
   peeker="dino-pez"
 >
-  <PhotoHero image={p11} alt="Die Chill-Lounge der MatriX mit Kicker und Sofas" />
+  <PhotoHero image={p11} alt="Die Chill-Lounge der MatriX mit Kicker und Sofas" gallery={rooms.filter((room) => room.slug !== 'chill-lounge').map((room) => ({ image: room.photos[0], alt: room.alt, label: room.title }))} />
 
   <!-- Welcome band with the campus map -->
   <section class="mx-section mx-section--accent home-welcome" id="roomtour">
@@ -71,7 +81,6 @@ const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, 
       />
       <EventList columns={eventColumns} />
       <div class="home-events__more">
-        <Graphic name="hand-point" class="home-events__hand" />
         <Button href="/aktuelles/" variant="inverse">Alle Events anzeigen</Button>
       </div>
     </div>
@@ -86,7 +95,7 @@ const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, 
             <path d="M20 30 L580 150 L200 500 Z"></path>
           </svg>
           <Graphic name="dino-camera" class="mx-teaser__sticker" />
-          <PhotoFrame src={r99} alt="Medienprojekt in der MatriX" ratio="4/3" offset="br" tilt="l" sizes="(max-width: 860px) 92vw, 620px" />
+          <PhotoFrame src={teamGroup} alt="Gruppenfoto aus der MatriX" ratio={`${teamGroup.width}/${teamGroup.height}`} offset="br" tilt="l" sizes="(max-width: 860px) 92vw, 620px" />
         </div>
         <div class="mx-teaser__text">
           <h2 class="mx-h2">Wir sind für euch da!</h2>
@@ -162,19 +171,6 @@ const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, 
     gap: 12px;
     margin-top: var(--space-8);
   }
-  .home-events__more :global(.home-events__hand) {
-    width: 64px;
-    height: auto;
-    transform: rotate(-12deg);
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .home-events__more:has(:global(.mx-btn:hover)) :global(.home-events__hand) { animation: home-nudge 0.5s ease-in-out infinite; }
-  }
-  @keyframes home-nudge {
-    0%, 100% { translate: 0 0; }
-    50% { translate: 7px -2px; }
-  }
-
   /* ---------- Team teaser ---------- */
   .mx-teaser {
     display: grid;

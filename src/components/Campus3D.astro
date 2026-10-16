@@ -47,10 +47,7 @@ import { campusRooms } from '../data/campus';
             </button>
             <div class="mx-mapcard__media">
               {room.image ? (
-                <>
-                  <Photo src={room.image} alt={room.alt ?? room.title} sizes="280px" widths={[280, 560]} />
-                  <span class="mx-mapcard__credit">© @aboutusmedia</span>
-                </>
+                <Photo src={room.image} alt={room.alt ?? room.title} sizes="320px" widths={[320, 640]} />
               ) : (
                 <CourtIllustration />
               )}
@@ -82,6 +79,19 @@ import { campusRooms } from '../data/campus';
     </div>
   </div>
 
+  <div class="mx-campus__mobile" data-mobile-controls>
+    <div class="mx-campus__toolbar">
+      <span class="mx-label">Deine kleine Roomtour</span>
+      <button type="button" class="mx-campus__toggle" data-campus-toggle aria-pressed="false"><span data-toggle-label>Haus öffnen</span><span aria-hidden="true"> ↗</span></button>
+    </div>
+    <p class="mx-campus__tip">Raum antippen. Für mehr Räume nach rechts wischen →</p>
+    <div class="mx-campus__rooms" role="group" aria-label="Räume entdecken">
+      {campusRooms.map((room) => (
+        <button type="button" data-mobile-room={room.id} aria-expanded="false" aria-controls={`mx-campus-card-${room.id}`}>{room.title}<span aria-hidden="true"> +</span></button>
+      ))}
+    </div>
+  </div>
+
   <noscript><style>.mx-campus__loading { display: none; } .mx-campus__fallback { display: flex; }</style></noscript>
 </div>
 
@@ -101,7 +111,8 @@ import { campusRooms } from '../data/campus';
         window.addEventListener('pagehide', (event) => {
           if (!event.persisted) app.destroy();
         });
-      } catch {
+      } catch (error) {
+        console.warn('Die 3D-Roomtour konnte nicht geladen werden.', error);
         root.dataset.state = 'unsupported';
       }
     };
@@ -242,7 +253,7 @@ import { campusRooms } from '../data/campus';
   .mx-mapcard {
     position: absolute;
     z-index: 4;
-    width: 280px;
+    width: 320px;
     max-width: calc(100% - 32px);
     padding: 12px 12px 20px;
     background: var(--white);
@@ -262,19 +273,11 @@ import { campusRooms } from '../data/campus';
     border-radius: 12px;
     background: color-mix(in oklab, var(--accent) 22%, var(--white));
   }
+  .mx-mapcard__media :global(picture) { position: absolute; inset: 0; }
   .mx-mapcard__media :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
-  }
-  .mx-mapcard__credit {
-    position: absolute;
-    right: 8px;
-    bottom: 5px;
-    font-size: 10px;
-    line-height: 1;
-    color: var(--white);
-    text-shadow: 0 1px 3px rgba(19, 26, 34, 0.8);
   }
 
   .mx-mapcard__close {
@@ -300,8 +303,21 @@ import { campusRooms } from '../data/campus';
   .mx-mapcard p { margin: 0 8px; font-size: 15px; line-height: 22px; }
   .mx-mapcard a { margin: 12px 8px 0; display: inline-block; }
 
+  .mx-campus__mobile { display: none; }
+
   @media (max-width: 600px) {
-    .mx-campus__panel { height: clamp(300px, 84vw, 420px); }
+    .mx-campus__panel { height: clamp(250px, 70vw, 320px); margin-inline: calc(-1 * var(--page-margin)); }
+    .mx-hotspot, .mx-campus__stems { display: none; }
+    .mx-campus[data-state="ready"] .mx-campus__mobile { display: block; margin-top: var(--space-3); }
+    .mx-campus__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--white); }
+    .mx-campus__toolbar .mx-label { font-size: 22px; }
+    .mx-campus__toggle { flex-shrink: 0; border: 2px solid var(--ink); border-radius: 8px; padding: 8px 10px; background: var(--yellow-500); color: var(--ink); box-shadow: 2px 2px 0 var(--ink); font: 18px/1.2 var(--font-display); }
+    .mx-campus__tip { margin: 14px 0 8px; color: var(--white); font-size: 12px; }
+    .mx-campus__rooms { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; grid-auto-columns: max-content; gap: 8px; overflow-x: auto; padding: 3px 3px 10px; scrollbar-width: thin; scrollbar-color: var(--white) transparent; }
+    .mx-campus__rooms button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 9px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--white); box-shadow: 2px 2px 0 var(--ink); font: 19px/1 var(--font-display); }
+    .mx-campus__rooms button[aria-expanded="true"] { background: var(--ink); color: var(--white); }
+    .mx-campus__rooms button span { font-size: 24px; }
+
     .mx-hotspot { width: 34px; height: 34px; margin: -17px 0 0 -17px; font-size: 23px; box-shadow: 0 0 0 4px var(--hotspot-halo), 0 2px 0 var(--ink); }
 
     /* The room card opens as a bottom sheet over the page. */

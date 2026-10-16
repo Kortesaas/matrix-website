@@ -153,13 +153,19 @@ const isCurrent = (key: string) => key === current;
 
   .mx-nav__links {
     display: flex;
+    align-items: center;
     gap: var(--space-6);
     margin: 0 auto;
     padding: 0;
     list-style: none;
   }
 
+  .mx-nav__links li { display: flex; align-items: center; }
+
   .mx-nav__links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
     color: var(--ink);
     text-decoration: none;

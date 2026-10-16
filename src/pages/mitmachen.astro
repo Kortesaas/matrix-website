@@ -7,10 +7,9 @@ import Graphic from '../components/Graphic.astro';
 import Photo from '../components/Photo.astro';
 import CtaBlock from '../components/CtaBlock.astro';
 import { site } from '../data/site';
-import videoStill from '../assets/photos/video-still.png';
+import videoStill from '../assets/photos/rickroll-thumbnail.jpg';
 
-// TODO: link the "Warum mitmachen?" video once it is published.
-const videoUrl = '';
+const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
 ---
 
 <BaseLayout
@@ -40,19 +39,14 @@ const videoUrl = '';
           </p>
         </div>
         <div class="why__media">
-          <div class="why__computer">
-            <Graphic name="retro-computer" class="why__art" />
+          <a class="why__computer" href={videoUrl} target="_blank" rel="noopener" aria-label="Musikvideo auf YouTube ansehen">
+            <Graphic name="retro-computer" class="why__art" play={false} />
             <div class="why__screen">
-              <Photo src={videoStill} alt="Standbild aus dem MatriX-Video: Eine Jugendliche und eine Seniorin beim Gärtnern" sizes="(max-width: 860px) 34vw, 220px" widths={[320, 640]} />
-              {
-                videoUrl && (
-                  <a class="why__play" href={videoUrl} target="_blank" rel="noopener">
-                    <span class="mx-visually-hidden">Video ansehen</span>
-                  </a>
-                )
-              }
+              <Photo src={videoStill} alt="Rick Astley – Never Gonna Give You Up" sizes="(max-width: 860px) 34vw, 220px" widths={[320, 480]} />
+              <span class="why__noise" aria-hidden="true"></span>
+              <span class="why__play" aria-hidden="true"></span>
             </div>
-          </div>
+          </a>
         </div>
       </div>
     </div>
@@ -96,7 +90,7 @@ const videoUrl = '';
   .why__text .mx-body { margin-top: var(--space-5); max-width: var(--measure-body); }
   .why__media { grid-column: 7 / span 6; }
 
-  .why__computer { position: relative; }
+  .why__computer { position: relative; display: block; }
   .why__computer :global(.why__art) { width: 100%; height: auto; }
 
   /* The still sits on the monitor's screen (measured on the 635×509 art). */
@@ -116,7 +110,39 @@ const videoUrl = '';
     object-fit: cover;
   }
 
+  .why__noise {
+    position: absolute;
+    inset: 0;
+    background: #6a6a6a url('/graphics/textures/tv-noise.svg') repeat;
+    background-size: 160px 160px;
+    opacity: 1;
+    transition: opacity .3s;
+  }
+  .why__noise::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(transparent 0 2px, #0003 2px 3px);
+  }
+  .why__computer:is(:hover, :focus-visible) .why__noise { opacity: 0; }
+  .why__computer:is(:hover, :focus-visible) .why__play { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    .why__noise { animation: tv-static .24s steps(3) infinite; }
+  }
+  @keyframes tv-static {
+    0% { background-position: 0 0; }
+    33% { background-position: 47px -31px; }
+    66% { background-position: -29px 59px; }
+    100% { background-position: 61px 17px; }
+  }
+  @media (hover: none) {
+    .why__noise { display: none; }
+    .why__computer .why__play { opacity: 1; }
+  }
+
   .why__play {
+    opacity: 0;
+    transition: opacity .3s;
     position: absolute;
     inset: 0;
     display: grid;

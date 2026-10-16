@@ -1,8 +1,14 @@
 import type { ImageMetadata } from 'astro';
 
-import r123 from '../assets/photos/r123.jpg';
-import p10 from '../assets/photos/p10.jpg';
-import r142 from '../assets/photos/r142.jpg';
+import ralf from '../assets/team/ralf.png';
+import steve from '../assets/team/steve.png';
+import angi from '../assets/team/angi.png';
+import thomas from '../assets/team/thomas.png';
+import leonie from '../assets/team/leonie.png';
+import richy from '../assets/team/richy.png';
+import groupOutdoors from '../assets/youth/group-outdoors.png';
+import groupStage from '../assets/youth/group-stage.png';
+import groupCostumes from '../assets/youth/group-costumes.png';
 
 export interface TeamMember {
   name: string;
@@ -23,17 +29,17 @@ export interface TeamGroup {
   members: (TeamMember | OpenPosition)[];
 }
 
-// TODO: add the portraits (same background and crop for everyone) once shot.
+// Staff portraits supplied in the design handoff.
 export const teamGroups: TeamGroup[] = [
   {
     title: 'Die Hauptamtlichen',
     members: [
-      { name: 'Ralf Engelstätter', role: 'CEO' },
-      { name: 'Steve Klier', role: 'Medienpädagoge' },
-      { name: 'Angi Klecker', role: 'Theaterpädagogin' },
-      { name: 'Thomas Walk', role: 'Eventmanager' },
-      { name: 'Leonie Spieß', role: 'Pädagogische Mitarbeiterin' },
-      { name: 'Richy Bieger', role: 'Streetworker' },
+      { name: 'Ralf Engelstätter', portrait: ralf, role: 'CEO' },
+      { name: 'Steve Klier', portrait: steve, role: 'Medienpädagoge' },
+      { name: 'Angi Klecker', portrait: angi, role: 'Theaterpädagogin' },
+      { name: 'Thomas Walk', portrait: thomas, role: 'Eventmanager' },
+      { name: 'Leonie Spieß', portrait: leonie, role: 'Pädagogische Mitarbeiterin' },
+      { name: 'Richy Bieger', portrait: richy, role: 'Streetworker' },
     ],
   },
   {
@@ -52,9 +58,9 @@ export interface GroupPhoto {
   alt: string;
 }
 
-// TODO: replace with real group photos of the young people (16:9 + two 4:3).
+// Original youth group photos; keep the full compositions visible.
 export const groupPhotos: GroupPhoto[] = [
-  { image: r123, alt: 'Party im Saal der MatriX' },
-  { image: p10, alt: 'Der Saal der MatriX' },
-  { image: r142, alt: 'Kicker und Sofas in der Chill-Lounge' },
+  { image: groupOutdoors, alt: 'Jugendliche der MatriX gemeinsam im Außenbereich' },
+  { image: groupStage, alt: 'Gruppenfoto von Jugendlichen auf der Bühne der MatriX' },
+  { image: groupCostumes, alt: 'Jugendliche in Kostümen im Garten der MatriX' },
 ];
