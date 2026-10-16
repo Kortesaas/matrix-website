@@ -234,6 +234,14 @@
         }
         node.replaceWith(frag);
       });
+      // Triggered from script (not :hover) so a hop always lands, even when
+      // the mouse sweeps across quickly; a letter mid-hop isn't restarted.
+      title.addEventListener('pointerover', (event) => {
+        const letter = event.target instanceof Element ? event.target.closest('.mx-letter') : null;
+        if (!letter || letter.classList.contains('is-hop')) return;
+        letter.classList.add('is-hop');
+        letter.addEventListener('animationend', () => letter.classList.remove('is-hop'), { once: true });
+      });
     });
 
     // Hero layers drift a little with the mouse.
@@ -424,7 +432,7 @@
   .mx-letter { display: inline-block; }
 
   @media (prefers-reduced-motion: no-preference) {
-    .mx-letter:hover { animation: mx-hop 0.4s var(--ease-matrix); }
+    .mx-letter.is-hop { animation: mx-hop 0.4s var(--ease-matrix); }
   }
 
   @keyframes mx-hop {

@@ -33,7 +33,7 @@ const isCurrent = (key: string) => key === current;
         }
       </ul>
       <div class="mx-nav__cta">
-        <Button href={ctaNav.href} variant="ink" size="sm" aria-current={isCurrent(ctaNav.key) ? 'page' : undefined}>
+        <Button href={ctaNav.href} size="sm" aria-current={isCurrent(ctaNav.key) ? 'page' : undefined}>
           {ctaNav.label}
         </Button>
       </div>
@@ -69,8 +69,8 @@ const isCurrent = (key: string) => key === current;
 </header>
 
 <script>
-  // Sticky behaviour: compact after the first bit of scrolling; hidden while
-  // scrolling down (past the hero), shown again on any scroll up or focus.
+  // Sticky behaviour: lifted shadow once scrolled; hidden while scrolling
+  // down (past the hero), shown again on any scroll up or focus.
   const nav = document.querySelector<HTMLElement>('[data-nav]');
   if (nav) {
     let lastY = window.scrollY;
@@ -120,8 +120,8 @@ const isCurrent = (key: string) => key === current;
 </script>
 
 <style>
-  /* Floats over the hero at first, then stays with you: slimmer once you
-     scroll, out of the way while you scroll down, back as soon as you scroll up. */
+  /* Floats over the hero at first, then stays with you: out of the way while
+     you scroll down, back as soon as you scroll up. */
   .mx-nav {
     position: fixed;
     z-index: 20;
@@ -144,12 +144,10 @@ const isCurrent = (key: string) => key === current;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-press);
     view-transition-name: mx-nav;
-    transition:
-      height var(--motion-slow) var(--ease-matrix),
-      box-shadow var(--motion-slow) var(--ease-matrix);
+    transition: box-shadow var(--motion-slow) var(--ease-matrix);
   }
+  /* Same size everywhere; over content it just gets a soft lift. */
   .mx-nav.is-scrolled .mx-nav__bar {
-    height: var(--nav-height-compact);
     box-shadow: var(--shadow-press), var(--shadow-float);
   }
 
