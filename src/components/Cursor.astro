@@ -6,22 +6,19 @@
  * the static CSS cursors from global.css.
  *
  * Geometry matches the static cursor images: a 46×35 box with the hand at
- * (10, 8) and the fingertip hotspot at (10, 10), tilted 20° clockwise around
- * the fingertip so it points up-left like a system arrow.
+ * (10, 8) and the fingertip hotspot at (10, 10).
  */
 ---
 
 <div class="mx-cursor" aria-hidden="true" data-cursor hidden>
-  <div class="mx-cursor__tilt">
-    <div class="mx-cursor__hand">
-      <img src="/graphics/cursors/hand-flat@2x.png" width="36" height="27" alt="" decoding="sync" />
-    </div>
-    <svg class="mx-cursor__taps" viewBox="0 0 46 35" width="46" height="35">
-      <path d="M7 6 4 3" />
-      <path d="M6 10H2" />
-      <path d="M7 14 4 17" />
-    </svg>
+  <div class="mx-cursor__hand">
+    <img src="/graphics/cursors/hand-flat@2x.png" width="36" height="27" alt="" decoding="sync" />
   </div>
+  <svg class="mx-cursor__taps" viewBox="0 0 46 35" width="46" height="35">
+    <path d="M7 6 4 3" />
+    <path d="M6 10H2" />
+    <path d="M7 14 4 17" />
+  </svg>
 </div>
 
 <!-- Inline (not bundled) so it runs during parsing, before the first paint
@@ -163,13 +160,6 @@
     cursor: none !important;
   }
   :global(html.mx-has-cursor ::backdrop) { cursor: none !important; }
-
-  .mx-cursor__tilt {
-    position: absolute;
-    inset: 0;
-    transform: rotate(20deg);
-    transform-origin: 10px 10px;
-  }
 
   .mx-cursor__hand {
     position: absolute;

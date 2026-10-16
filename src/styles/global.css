@@ -63,12 +63,12 @@ body {
    devices Cursor.astro replaces it with the animated one. The image-set
    line adds the sharp 2x version where supported. */
 html {
-  cursor: url("/graphics/cursors/hand.png") 2 2, auto;
-  cursor: image-set(url("/graphics/cursors/hand.png") 1x, url("/graphics/cursors/hand@2x.png") 2x) 2 2, auto;
+  cursor: url("/graphics/cursors/hand.png") 1 3, auto;
+  cursor: image-set(url("/graphics/cursors/hand.png") 1x, url("/graphics/cursors/hand@2x.png") 2x) 1 3, auto;
 }
 :where(a[href], button:not(:disabled), [role="button"], summary, label[for], select) {
-  cursor: url("/graphics/cursors/hand-tap.png") 10 10, pointer;
-  cursor: image-set(url("/graphics/cursors/hand-tap.png") 1x, url("/graphics/cursors/hand-tap@2x.png") 2x) 10 10, pointer;
+  cursor: url("/graphics/cursors/hand-tap.png") 10 8, pointer;
+  cursor: image-set(url("/graphics/cursors/hand-tap.png") 1x, url("/graphics/cursors/hand-tap@2x.png") 2x) 10 8, pointer;
 }
 :where(input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]), textarea, [contenteditable]) {
   cursor: text;
