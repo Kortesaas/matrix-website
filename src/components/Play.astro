@@ -1,0 +1,407 @@
+---
+/**
+ * The playful layer of the site — all of it optional decoration:
+ *  - each kind of sticker ([data-play]) has its own personality:
+ *    pet   characters lean in on hover, say hello once, squash + confetti on click
+ *    love  heartbeat on hover, hearts trail the mouse, burst of hearts on click
+ *    hot   flicker on hover, shake + sparks on click
+ *    snap  turns towards you, click takes a photo (one soft flash)
+ *    spin  the X stays calm, a click spins it once
+ *  - hero layers drift with the mouse, the hero-title letter under it hops
+ *  - party mode: the Konami code or seven quick sticker clicks rain confetti
+ * Everything is skipped for prefers-reduced-motion.
+ */
+---
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+  const SHAPES = [
+    '/graphics/shapes/star-green.svg',
+    '/graphics/shapes/star-pink.svg',
+    '/graphics/shapes/bolt-yellow.svg',
+    '/graphics/shapes/zigzag-pink.svg',
+    '/graphics/shapes/zigzag-yellow.svg',
+  ];
+  const COLORS: Record<string, string[]> = {
+    all: ['--cyan-500', '--orange-500', '--mint-500', '--purple-500', '--pink-500', '--yellow-500', '--blue-500'],
+    hot: ['--orange-500', '--yellow-500', '--coral-500'],
+    love: ['--pink-500', '--pink-600', '--coral-500', '--purple-500'],
+  };
+  const HEART = 'M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3 1.7-1.8 3.2-3 5.3-3 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z';
+
+  const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
+  const rand = (min: number, max: number) => min + Math.random() * (max - min);
+
+  let layer: HTMLElement | null = null;
+  const fx = () => {
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.className = 'mx-fx';
+      layer.setAttribute('aria-hidden', 'true');
+      document.body.append(layer);
+    }
+    return layer;
+  };
+
+  const spawn = (el: HTMLElement) => {
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+    fx().append(el);
+  };
+
+  const piece = (palette: string, heartOnly = false): HTMLElement => {
+    const roll = heartOnly ? 0 : Math.random();
+    if (palette === 'love' && roll < 0.7) {
+      const heart = document.createElement('span');
+      heart.className = 'mx-fx__piece mx-fx__heart';
+      heart.style.color = `var(${pick(COLORS.love)})`;
+      heart.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="currentColor"/></svg>`;
+      return heart;
+    }
+    if (palette === 'all' && roll < 0.45) {
+      const img = document.createElement('img');
+      img.className = 'mx-fx__piece mx-fx__shape';
+      img.src = pick(SHAPES);
+      img.alt = '';
+      return img;
+    }
+    const dot = document.createElement('span');
+    dot.className = `mx-fx__piece ${Math.random() < 0.5 ? 'mx-fx__dot' : 'mx-fx__dash'}`;
+    dot.style.background = `var(${pick(COLORS[palette] ?? COLORS.all)})`;
+    return dot;
+  };
+
+  /** Confetti thrown out from a point. */
+  const burst = (x: number, y: number, palette = 'all', count = 12) => {
+    for (let i = 0; i < count; i++) {
+      const el = piece(palette);
+      const angle = (Math.PI * 2 * i) / count + rand(-0.3, 0.3);
+      const dist = rand(50, 110);
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      el.style.setProperty('--dy', `${Math.sin(angle) * dist - 30}px`);
+      el.style.setProperty('--r', `${rand(-260, 260)}deg`);
+      el.style.animation = `mx-burst ${rand(0.6, 0.9)}s cubic-bezier(.2,.7,.3,1) forwards`;
+      spawn(el);
+    }
+  };
+
+  /** One heart floating up from the cursor. */
+  const heart = (x: number, y: number) => {
+    const el = piece('love', true);
+    el.style.left = `${x + rand(-6, 6)}px`;
+    el.style.top = `${y}px`;
+    el.style.setProperty('--dx', `${rand(-14, 14)}px`);
+    el.style.animation = 'mx-float .9s ease-out forwards';
+    spawn(el);
+  };
+
+  let lastFlash = 0;
+  const flash = () => {
+    const now = Date.now();
+    if (now - lastFlash < 800) return;
+    lastFlash = now;
+    const el = document.createElement('div');
+    el.className = 'mx-fx__flash';
+    spawn(el);
+  };
+
+  /** Party mode: confetti rain over the whole screen. */
+  let partying = false;
+  const party = () => {
+    if (partying) return;
+    partying = true;
+    document.documentElement.classList.add('is-party');
+    for (let i = 0; i < 70; i++) {
+      const el = piece('all');
+      el.style.left = `${rand(0, 100)}vw`;
+      el.style.top = '-30px';
+      el.style.setProperty('--dx', `${rand(-60, 60)}px`);
+      el.style.setProperty('--r', `${rand(-540, 540)}deg`);
+      el.style.animation = `mx-rain ${rand(1.6, 2.8)}s linear ${rand(0, 1.4)}s forwards`;
+      spawn(el);
+    }
+    window.setTimeout(() => {
+      partying = false;
+      document.documentElement.classList.remove('is-party');
+    }, 4200);
+  };
+
+  /** Restart a one-shot reaction class on an element (cleared after its own animation, or after `ms`). */
+  const REACTIONS = ['is-hello', 'is-boop', 'is-pop', 'is-shake', 'is-spin'];
+  const replay = (el: Element, className: string, ms?: number) => {
+    el.classList.remove(className, ...REACTIONS);
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add(className);
+    if (ms) {
+      window.setTimeout(() => el.classList.remove(className), ms);
+      return;
+    }
+    const done = (event: Event) => {
+      if (event.target !== el) return;
+      el.classList.remove(className);
+      el.removeEventListener('animationend', done);
+    };
+    el.addEventListener('animationend', done);
+  };
+
+  // Each kind of sticker has its own personality.
+  const reactions: Record<string, string> = { spin: 'is-spin', hot: 'is-shake', love: 'is-pop' };
+  const palettes: Record<string, string> = { hot: 'hot', love: 'love' };
+  const confetti: Record<string, number> = { pet: 10, love: 12, hot: 10, snap: 8, spin: 0 };
+
+  let clicks: number[] = [];
+
+  document.addEventListener('click', (event) => {
+    if (reduce.matches) return;
+    const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-play]') : null;
+    if (!target) return;
+    const kind = target.dataset.play ?? 'pet';
+
+    replay(target, reactions[kind] ?? 'is-boop');
+    const pieces = confetti[kind] ?? 10;
+    if (pieces) burst(event.clientX, event.clientY, palettes[kind] ?? 'all', pieces);
+    if (kind === 'snap') flash();
+
+    const now = Date.now();
+    clicks = [...clicks.filter((t) => now - t < 4000), now];
+    if (clicks.length >= 7) {
+      clicks = [];
+      party();
+    }
+  });
+
+  // Hearts trail behind the mouse over "love" stickers.
+  let lastHeart = 0;
+  document.addEventListener(
+    'pointermove',
+    (event) => {
+      if (reduce.matches || event.pointerType !== 'mouse') return;
+      const target = event.target instanceof Element ? event.target.closest('[data-play="love"]') : null;
+      if (!target || event.timeStamp - lastHeart < 110) return;
+      lastHeart = event.timeStamp;
+      heart(event.clientX, event.clientY - 12);
+    },
+    { passive: true },
+  );
+
+  // Konami code → party.
+  const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  let progress = 0;
+  document.addEventListener('keydown', (event) => {
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    progress = key === KONAMI[progress] ? progress + 1 : key === KONAMI[0] ? 1 : 0;
+    if (progress === KONAMI.length) {
+      progress = 0;
+      if (!reduce.matches) party();
+    }
+  });
+
+  if (!reduce.matches) {
+    // Stickers say hello once when they scroll into view.
+    const hello = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          hello.unobserve(entry.target);
+          replay(entry.target, 'is-hello');
+        });
+      },
+      { threshold: 0.6 },
+    );
+    document.querySelectorAll('[data-play="pet"]').forEach((el) => hello.observe(el));
+
+    // Hero titles: the letter under the mouse hops.
+    document.querySelectorAll<HTMLElement>('.mx-hero__title').forEach((title) => {
+      title.setAttribute('aria-label', title.innerText.replace(/\s+/g, ' ').trim());
+      const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT);
+      const nodes: Text[] = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+      nodes.forEach((node) => {
+        const frag = document.createDocumentFragment();
+        for (const char of node.data) {
+          if (/\s/.test(char)) {
+            frag.append(char);
+            continue;
+          }
+          const span = document.createElement('span');
+          span.className = 'mx-letter';
+          span.setAttribute('aria-hidden', 'true');
+          span.textContent = char;
+          frag.append(span);
+        }
+        node.replaceWith(frag);
+      });
+    });
+
+    // Hero layers drift a little with the mouse.
+    if (finePointer.matches) {
+      document.querySelectorAll<HTMLElement>('.mx-hero').forEach((hero) => {
+        hero.addEventListener('pointermove', (event) => {
+          const box = hero.getBoundingClientRect();
+          hero.style.setProperty('--px', (((event.clientX - box.left) / box.width) * 2 - 1).toFixed(3));
+          hero.style.setProperty('--py', (((event.clientY - box.top) / box.height) * 2 - 1).toFixed(3));
+        });
+        hero.addEventListener('pointerleave', () => {
+          hero.style.setProperty('--px', '0');
+          hero.style.setProperty('--py', '0');
+        });
+      });
+    }
+  }
+</script>
+
+<style is:global>
+  /* ---------- Stickers ---------- */
+  [data-play] {
+    pointer-events: auto !important;
+    transform-origin: 50% 85%;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  [data-play="spin"] { transform-origin: 50% 50%; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-play="pet"],
+    [data-play="snap"] {
+      transition:
+        rotate var(--motion-slow) var(--ease-matrix),
+        translate var(--motion-slow) var(--ease-matrix);
+    }
+
+    @media (hover: hover) {
+      /* pet: the character leans in */
+      [data-play="pet"]:hover { rotate: -4deg; translate: 0 -4px; }
+      /* love: a heartbeat */
+      [data-play="love"]:hover { animation: mx-heartbeat 1s var(--ease-matrix) infinite; }
+      /* hot: a little flicker */
+      [data-play="hot"]:hover { animation: mx-flicker 0.32s ease-in-out infinite alternate; }
+      /* snap: the camera turns towards you */
+      [data-play="snap"]:hover { rotate: 4deg; }
+      /* spin: the X stays calm until clicked */
+    }
+
+    [data-play].is-hello { animation: mx-wiggle 0.7s var(--ease-matrix) 0.15s; }
+    [data-play].is-boop { animation: mx-boop 0.45s var(--ease-matrix); }
+    [data-play].is-pop { animation: mx-heartbeat 0.5s var(--ease-matrix); }
+    [data-play].is-shake { animation: mx-shake 0.4s linear; }
+    [data-play].is-spin { animation: mx-spin 0.6s cubic-bezier(.3, 1.3, .5, 1); }
+    html.is-party [data-play]:not([data-play="spin"]) { animation: mx-wiggle 0.6s var(--ease-matrix) infinite; }
+  }
+
+  @keyframes mx-wiggle {
+    0%, 100% { rotate: 0deg; }
+    30% { rotate: -4deg; }
+    65% { rotate: 3deg; }
+  }
+
+  @keyframes mx-heartbeat {
+    0%, 45%, 100% { scale: 1; }
+    15% { scale: 1.08; }
+    30% { scale: 1.02; }
+  }
+
+  @keyframes mx-flicker {
+    from { scale: 1 1; }
+    to { scale: 0.98 1.05; }
+  }
+
+  @keyframes mx-boop {
+    0%, 100% { scale: 1; }
+    30% { scale: 1.14 0.86; }
+    60% { scale: 0.94 1.08; }
+    80% { scale: 1.03 0.97; }
+  }
+
+  @keyframes mx-shake {
+    0%, 100% { translate: 0 0; rotate: 0deg; }
+    20% { translate: -4px 0; rotate: -4deg; }
+    40% { translate: 4px 0; rotate: 4deg; }
+    60% { translate: -3px 0; rotate: -2deg; }
+    80% { translate: 2px 0; rotate: 2deg; }
+  }
+
+  @keyframes mx-spin {
+    from { rotate: 0deg; }
+    to { rotate: 360deg; }
+  }
+
+  /* ---------- Effects layer ---------- */
+  .mx-fx {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .mx-fx__piece {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    translate: -50% -50%;
+  }
+  .mx-fx__shape { width: 18px; height: auto; }
+  .mx-fx__dot { width: 9px; height: 9px; border-radius: 50%; }
+  .mx-fx__dash { width: 14px; height: 4px; border-radius: 2px; }
+  .mx-fx__heart { width: 16px; height: 16px; }
+  .mx-fx__heart svg { width: 100%; height: 100%; }
+
+  .mx-fx__flash {
+    position: absolute;
+    inset: 0;
+    background: var(--white);
+    animation: mx-flash 0.4s ease-out forwards;
+  }
+
+  @keyframes mx-burst {
+    0% { translate: -50% -50%; scale: 0.3; rotate: 0deg; }
+    55% { translate: calc(-50% + var(--dx)) calc(-50% + var(--dy)); scale: 1; }
+    100% { translate: calc(-50% + var(--dx)) calc(-50% + var(--dy) + 46px); scale: 0; rotate: var(--r); }
+  }
+
+  @keyframes mx-float {
+    0% { translate: -50% -50%; scale: 0.4; }
+    30% { scale: 1; }
+    100% { translate: calc(-50% + var(--dx)) calc(-50% - 48px); scale: 0; }
+  }
+
+  @keyframes mx-rain {
+    0% { translate: -50% 0; rotate: 0deg; }
+    100% { translate: calc(-50% + var(--dx)) calc(100vh + 60px); rotate: var(--r); }
+  }
+
+  @keyframes mx-flash {
+    from { opacity: 0.65; }
+    to { opacity: 0; }
+  }
+
+  /* ---------- Hero ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .mx-hero__deco img {
+      translate: calc(var(--px, 0) * -18px) calc(var(--py, 0) * -10px);
+      transition: translate 0.5s ease-out;
+    }
+    .mx-hero__title,
+    .mx-hero__mark {
+      translate: calc(var(--px, 0) * 10px) calc(var(--py, 0) * 6px);
+      transition: translate 0.5s ease-out;
+    }
+  }
+
+  .mx-letter { display: inline-block; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .mx-letter:hover { animation: mx-hop 0.4s var(--ease-matrix); }
+  }
+
+  @keyframes mx-hop {
+    0%, 100% { translate: 0 0; rotate: 0deg; }
+    40% { translate: 0 -0.12em; rotate: -4deg; }
+    70% { translate: 0 0.02em; rotate: 2deg; }
+  }
+</style>

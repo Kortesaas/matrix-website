@@ -45,6 +45,15 @@ const { title, lead, label, href, hand = true } = Astro.props;
     pointer-events: none;
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    .mx-cta:has(:global(.mx-btn:hover)) :global(.mx-cta__hand) { animation: mx-nudge 0.5s ease-in-out infinite; }
+  }
+
+  @keyframes mx-nudge {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 7px -3px; }
+  }
+
   @media (max-width: 600px) {
     .mx-cta :global(.mx-cta__hand) { left: 0; width: 56px; }
   }

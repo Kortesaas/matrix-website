@@ -66,7 +66,7 @@ html {
   cursor: url("/graphics/cursors/hand.png") 2 2, auto;
   cursor: image-set(url("/graphics/cursors/hand.png") 1x, url("/graphics/cursors/hand@2x.png") 2x) 2 2, auto;
 }
-:where(a[href], button:not(:disabled), [role="button"], summary, label[for], select) {
+:where(a[href], button:not(:disabled), [role="button"], summary, label[for], select, [data-play]) {
   cursor: url("/graphics/cursors/hand-tap.png") 10 10, pointer;
   cursor: image-set(url("/graphics/cursors/hand-tap.png") 1x, url("/graphics/cursors/hand-tap@2x.png") 2x) 10 10, pointer;
 }

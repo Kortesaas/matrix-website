@@ -22,7 +22,7 @@ const isOpen = 'open' in member;
     <a class="mx-person mx-person--open" href={member.href}>
       <div class="mx-person__tile mx-person__tile--open">
         <div class="mx-person__face">
-          <Graphic name="egg-hi" class="mx-person__sticker" />
+          <Graphic name="egg-hi" class="mx-person__sticker" play={false} />
         </div>
       </div>
       <div class="mx-person__name">{member.title}</div>
@@ -35,7 +35,9 @@ const isOpen = 'open' in member;
       ) : (
         <div class="mx-person__tile" role="img" aria-label={`Foto von ${member.name} folgt`}>
           <div class="mx-person__face">
-            <Icon name="xmark" class="mx-person__mark" />
+            <span class="mx-person__spin" data-play="spin">
+              <Icon name="xmark" class="mx-person__mark" />
+            </span>
           </div>
         </div>
       )}
@@ -74,8 +76,9 @@ const isOpen = 'open' in member;
     transform: translate(calc(-1 * var(--photo-offset)), var(--photo-offset));
   }
 
+  .mx-person__spin { display: grid; place-items: center; width: 34%; transform-origin: 50% 50%; }
   .mx-person__tile :global(.mx-person__mark) {
-    width: 34%;
+    width: 100%;
     height: auto;
     color: var(--accent);
   }

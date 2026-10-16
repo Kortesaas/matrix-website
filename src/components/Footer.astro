@@ -93,8 +93,9 @@ const year = new Date().getFullYear();
     width: 140px;
     height: auto;
     transform: translateY(-78%);
-    pointer-events: none;
+    transition: translate var(--motion-slow) var(--ease-matrix);
   }
+  .mx-footer :global(.mx-footer__peek:hover) { translate: 0 -12px; }
 
   .mx-footer :global(.mx-footer__heart) {
     position: absolute;

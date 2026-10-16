@@ -1,6 +1,28 @@
 ---
-/** Decorative sticker, shape or hero layer from the handoff artwork (never redrawn). */
+/**
+ * Decorative sticker, shape or hero layer from the handoff artwork (never redrawn).
+ * Characters are playable by default (see Play.astro): they react to hover and
+ * clicks and give the hand cursor its own easter-egg state.
+ */
 import { graphics, type GraphicName } from '../data/graphics';
+
+export type PlayKind = 'pet' | 'hot' | 'love' | 'snap' | 'spin';
+
+const defaultPlay: Partial<Record<GraphicName, PlayKind>> = {
+  'cat-hi': 'pet',
+  'dino-pez': 'pet',
+  'dino-wave': 'pet',
+  'egg-hi': 'pet',
+  'skater-yeah': 'pet',
+  'dino-camera': 'snap',
+  'sun-omg': 'hot',
+  flame: 'hot',
+  flowers: 'love',
+  'daisy-face': 'love',
+  'flower-face': 'love',
+  'heart-bubble': 'love',
+  'x-mark': 'spin',
+};
 
 interface Props {
   name: GraphicName;
@@ -9,10 +31,13 @@ interface Props {
   /** Leave empty for decoration (the default). */
   alt?: string;
   loading?: 'lazy' | 'eager';
+  /** Override the sticker's reaction, or `false` to keep it still (e.g. inside a link). */
+  play?: PlayKind | false;
 }
 
-const { name, class: className, style, alt = '', loading = 'lazy' } = Astro.props;
+const { name, class: className, style, alt = '', loading = 'lazy', play } = Astro.props;
 const g = graphics[name];
+const kind = play === false ? undefined : (play ?? defaultPlay[name]);
 ---
 
 <img
@@ -25,4 +50,6 @@ const g = graphics[name];
   aria-hidden={alt ? undefined : 'true'}
   loading={loading}
   decoding="async"
+  data-play={kind}
+  draggable={kind ? 'false' : undefined}
 />

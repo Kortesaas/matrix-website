@@ -27,6 +27,14 @@ const { class: className, onDark = false } = Astro.props;
     font-size: 28px;
     line-height: 1;
   }
-  .mx-logo :global(svg) { width: 30px; height: 37px; flex: none; }
+  .mx-logo :global(svg) {
+    width: 30px;
+    height: 37px;
+    flex: none;
+    transition: rotate var(--motion-slow) var(--ease-matrix);
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .mx-logo:hover :global(svg) { rotate: -8deg; }
+  }
   .mx-logo--on-dark { color: var(--white); }
 </style>

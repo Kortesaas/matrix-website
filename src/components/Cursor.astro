@@ -22,6 +22,11 @@
       <path d="M7 14 4 17" />
     </svg>
   </div>
+  <svg class="mx-cursor__finder" viewBox="0 0 46 35" width="46" height="35">
+    <path d="M-5 5v-7h7M18-2h7v7M25 15v7h-7M2 22h-7v-7" />
+    <circle class="mx-cursor__rec" cx="20" cy="3" r="1.6" />
+    <path class="mx-cursor__cross" d="M10 7v6M7 10h6" />
+  </svg>
 </div>
 
 <!-- Inline (not bundled) so it runs during parsing, before the first paint
@@ -75,7 +80,13 @@
 
     const update = (target) => {
       const overText = !!(target && target.closest(TEXT));
-      cursor.classList.toggle('is-link', !overText && !!(target && target.closest(CLICKABLE)));
+      // Easter eggs: playable stickers give the hand their own state (Play.astro).
+      const play = target && target.closest('[data-play]');
+      const mode = play && !overText ? play.getAttribute('data-play') : '';
+      if (mode) cursor.dataset.mode = mode;
+      else delete cursor.dataset.mode;
+      const clickable = !!(target && target.closest(CLICKABLE)) || mode === 'spin';
+      cursor.classList.toggle('is-link', !overText && clickable);
       show(!overText);
     };
 
@@ -223,6 +234,65 @@
     stroke-dashoffset: 0;
   }
 
+  /* ---------- Easter eggs over playable stickers ---------- */
+  .mx-cursor__finder {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    visibility: hidden;
+  }
+  .mx-cursor__finder path {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .mx-cursor__finder .mx-cursor__cross { stroke-width: 1.6; }
+  .mx-cursor__rec { fill: var(--coral-600); }
+
+  /* pet — the hand strokes the character */
+  .mx-cursor[data-mode="pet"] .mx-cursor__hand { animation: mx-pet 0.7s ease-in-out infinite; }
+  .mx-cursor[data-mode="pet"] .mx-cursor__taps path { animation: none; stroke-dashoffset: 5; }
+
+  /* hot — the hand jerks back, heat lines flicker */
+  .mx-cursor[data-mode="hot"] .mx-cursor__hand { animation: mx-hot 0.26s linear infinite; }
+  .mx-cursor[data-mode="hot"] .mx-cursor__taps path {
+    stroke: var(--orange-500);
+    animation: mx-tap 0.35s linear infinite;
+  }
+
+  /* love — a gentle bob (hearts trail behind, see Play.astro) */
+  .mx-cursor[data-mode="love"] .mx-cursor__hand { animation: mx-bob 0.9s ease-in-out infinite; }
+  .mx-cursor[data-mode="love"] .mx-cursor__taps path { animation: none; stroke-dashoffset: 5; }
+
+  /* snap — the hand becomes a viewfinder */
+  .mx-cursor[data-mode="snap"] .mx-cursor__tilt { visibility: hidden; }
+  .mx-cursor[data-mode="snap"] .mx-cursor__finder { visibility: visible; }
+  .mx-cursor[data-mode="snap"] .mx-cursor__rec { animation: mx-rec 1s steps(1) infinite; }
+  .mx-cursor[data-mode="snap"].is-down .mx-cursor__finder { scale: 0.85; transform-origin: 10px 10px; }
+
+  @keyframes mx-pet {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    50% { transform: translateX(5px) rotate(5deg); }
+  }
+
+  @keyframes mx-hot {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    25% { transform: translate(1.5px, -1px) rotate(3deg); }
+    75% { transform: translate(-1px, 1px) rotate(-2deg); }
+  }
+
+  @keyframes mx-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px) rotate(-3deg); }
+  }
+
+  @keyframes mx-rec {
+    0% { fill: var(--coral-600); }
+    50% { fill: transparent; }
+  }
+
   /* Reduced motion: no loop — the variant simply shows its tap pose. */
   @media (prefers-reduced-motion: reduce) {
     .mx-cursor__hand { transition: none; }
@@ -234,5 +304,8 @@
       animation: none;
       stroke-dashoffset: 0;
     }
+    .mx-cursor[data-mode] .mx-cursor__hand,
+    .mx-cursor[data-mode] .mx-cursor__taps path,
+    .mx-cursor[data-mode] .mx-cursor__rec { animation: none; }
   }
 </style>
