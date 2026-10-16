@@ -38,7 +38,7 @@ export const offers: Offer[] = [
   { slug: '3d-druck', href: '/werkstatt/#3d-druck', title: '3D-Druck', meta: 'In der Werkstatt', image: r155, frame: 'coral' },
   { slug: 'kochen', href: '/raeume/#theke-kueche', title: 'Kochen', meta: 'An der X-Bar', image: r118, frame: 'yellow' },
   { slug: 'theater', href: '/raeume/#saal', title: 'Theater', meta: 'Bühne im Saal', image: r119, frame: 'pink' },
-  { slug: 'girls-day', href: '/raeume/#maedchenzimmer', title: 'Girls Day', meta: 'Nur für Mädchen', image: r30, frame: 'pink', hot: true },
+  { slug: 'girls-day', href: '/raeume/#maedchenzimmer', title: 'Girls Day', meta: 'Nur für Mädchen', image: r30, frame: 'pink' },
   { slug: 'siebdruck', href: '/werkstatt/#siebdruck', title: 'Siebdruck', meta: 'Shirts, Beutel, Poster', image: r10, frame: 'purple' },
   { slug: 'spieleabend', href: '/aktuelles/', title: 'Spieleabend', meta: 'Brett- und Konsolenspiele', image: r151, frame: 'yellow' },
   { slug: 'nachhaltigkeit', href: '/werkstatt/#holzbearbeitung', title: 'Nachhaltigkeit', meta: 'Reparieren statt wegwerfen', image: r96, frame: 'green' },

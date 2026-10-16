@@ -142,7 +142,7 @@
 }
 
 /* ---------- Page accent ----------
-   Every page carries ONE accent. data-accent on <body> or any section;
+   Every page carries ONE accent. data-accent on <html> or any section;
    components read --accent (fills, frames), --accent-strong (text, buttons)
    and --accent-tint (grounds). */
 :root,

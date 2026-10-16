@@ -30,7 +30,9 @@ const chips = [
   title="Startseite"
   description="Die MatriX ist das Jugendzentrum in Königsbrunn: Kreativangebote, Werkstatt, Tonstudio, Events – oder einfach chillen. Komm rein!"
   accent="purple"
+  randomAccent
   peeker="dino-pez"
+  peekerWidth={108}
 >
   <PhotoHero image={p11} alt="Die Chill-Lounge der MatriX mit Kicker und Sofas" gallery={rooms.filter((room) => room.slug !== 'chill-lounge').map((room) => ({ image: room.photos[0], alt: room.alt, label: room.title }))} />
 
@@ -77,7 +79,6 @@ const chips = [
       <SectionHeading
         title="Was geht zur Zeit?"
         lead="Bei uns ist immer was los – egal ob große Events oder unsere Day-to-Day-Aktivitäten."
-        onDark
       />
       <EventList columns={eventColumns} />
       <div class="home-events__more">
@@ -136,9 +137,9 @@ const chips = [
   .mx-welcome {
     position: relative;
     text-align: center;
-    color: var(--white);
+    color: var(--ink);
   }
-  .mx-welcome .mx-h1 { color: var(--white); }
+  .mx-welcome .mx-h1 { color: inherit; }
   .mx-welcome__kicker {
     display: block;
     font-size: 0.62em;
@@ -160,6 +161,7 @@ const chips = [
   .mx-split__b { grid-column: 6 / span 7; }
   .mx-split__a .mx-lead { margin: var(--space-4) 0 var(--space-6); }
   .mx-split__more { margin-top: var(--space-5); }
+  .mx-split__more .mx-link { color: var(--accent-strong); }
 
   /* ---------- Events ---------- */
   .home-events { max-width: 1160px; }

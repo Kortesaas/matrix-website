@@ -3,45 +3,69 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer, { type Peeker } from '../components/Footer.astro';
 import Cursor from '../components/Cursor.astro';
+import CursorTheme from '../components/CursorTheme.astro';
 import Play from '../components/Play.astro';
 import PhotoViewer from '../components/PhotoViewer.astro';
 import type { Accent } from '../data/site';
-import { site } from '../data/site';
+import { homeAccents, site } from '../data/site';
+import { accentColours } from '../styles/palette';
 
 interface Props {
   title: string;
   description: string;
   /** The page's single accent colour. */
   accent: Accent;
+  /** Choose a fresh palette colour on each visit or reload. */
+  randomAccent?: boolean;
   /** Key of the active nav item. */
   current?: string;
   peeker?: Peeker;
   peekerLeft?: string;
+  peekerWidth?: number;
   /** Hide from search engines (404 page). */
   noindex?: boolean;
 }
 
-const { title, description, accent, current, peeker, peekerLeft, noindex = false } = Astro.props;
+const { title, description, accent, randomAccent = false, current, peeker, peekerLeft, peekerWidth, noindex = false } = Astro.props;
 
 const fullTitle = Astro.url.pathname === '/' ? `${site.name} – Jugendzentrum Königsbrunn` : `${title} – ${site.name} Königsbrunn`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
-<html lang="de">
+<html lang="de" data-accent={accent}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
-    <meta name="theme-color" content="#907BE0" />
+    <meta name="theme-color" content={accentColours[accent]} />
+    <CursorTheme />
+    <script is:inline define:vars={{ homeAccents, accentColours, randomAccent }}>
+      // Set the theme during parsing so the first paint already has its colour.
+      if (randomAccent) {
+        let previous;
+        try { previous = sessionStorage.getItem('mx-home-accent'); } catch {}
+        const choices = homeAccents.filter((colour) => colour !== previous);
+        const colour = choices[Math.floor(Math.random() * choices.length)];
+        document.documentElement.dataset.accent = colour;
+        try { sessionStorage.setItem('mx-home-accent', colour); } catch {}
+      }
+      const pageAccent = document.documentElement.dataset.accent;
+      document.querySelector('meta[name="theme-color"]').content = accentColours[pageAccent];
+      for (const variant of ['hand@2x', 'hand-flat@2x']) {
+        const preload = document.createElement('link');
+        preload.rel = 'preload';
+        preload.as = 'image';
+        preload.href = `/graphics/cursors/${pageAccent}/${variant}.png`;
+        document.head.append(preload);
+      }
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
     <link rel="preload" href="/fonts/boogaloo-latin-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/graphics/cursors/hand@2x.png" as="image" />
-    <link rel="preload" href="/graphics/cursors/hand-flat@2x.png" as="image" />
     <script is:inline>
       // Coming from another page with the MatriX hand: hide the system cursor
       // from the first frame on, Cursor.astro then draws the hand in place.
@@ -59,13 +83,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
   </head>
-  <body data-accent={accent}>
+  <body>
     <a class="mx-skip" href="#inhalt">Zum Inhalt springen</a>
     <Header current={current} />
     <main id="inhalt" tabindex="-1">
       <slot />
     </main>
-    <Footer peeker={peeker} peekerLeft={peekerLeft} />
+    <Footer peeker={peeker} peekerLeft={peekerLeft} peekerWidth={peekerWidth} />
     <PhotoViewer />
     <Cursor />
     <Play />

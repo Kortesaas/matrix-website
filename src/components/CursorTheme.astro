@@ -1,0 +1,17 @@
+---
+import { accents } from '../data/site';
+
+// These URLs point to static PNG endpoints generated during the build.
+const styles = accents.map((accent) => {
+  const path = `/graphics/cursors/${accent}`;
+  return `html[data-accent="${accent}"] {
+    --cursor-base: url("${path}/hand.png");
+    --cursor-retina: url("${path}/hand@2x.png");
+    --cursor-tap: url("${path}/hand-tap.png");
+    --cursor-tap-retina: url("${path}/hand-tap@2x.png");
+    --cursor-flat: url("${path}/hand-flat@2x.png");
+  }`;
+}).join('\n');
+---
+
+<style is:inline set:html={styles} />

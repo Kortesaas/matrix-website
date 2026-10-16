@@ -1,12 +1,13 @@
 ---
 /**
- * Ink footer with one character peeking over its top edge and the purple
+ * Ink footer with one character peeking over its top edge and a page-coloured
  * heart bubble on the right.
  */
 import { Image } from 'astro:assets';
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 import Graphic from './Graphic.astro';
+import HeartBubble from '../../public/graphics/stickers/heart-bubble.svg';
 import type { GraphicName } from '../data/graphics';
 import { site, activeSocials } from '../data/site';
 import kjrLogo from '../assets/logos/kjr-logo-white.png';
@@ -18,17 +19,19 @@ interface Props {
   peeker?: Peeker;
   /** Horizontal position of the peeker, 12–20% per the design rules. */
   peekerLeft?: string;
+  /** Width in pixels; smaller characters leave more space above the footer. */
+  peekerWidth?: number;
 }
 
-const { peeker = 'dino-pez', peekerLeft = '14%' } = Astro.props;
+const { peeker = 'dino-pez', peekerLeft = '14%', peekerWidth = 140 } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
 <footer class="mx-footer">
-  <span class="mx-footer__peeker" style={`left: ${peekerLeft}`}>
+  <span class="mx-footer__peeker" style={`left: ${peekerLeft}; --peeker-width: ${peekerWidth}px`}>
     <Graphic name={peeker} class="mx-footer__peek" />
   </span>
-  <Graphic name="heart-bubble" class="mx-footer__heart" />
+  <HeartBubble class="mx-footer__heart" aria-hidden="true" data-play="love" />
 
   <div class="mx-container">
     <div class="mx-footer__grid">
@@ -98,7 +101,7 @@ const year = new Date().getFullYear();
   .mx-footer__peeker {
     position: absolute;
     top: 0;
-    width: 140px;
+    width: var(--peeker-width);
     height: auto;
     transform: translateY(-78%);
   }
@@ -182,6 +185,6 @@ const year = new Date().getFullYear();
   @media (max-width: 600px) {
     .mx-footer__grid { grid-template-columns: 1fr; gap: var(--space-6); }
     .mx-footer__bottom { flex-direction: column; gap: 8px; align-items: flex-start; }
-    .mx-footer__peeker { width: 104px; }
+    .mx-footer__peeker { width: min(104px, var(--peeker-width)); }
   }
 </style>

@@ -1,6 +1,10 @@
 import type { IconName } from './icons';
 
-export type Accent = 'purple' | 'blue' | 'coral' | 'green' | 'yellow' | 'pink';
+export const accents = ['purple', 'blue', 'coral', 'green', 'yellow', 'pink'] as const;
+export type Accent = (typeof accents)[number];
+
+/** Page accents already used by Räume, Angebot, Team and Aktuelles. */
+export const homeAccents = ['purple', 'blue', 'coral', 'green'] as const satisfies readonly Accent[];
 
 export const site = {
   name: 'Die MatriX',

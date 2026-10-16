@@ -7,6 +7,7 @@ import { createPointerCamera } from "./camera-motion.js";
 import { createModel } from "./model.js";
 import { createPalette, toonify, createComicLandscape, createComicRenderer, setInk } from "./comic.js";
 import { createRoomHighlights } from "./highlights.js";
+import { placeRoomCard } from "./card-placement.js";
 
 const S = 1 / 42;
 const planX = (x) => (x - 1005) * S;
@@ -203,8 +204,8 @@ export function mountCampus(root) {
   let active = null;
   let pinnedCard = false;
   let closeTimer = 0;
-  let transitioning = false;
   let restoringFocus = false;
+  let previewPointer = null;
   const mobileButtons = [...root.querySelectorAll('[data-mobile-room]')];
   const toggle = root.querySelector('[data-campus-toggle]');
   const syncExpanded = (m, expanded) => {
@@ -231,6 +232,8 @@ export function mountCampus(root) {
     root.classList.add("is-explored");
     if (active === m) {
       pinnedCard = pinnedCard || pin;
+      if (m.card) m.card.dataset.pinned = String(pinnedCard);
+      positionCard();
       refreshDesired();
       return;
     }
@@ -239,6 +242,7 @@ export function mountCampus(root) {
     pinnedCard = pin;
     for (const other of markers) syncExpanded(other, other === m);
     if (m.card) {
+      m.card.dataset.pinned = String(pin);
       m.card.hidden = false;
       positionCard();
     }
@@ -251,13 +255,15 @@ export function mountCampus(root) {
     if (active?.card) active.card.hidden = true;
     active = null;
     pinnedCard = false;
+    previewPointer = null;
     for (const m of markers) syncExpanded(m, false);
     highlights.select(null);
     refreshDesired();
   }
 
-  // As in the original desktop view: center the card on its marker and
-  // prefer below, flipping above when needed. Mobile keeps its bottom sheet.
+  // Hover previews stay below the pointer and let it pass through to other
+  // markers. Pinned/keyboard cards stay anchored and can be interacted with.
+  // Mobile cards live below the room buttons, leaving the map unobstructed.
   function positionCard() {
     const card = active?.card;
     if (!card) return;
@@ -265,20 +271,22 @@ export function mountCampus(root) {
       card.style.left = card.style.top = card.style.maxHeight = "";
       return;
     }
-    const margin = 16;
-    const gap = 30;
-    const bounds = host.getBoundingClientRect();
-    const top = Math.max(margin, 100 - bounds.top);
-    const bottom = window.innerHeight - bounds.top - margin;
-    card.style.maxHeight = `${Math.max(180, bottom - top)}px`;
-    const w = card.offsetWidth;
-    const h = card.offsetHeight;
-    const x = Math.max(margin, Math.min(active.x - w / 2, host.clientWidth - w - margin));
-    const below = active.y + gap;
-    const above = active.y - gap - h;
-    const preferred = below + h <= bottom ? below : above;
-    card.style.left = `${x}px`;
-    card.style.top = `${Math.max(top, Math.min(preferred, bottom - h))}px`;
+    const bounds = hostBounds();
+    const origin = !pinnedCard && previewPointer ? previewPointer : { x: bounds.left + active.x, y: bounds.top + active.y };
+    const top = 100;
+    const bottom = window.innerHeight - 16;
+    const placement = placeRoomCard({
+      ...origin,
+      width: card.offsetWidth,
+      height: Math.min(card.scrollHeight, 460),
+      left: Math.max(16, bounds.left + 16),
+      right: Math.min(window.innerWidth - 16, bounds.right - 16),
+      top,
+      bottom,
+    });
+    card.style.maxHeight = `${placement.maxHeight}px`;
+    card.style.left = `${placement.left - bounds.left}px`;
+    card.style.top = `${placement.top - bounds.top}px`;
   }
 
   const listeners = [];
@@ -289,15 +297,21 @@ export function mountCampus(root) {
 
   for (const m of markers) {
     on(m.button, "pointerenter", (e) => {
-      if (e.pointerType !== "touch" && !transitioning && (!pinnedCard || active === m)) open(m, false);
+      if (e.pointerType !== "touch") {
+        previewPointer = { x: e.clientX, y: e.clientY };
+        open(m, false);
+      }
     });
     on(m.button, "pointerleave", scheduleClose);
-    // Keyboard focus previews the card; a tap or click opens it via "click" instead
-    // (on phones the card is a bottom sheet that would otherwise catch the tap).
+    // Keyboard focus opens the full card. Pointer presses are handled by
+    // click so moving focus during a tap does not open a second preview.
     let pressed = false;
     on(m.button, "pointerdown", () => (pressed = true));
     on(m.button, "focus", () => {
-      if (!pressed && !restoringFocus) open(m, false);
+      if (!pressed && !restoringFocus) {
+        previewPointer = null;
+        open(m, true);
+      }
       pressed = false;
     });
     on(m.button, "blur", (e) => {
@@ -341,7 +355,11 @@ export function mountCampus(root) {
       const marker = byId.get(button.dataset.mobileRoom);
       if (!marker) return;
       if (active === marker && pinnedCard) close();
-      else open(marker, true);
+      else {
+        previewPointer = null;
+        open(marker, true);
+        host.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'instant' : 'smooth' });
+      }
     });
   }
   if (toggle) on(toggle, 'click', () => {
@@ -387,11 +405,11 @@ export function mountCampus(root) {
       const ay = (-projected.y * 0.5 + 0.5) * h;
       let dx = 0;
       let dy = 0;
-      if (active === m) {
+      if (active === m && !phone.matches) {
         // The open marker stays put so its card doesn't run away.
         dx = m.x - ax;
         dy = m.y - ay;
-      } else {
+      } else if (!phone.matches) {
         for (const [ox, oy] of offsets) {
           dx = ox;
           dy = oy;
@@ -431,6 +449,9 @@ export function mountCampus(root) {
         kick();
         return;
       }
+      if (active && !pinnedCard) {
+        previewPointer = { x: e.clientX, y: e.clientY };
+      }
       const ui = e.target.closest?.("[data-room],[data-card]");
       if (ui) {
         pointerCamera.hold();
@@ -451,7 +472,10 @@ export function mountCampus(root) {
   );
   on(host, "pointerleave", leaveScene);
   on(window, "blur", leaveScene);
-  on(window, "scroll", () => (boundsStale = true), { passive: true });
+  on(window, "scroll", () => {
+    boundsStale = true;
+    positionCard();
+  }, { passive: true });
   on(document, "visibilitychange", () => {
     if (document.hidden) leaveScene();
     else kick();
@@ -513,13 +537,13 @@ export function mountCampus(root) {
     building.roof.visible = peek < 0.28;
     building.roof.position.y = 1.3 * (1 - Math.pow(1 - THREE.MathUtils.clamp(peek / 0.28, 0, 1), 3));
     if (peek !== previous) renderer.shadowMap.needsUpdate = true;
-    transitioning = peek > 0.001 && peek < 0.999;
 
     const moving = pointerCamera.update(dt);
     landscape.updateCamera(camera);
     const fading = highlights.update(peek, dt);
     comic.render();
     placeMarkers();
+    positionCard();
 
     if (moving || fading || peek !== (desired ? 1 : 0)) raf = requestAnimationFrame(frame);
     else last = 0;

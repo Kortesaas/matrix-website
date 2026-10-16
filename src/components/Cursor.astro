@@ -15,7 +15,7 @@
 <div class="mx-cursor" aria-hidden="true" data-cursor hidden>
   <div class="mx-cursor__tilt">
     <div class="mx-cursor__hand">
-      <img src="/graphics/cursors/hand-flat@2x.png" width="36" height="27" alt="" decoding="sync" />
+      <span class="mx-cursor__image"></span>
     </div>
     <svg class="mx-cursor__taps" viewBox="0 0 46 35" width="46" height="35">
       <path d="M7 6 4 3" />
@@ -213,7 +213,12 @@
     transform-origin: 90% 70%;
     transition: transform var(--motion-fast) var(--ease-matrix);
   }
-  .mx-cursor__hand img { width: 36px; height: auto; max-width: none; }
+  .mx-cursor__image {
+    display: block;
+    width: 36px;
+    height: 27px;
+    background: var(--cursor-flat) center / contain no-repeat;
+  }
 
   .mx-cursor__taps {
     position: absolute;

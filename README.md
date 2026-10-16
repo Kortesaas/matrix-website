@@ -37,7 +37,7 @@ public/
 
 - **Texte, Termine, Team, Angebote:** in `src/data/*.ts` – die Seiten lesen von dort.
 - **Fotos austauschen:** neue Datei nach `src/assets/photos/` legen und den Import in der passenden Datei in `src/data/` (bzw. der Seite) anpassen. Zuschnitt und Rahmen ergeben sich aus der Komponente.
-- **Seitenfarbe:** jede Seite setzt genau eine Akzentfarbe (`accent` im `BaseLayout`). Das 3D-Modell auf der Startseite übernimmt seine Farben automatisch aus dieser Akzentfarbe.
+- **Seitenfarbe:** jede Seite setzt genau eine Akzentfarbe (`accent` im `BaseLayout`). Die Startseite wählt mit `randomAccent` bei jedem Laden eine zufällige Farbe aus `homeAccents` in `src/data/site.ts`: Lila, Blau, Koralle und Grün, wie auf den Unterseiten. Sie vermeidet die vorherige Farbe, sofern Sitzungsspeicher verfügbar ist. Cursor-Ärmel, Textauswahl und 3D-Modell übernehmen die Seitenfarbe; der Handschuh bleibt weiß. Die farbigen Cursor-PNGs werden beim Build aus den vorhandenen Handgrafiken und den CSS-Farbwerten erzeugt.
 - **3D-Räume (Startseite):** Raumnamen, Texte, Fotos, Links und Marker-Positionen stehen in `src/data/campus.ts`.
 
 ### Design-System
