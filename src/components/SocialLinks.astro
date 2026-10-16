@@ -1,0 +1,63 @@
+---
+/** Large social icons with handles ("Hier folgen, um nichts zu verpassen"). */
+import Icon from './Icon.astro';
+import { activeSocials } from '../data/site';
+
+const links = activeSocials.filter((s) => s.handle);
+---
+
+<ul class="mx-social">
+  {
+    links.map((s) => (
+      <li>
+        <a href={s.url} rel="noopener" target="_blank">
+          <Icon name={s.icon} />
+          <span>
+            <span class="mx-visually-hidden">{s.label}: </span>
+            {s.handle}
+          </span>
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .mx-social {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mx-social a {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    color: var(--accent-strong);
+    text-decoration: none;
+  }
+
+  .mx-social :global(svg) { width: 72px; height: 72px; }
+
+  .mx-social a > span {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .mx-social a:hover > span {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+  }
+
+  @media (max-width: 600px) {
+    .mx-social { gap: var(--space-6); }
+    .mx-social :global(svg) { width: 56px; height: 56px; }
+  }
+</style>

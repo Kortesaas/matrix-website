@@ -1,0 +1,91 @@
+---
+/**
+ * Full-bleed photo hero. With a title: detail pages (Werkstatt).
+ * Without a title: the landing variant with the white X mark centred.
+ */
+import type { ImageMetadata } from 'astro';
+import Photo from './Photo.astro';
+import Graphic from './Graphic.astro';
+
+interface Props {
+  image: ImageMetadata;
+  alt: string;
+  /** Detail-page title. Omit for the landing variant (X mark). */
+  title?: string;
+  /** Crop focus, e.g. "50% 40%". */
+  position?: string;
+}
+
+const { image, alt, title, position } = Astro.props;
+const landing = !title;
+---
+
+<section class:list={['mx-hero', landing && 'mx-hero--landing']}>
+  <Photo
+    src={image}
+    alt={alt}
+    class="mx-hero__photo"
+    sizes="100vw"
+    widths={[640, 960, 1280, 1600, 1920, 2400]}
+    loading="eager"
+    fetchpriority="high"
+    position={position}
+  />
+  {
+    landing ? (
+      <Graphic name="x-mark" class="mx-hero__mark" alt="MatriX" loading="eager" />
+    ) : (
+      <h1 class="mx-display mx-hero__title">{title}</h1>
+    )
+  }
+</section>
+
+<style>
+  .mx-hero {
+    position: relative;
+    height: clamp(600px, 46.875vw, 900px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 var(--page-margin);
+    overflow: hidden;
+    background: var(--ink);
+  }
+
+  .mx-hero :global(.mx-hero__photo) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  .mx-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--ink-scrim-soft) 40%, var(--ink-scrim-strong) 100%);
+  }
+
+  .mx-hero__title {
+    position: relative;
+    z-index: 3;
+  }
+
+  .mx-hero :global(.mx-hero__mark) {
+    position: relative;
+    z-index: 3;
+    width: clamp(120px, 12vw, 200px);
+    height: auto;
+    filter: var(--shadow-mark);
+  }
+
+  @media (max-width: 860px) {
+    .mx-hero { height: 560px; }
+  }
+
+  /* The landing hero stays taller than the detail heroes, also on phones. */
+  .mx-hero--landing { height: clamp(640px, 52vw, 860px); }
+</style>

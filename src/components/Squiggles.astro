@@ -1,0 +1,43 @@
+---
+/** White background squiggles for long tinted sections — max two per screen, never behind text. */
+import Graphic from './Graphic.astro';
+
+interface Squiggle {
+  side: 'left' | 'right';
+  /** Horizontal offset from that side, e.g. "-60px". */
+  inset: string;
+  top: string;
+  rotate?: number;
+}
+
+interface Props {
+  items: Squiggle[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.map((s) => (
+    <Graphic
+      name="squiggle"
+      class="mx-squiggle"
+      style={`${s.side}: ${s.inset}; top: ${s.top}${s.rotate ? `; transform: rotate(${s.rotate}deg)` : ''}`}
+    />
+  ))
+}
+
+<style>
+  :global(.mx-squiggle) {
+    position: absolute;
+    z-index: 0;
+    width: 220px;
+    height: auto;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  @media (max-width: 860px) {
+    :global(.mx-squiggle) { width: 150px; }
+  }
+</style>

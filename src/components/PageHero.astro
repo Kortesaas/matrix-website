@@ -1,0 +1,81 @@
+---
+/**
+ * Colour hero of the section pages: accent field + the ready-made hero layer
+ * (grainy triangle, confetti, character on the 1920×1020 canvas) + the
+ * display title. The layer is centred and never narrower than 1280px, so on
+ * phones its edges (and the character) fall outside — there a separate
+ * character sticker takes over, overlapping the hero's bottom edge.
+ */
+import Graphic from './Graphic.astro';
+import type { GraphicName } from '../data/graphics';
+
+interface Props {
+  deco: Extract<GraphicName, `${string}-hero-deco` | 'rainbow-clouds'>;
+  /** Phone-only character, overlapping the bottom edge. */
+  sticker?: GraphicName;
+  stickerSide?: 'left' | 'right';
+}
+
+const { deco, sticker, stickerSide = 'left' } = Astro.props;
+---
+
+<section class="mx-hero">
+  <div class="mx-hero__deco">
+    <Graphic name={deco} loading="eager" />
+  </div>
+  <h1 class="mx-display mx-hero__title"><slot /></h1>
+  {sticker && <Graphic name={sticker} class:list={['mx-hero__sticker', `mx-hero__sticker--${stickerSide}`]} />}
+</section>
+
+<style>
+  .mx-hero {
+    position: relative;
+    background: var(--accent);
+    height: clamp(600px, 46.875vw, 900px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--nav-height) var(--page-margin) 0;
+    overflow-x: clip;
+  }
+
+  .mx-hero__deco {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .mx-hero__deco :global(img) {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: max(1280px, 100%);
+    height: auto;
+    max-width: none;
+    transform: translateX(-50%);
+  }
+
+  .mx-hero__title {
+    position: relative;
+    z-index: 2;
+    overflow-wrap: break-word;
+  }
+
+  .mx-hero :global(.mx-hero__sticker) {
+    display: none;
+    position: absolute;
+    z-index: 3;
+    bottom: -60px;
+    width: 150px;
+    height: auto;
+    pointer-events: none;
+  }
+  .mx-hero :global(.mx-hero__sticker--left) { left: 16px; }
+  .mx-hero :global(.mx-hero__sticker--right) { right: 16px; }
+
+  @media (max-width: 860px) {
+    .mx-hero { height: 560px; }
+    .mx-hero :global(.mx-hero__sticker) { display: block; }
+  }
+</style>

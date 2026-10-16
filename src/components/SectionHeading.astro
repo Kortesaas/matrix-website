@@ -1,0 +1,33 @@
+---
+/** Section title (heading-2, or heading-1 for page intros) plus an optional lead. */
+interface Props {
+  title?: string;
+  lead?: string;
+  /** Visual size; page intro statements use h1 size. */
+  size?: 'h1' | 'h2';
+  /** Semantic level of the heading element. */
+  as?: 'h1' | 'h2' | 'h3';
+  align?: 'center' | 'left';
+  onDark?: boolean;
+  class?: string;
+}
+
+const { title, lead, size = 'h2', as: Tag = 'h2', align = 'center', onDark = false, class: className } = Astro.props;
+---
+
+<div class:list={['mx-heading', align === 'left' && 'mx-heading--left', onDark && 'mx-heading--on-dark', className]}>
+  <Tag class={`mx-${size}`}>{title}<slot name="title" /></Tag>
+  {lead && <p class="mx-lead">{lead}</p>}
+  <slot />
+</div>
+
+<style>
+  .mx-heading {
+    max-width: 760px;
+    margin: 0 auto var(--space-8);
+    text-align: center;
+  }
+  .mx-heading .mx-lead { margin-top: var(--space-4); }
+  .mx-heading--left { margin-left: 0; text-align: left; }
+  .mx-heading--on-dark { color: var(--white); }
+</style>

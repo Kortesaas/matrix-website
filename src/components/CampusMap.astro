@@ -1,0 +1,173 @@
+---
+/**
+ * Illustrated campus map with hotspots that open a small room card.
+ * Desktop: the card floats next to its hotspot. Phones: the map scrolls
+ * horizontally inside its band and the card sits below it like a sheet.
+ */
+import Photo from './Photo.astro';
+import type { MapSpot } from '../data/rooms';
+import campusMap from '../assets/illustrations/campus-map.png';
+
+interface Props {
+  spots: MapSpot[];
+  alt: string;
+}
+
+const { spots, alt } = Astro.props;
+---
+
+<div class="mx-map" data-map>
+  <div class="mx-map__scroller">
+    <div class="mx-map__stage">
+      <Photo src={campusMap} alt={alt} class="mx-map__art" sizes="(max-width: 600px) 640px, min(1180px, 92vw)" widths={[640]} />
+      {
+        spots.map((spot, i) => (
+          <button
+            class="mx-hotspot"
+            type="button"
+            style={`left: ${spot.x}%; top: ${spot.y}%`}
+            aria-label={spot.title}
+            aria-expanded={i === 0 ? 'true' : 'false'}
+            aria-controls={`mx-mapcard-${i}`}
+            data-spot={i}
+          >
+            <span aria-hidden="true">+</span>
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  {
+    spots.map((spot, i) => (
+      <div
+        class:list={['mx-mapcard', spot.x > 60 && 'mx-mapcard--left', spot.y > 62 && 'mx-mapcard--up']}
+        id={`mx-mapcard-${i}`}
+        style={`--x: ${spot.x}%; --y: ${spot.y}%`}
+        role="region"
+        aria-label={spot.title}
+        hidden={i !== 0}
+        data-card={i}
+      >
+        <Photo src={spot.image} alt={spot.alt} sizes="280px" widths={[280, 560]} class="mx-mapcard__img" />
+        <h3 class="mx-h4">{spot.title}</h3>
+        <p>{spot.text}</p>
+        <a class="mx-link" href={spot.link.href}>{spot.link.label}</a>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-map]').forEach((map) => {
+    const spots = Array.from(map.querySelectorAll<HTMLButtonElement>('[data-spot]'));
+    const cards = Array.from(map.querySelectorAll<HTMLElement>('[data-card]'));
+
+    const show = (index: number | null) => {
+      spots.forEach((spot, i) => spot.setAttribute('aria-expanded', String(i === index)));
+      cards.forEach((card, i) => (card.hidden = i !== index));
+    };
+
+    spots.forEach((spot, i) => {
+      spot.addEventListener('click', () => {
+        show(spot.getAttribute('aria-expanded') === 'true' ? null : i);
+      });
+    });
+
+    map.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const open = spots.findIndex((s) => s.getAttribute('aria-expanded') === 'true');
+      if (open === -1) return;
+      show(null);
+      spots[open].focus();
+    });
+  });
+</script>
+
+<style>
+  .mx-map {
+    position: relative;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .mx-map__stage { position: relative; }
+
+  .mx-map :global(.mx-map__art) {
+    width: 100%;
+    filter: var(--shadow-map);
+  }
+
+  .mx-hotspot {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    padding: 0;
+    border-radius: 50%;
+    border: 0;
+    background: var(--white);
+    color: var(--purple-700);
+    box-shadow: 0 0 0 6px var(--hotspot-halo);
+    display: grid;
+    place-items: center;
+    font: 28px/1 var(--font-display);
+    cursor: pointer;
+  }
+  .mx-hotspot span { transform: translateY(1px); }
+  .mx-hotspot[aria-expanded="true"] { background: var(--ink); color: var(--white); }
+
+  .mx-mapcard {
+    position: absolute;
+    z-index: 4;
+    left: calc(var(--x) + 2.3%);
+    top: calc(var(--y) + 4.8%);
+    width: 280px;
+    color: var(--ink);
+    padding: 12px 12px 20px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-press), var(--shadow-float);
+    text-align: left;
+  }
+  .mx-mapcard[hidden] { display: none; }
+  .mx-mapcard--left { left: auto; right: calc(100% - var(--x) + 2.3%); }
+  .mx-mapcard--up { top: auto; bottom: calc(100% - var(--y) + 4.8%); }
+
+  .mx-mapcard :global(.mx-mapcard__img) {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+  .mx-mapcard h3 { margin: 14px 8px 6px; color: var(--coral-600); }
+  .mx-mapcard p { margin: 0 8px; font-size: 15px; line-height: 22px; }
+  .mx-mapcard a { margin: 12px 8px 0; display: inline-block; }
+
+  @media (max-width: 600px) {
+    .mx-map__scroller {
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      margin: 0 calc(-1 * var(--page-margin));
+      padding: var(--space-4) var(--page-margin) var(--space-5);
+      scrollbar-width: thin;
+    }
+    .mx-map__stage { width: 640px; }
+
+    .mx-hotspot {
+      width: 36px;
+      height: 36px;
+      margin: -18px 0 0 -18px;
+      font-size: 24px;
+    }
+
+    .mx-mapcard,
+    .mx-mapcard--left,
+    .mx-mapcard--up {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      margin-top: var(--space-3);
+    }
+  }
+</style>

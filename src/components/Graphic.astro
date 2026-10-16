@@ -1,0 +1,28 @@
+---
+/** Decorative sticker, shape or hero layer from the handoff artwork (never redrawn). */
+import { graphics, type GraphicName } from '../data/graphics';
+
+interface Props {
+  name: GraphicName;
+  class?: string;
+  style?: string;
+  /** Leave empty for decoration (the default). */
+  alt?: string;
+  loading?: 'lazy' | 'eager';
+}
+
+const { name, class: className, style, alt = '', loading = 'lazy' } = Astro.props;
+const g = graphics[name];
+---
+
+<img
+  class={className}
+  style={style}
+  src={g.src}
+  width={g.width}
+  height={g.height}
+  alt={alt}
+  aria-hidden={alt ? undefined : 'true'}
+  loading={loading}
+  decoding="async"
+/>

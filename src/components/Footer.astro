@@ -1,0 +1,176 @@
+---
+/**
+ * Ink footer with one character peeking over its top edge and the purple
+ * heart bubble on the right.
+ */
+import { Image } from 'astro:assets';
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import Graphic from './Graphic.astro';
+import type { GraphicName } from '../data/graphics';
+import { site, activeSocials } from '../data/site';
+import kjrLogo from '../assets/logos/kjr-logo-white.png';
+
+export type Peeker = Extract<GraphicName, 'dino-pez' | 'dino-wave' | 'flame' | 'daisy-face' | 'flower-face' | 'egg-hi' | 'cat-hi'>;
+
+interface Props {
+  peeker?: Peeker;
+  /** Horizontal position of the peeker, 12–20% per the design rules. */
+  peekerLeft?: string;
+}
+
+const { peeker = 'dino-pez', peekerLeft = '14%' } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="mx-footer">
+  <Graphic name={peeker} class="mx-footer__peek" style={`left: ${peekerLeft}`} />
+  <Graphic name="heart-bubble" class="mx-footer__heart" />
+
+  <div class="mx-container">
+    <div class="mx-footer__grid">
+      <div>
+        <Logo onDark class="mx-footer__logo" />
+        <p>
+          {site.legalName}<br />
+          {site.address.street}<br />
+          {site.address.zip} {site.address.city}
+        </p>
+      </div>
+
+      <div>
+        <h2 class="mx-footer__title">Öffnungszeiten</h2>
+        <ul class="mx-footer__hours">
+          {site.hours.map((h) => (
+            <li><b>{h.days}</b>{h.time}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="mx-footer__title">Kontakt</h2>
+        <ul>
+          <li><a href={site.phone.href}>{site.phone.display}</a></li>
+          <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+          <li><a href="/impressum/#datenschutz">Datenschutz</a></li>
+          <li><a href="/impressum/">Impressum</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="mx-footer__title">Folg uns</h2>
+        <div class="mx-footer__social">
+          {activeSocials.map((s) => (
+            <a href={s.url} aria-label={s.label} rel="noopener" target="_blank">
+              <Icon name={s.icon} />
+            </a>
+          ))}
+        </div>
+        <Image src={kjrLogo} alt={site.operator} width={64} densities={[1, 2]} class="mx-footer__kjr" />
+      </div>
+    </div>
+
+    <div class="mx-footer__bottom">
+      <span>© {year} {site.legalName} {site.address.city}</span>
+      <span>{site.operatorLine}</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .mx-footer {
+    --focus: var(--white);
+    position: relative;
+    background: var(--ink);
+    color: var(--white);
+    padding: var(--space-9) 0 var(--space-7);
+    margin-top: var(--space-9);
+  }
+
+  .mx-footer :global(.mx-footer__peek) {
+    position: absolute;
+    top: 0;
+    width: 140px;
+    height: auto;
+    transform: translateY(-78%);
+    pointer-events: none;
+  }
+
+  .mx-footer :global(.mx-footer__heart) {
+    position: absolute;
+    top: 0;
+    right: 18%;
+    width: 64px;
+    height: auto;
+    transform: translateY(-55%) rotate(6deg);
+  }
+
+  .mx-footer__grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1.3fr 1fr 1fr;
+    gap: var(--space-7);
+  }
+
+  .mx-footer__title {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--white);
+  }
+
+  .mx-footer p,
+  .mx-footer li {
+    margin: 0;
+    font-size: var(--fs-footer);
+    line-height: var(--lh-footer);
+    color: var(--on-dark-text);
+  }
+
+  .mx-footer ul { list-style: none; margin: 0; padding: 0; }
+
+  .mx-footer a { color: var(--white); text-decoration: none; }
+  .mx-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .mx-footer :global(.mx-footer__logo) { margin-bottom: var(--space-4); }
+
+  .mx-footer__hours li + li { margin-top: 8px; }
+  .mx-footer__hours b { display: block; font-weight: 600; color: var(--white); }
+
+  .mx-footer__social { display: flex; gap: 14px; margin-bottom: var(--space-6); }
+  .mx-footer__social a {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--on-dark-fill);
+  }
+  .mx-footer__social a:hover { background: var(--purple-500); }
+  .mx-footer__social :global(svg) { width: 22px; height: 22px; }
+
+  .mx-footer :global(.mx-footer__kjr) { width: 64px; height: auto; }
+
+  .mx-footer__bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--on-dark-line);
+    font-size: 13px;
+    color: var(--on-dark-meta);
+  }
+
+  @media (max-width: 1024px) {
+    .mx-footer__grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .mx-footer__grid { grid-template-columns: 1fr; gap: var(--space-6); }
+    .mx-footer__bottom { flex-direction: column; gap: 8px; align-items: flex-start; }
+    .mx-footer :global(.mx-footer__peek) { width: 104px; }
+  }
+</style>

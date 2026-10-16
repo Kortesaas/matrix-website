@@ -1,0 +1,72 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer, { type Peeker } from '../components/Footer.astro';
+import type { Accent } from '../data/site';
+import { site } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  /** The page's single accent colour. */
+  accent: Accent;
+  /** Key of the active nav item. */
+  current?: string;
+  peeker?: Peeker;
+  peekerLeft?: string;
+  /** Hide from search engines (404 page). */
+  noindex?: boolean;
+}
+
+const { title, description, accent, current, peeker, peekerLeft, noindex = false } = Astro.props;
+
+const fullTitle = Astro.url.pathname === '/' ? `${site.name} – Jugendzentrum Königsbrunn` : `${title} – ${site.name} Königsbrunn`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta name="theme-color" content="#907BE0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/boogaloo-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+  </head>
+  <body data-accent={accent}>
+    <a class="mx-skip" href="#inhalt">Zum Inhalt springen</a>
+    <Header current={current} />
+    <main id="inhalt" tabindex="-1">
+      <slot />
+    </main>
+    <Footer peeker={peeker} peekerLeft={peekerLeft} />
+  </body>
+</html>
+
+<style>
+  .mx-skip {
+    position: absolute;
+    z-index: 100;
+    top: var(--space-2);
+    left: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--ink);
+    color: var(--white);
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(-200%);
+  }
+  .mx-skip:focus { transform: none; }
+  main:focus { outline: none; }
+</style>

@@ -1,0 +1,25 @@
+---
+import { icons, type IconName } from '../data/icons';
+
+interface Props {
+  name: IconName;
+  class?: string;
+  /** Accessible name. Without it the icon is decorative. */
+  title?: string;
+}
+
+const { name, class: className, title } = Astro.props;
+const icon = icons[name];
+---
+
+<svg
+  class={className}
+  viewBox={icon.viewBox}
+  fill="currentColor"
+  role={title ? 'img' : undefined}
+  aria-label={title}
+  aria-hidden={title ? undefined : 'true'}
+  focusable="false"
+>
+  {icon.paths.map((p) => <path d={p.d} fill-rule={'evenodd' in p && p.evenodd ? 'evenodd' : undefined} />)}
+</svg>

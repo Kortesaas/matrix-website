@@ -1,0 +1,32 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../data/site';
+
+interface Props {
+  class?: string;
+  /** Inverse colouring for the ink footer. */
+  onDark?: boolean;
+}
+
+const { class: className, onDark = false } = Astro.props;
+---
+
+<a class:list={['mx-logo', onDark && 'mx-logo--on-dark', className]} href="/">
+  <Icon name="xmark" />
+  <span>{site.name}</span>
+</a>
+
+<style>
+  .mx-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1;
+  }
+  .mx-logo :global(svg) { width: 30px; height: 37px; flex: none; }
+  .mx-logo--on-dark { color: var(--white); }
+</style>
