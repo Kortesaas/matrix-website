@@ -110,6 +110,7 @@ export function toonify(root) {
       }
       const m = new THREE.MeshToonMaterial(args);
       m.userData.role = role;
+      m.userData.lightnessOffset = orig.userData.lightnessOffset ?? 0;
       converted.set(key, m);
       materials.push(m);
     }
@@ -118,7 +119,7 @@ export function toonify(root) {
   return (palette) => {
     for (const m of materials) {
       const [s, l] = roles[m.userData.role] || roles.floor;
-      m.color.copy(palette.color(s, l));
+      m.color.copy(palette.color(s, THREE.MathUtils.clamp(l + m.userData.lightnessOffset, 0, 1)));
     }
   };
 }
@@ -330,7 +331,6 @@ export function createComicLandscape(initialPalette) {
   mesh("Illustrated island", geo, ground, 0, -0.24, 0);
   box("Front footpath", 0, -0.22, 20, 64, 0.045, 2.5, path);
   box("Right footpath", 26, -0.21, -1, 1.8, 0.05, 40, path);
-  box("Rear path", 0, -0.22, -20, 54, 0.045, 1.5, path);
   box("Entrance terrace", -6, -0.19, 14.7, 28.4, 0.04, 5.6, path);
   box("Side terrace", 21.5, -0.19, 0.1, 3.1, 0.04, 13.7, path);
   for (let x = -30; x < 32; x += 3.2)
@@ -626,11 +626,24 @@ export function createComicLandscape(initialPalette) {
     },
   };
 }
+// Keep phone contours fine without losing detail on high-density screens.
+export function comicRenderSettings(mobile, deviceScale = 1) {
+  return {
+    pixelRatio: mobile ? Math.min(3, Math.max(2, deviceScale)) : Math.min(deviceScale, 2),
+    outlineWidth: mobile ? 0.55 : 1.1,
+    outlineOpacity: mobile ? 0.8 : 0.92,
+  };
+}
+
 // Depth + normal discontinuities supply screen-space comic contours, including creases and silhouettes.
 export function createComicRenderer(renderer, scene, camera) {
   const colorTarget = new THREE.WebGLRenderTarget(1, 1, { samples: 4 });
   colorTarget.texture.colorSpace = THREE.SRGBColorSpace;
-  const normalTarget = new THREE.WebGLRenderTarget(1, 1);
+  // Interpolating normals between adjacent surfaces creates fuzzy dark halos.
+  const normalTarget = new THREE.WebGLRenderTarget(1, 1, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+  });
   normalTarget.depthTexture = new THREE.DepthTexture(
     1,
     1,
@@ -667,10 +680,11 @@ export function createComicRenderer(renderer, scene, camera) {
       resolution: { value: new THREE.Vector2(1, 1) },
       ink: { value: new THREE.Color(ink) },
       weight: { value: 1.05 },
+      strength: { value: 0.92 },
       enabled: { value: true },
     },
     vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`,
-    fragmentShader: `varying vec2 vUv;uniform sampler2D tColor,tNormal,tDepth;uniform vec2 resolution;uniform vec3 ink;uniform float weight;uniform bool enabled;float depth(vec2 uv){return texture2D(tDepth,uv).x;}void main(){vec4 src=texture2D(tColor,vUv);vec3 color=src.rgb;float d=depth(vUv);vec3 n=texture2D(tNormal,vUv).xyz;float de=0.,ne=0.;for(int x=-1;x<=1;x++){for(int y=-1;y<=1;y++){vec2 off=vec2(float(x),float(y))*weight/resolution;float dd=depth(vUv+off);vec3 nn=texture2D(tNormal,vUv+off).xyz;if(d<.999&&dd<.999)ne=max(ne,length(n-nn));}}vec2 px=weight/resolution;de=abs(depth(vUv+vec2(px.x,0.))+depth(vUv-vec2(px.x,0.))-2.*d)+abs(depth(vUv+vec2(0.,px.y))+depth(vUv-vec2(0.,px.y))-2.*d);float edge=max(smoothstep(.00025,.0008,de),smoothstep(.32,.6,ne));if(!enabled)edge=0.;float e=edge*.92;gl_FragColor=vec4(mix(color,ink,e),mix(src.a,1.,e));
+    fragmentShader: `varying vec2 vUv;uniform sampler2D tColor,tNormal,tDepth;uniform vec2 resolution;uniform vec3 ink;uniform float weight,strength;uniform bool enabled;float depth(vec2 uv){return texture2D(tDepth,uv).x;}void main(){vec4 src=texture2D(tColor,vUv);vec3 color=src.rgb;float d=depth(vUv);vec3 n=texture2D(tNormal,vUv).xyz;float de=0.,ne=0.;for(int x=-1;x<=1;x++){for(int y=-1;y<=1;y++){vec2 off=vec2(float(x),float(y))*weight/resolution;float dd=depth(vUv+off);vec3 nn=texture2D(tNormal,vUv+off).xyz;if(d<.999&&dd<.999)ne=max(ne,length(n-nn));}}vec2 px=weight/resolution;de=abs(depth(vUv+vec2(px.x,0.))+depth(vUv-vec2(px.x,0.))-2.*d)+abs(depth(vUv+vec2(0.,px.y))+depth(vUv-vec2(0.,px.y))-2.*d);float edge=max(smoothstep(.00025,.0008,de),smoothstep(.32,.6,ne));if(!enabled)edge=0.;float e=edge*strength;gl_FragColor=vec4(mix(color,ink,e),mix(src.a,1.,e));
 #include <colorspace_fragment>
 }`,
   });
@@ -679,12 +693,16 @@ export function createComicRenderer(renderer, scene, camera) {
   const quadCamera = new THREE.Camera();
   const clear = new THREE.Color();
   return {
-    resize(w, h) {
+    resize(w, h, mobile = false) {
       const dpr = renderer.getPixelRatio();
-      colorTarget.setSize(w * dpr, h * dpr);
-      normalTarget.setSize(w * dpr, h * dpr);
-      shader.uniforms.resolution.value.set(w * dpr, h * dpr);
-      shader.uniforms.weight.value = 1.1 * dpr;
+      const settings = comicRenderSettings(mobile, dpr);
+      const width = Math.max(1, Math.floor(w * dpr));
+      const height = Math.max(1, Math.floor(h * dpr));
+      colorTarget.setSize(width, height);
+      normalTarget.setSize(width, height);
+      shader.uniforms.resolution.value.set(width, height);
+      shader.uniforms.weight.value = Math.max(0.75, settings.outlineWidth * dpr);
+      shader.uniforms.strength.value = settings.outlineOpacity;
     },
     setInk(enabled) {
       shader.uniforms.enabled.value = enabled;

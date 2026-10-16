@@ -8,6 +8,13 @@
  */
 import Graphic from './Graphic.astro';
 import type { GraphicName } from '../data/graphics';
+import AngebotArtwork from '../../public/graphics/heroes/angebot-hero-deco.svg';
+import RaeumeArtwork from '../../public/graphics/heroes/raeume-hero-deco.svg';
+import TeamArtwork from '../../public/graphics/heroes/team-hero-deco.svg';
+import AktuellesArtwork from '../../public/graphics/heroes/aktuelles-hero-deco.svg';
+import RainbowArtwork from '../../public/graphics/heroes/rainbow-clouds.svg';
+import LegalArtwork from '../../public/graphics/heroes/rechtliches-hero-deco.svg';
+import SunArtwork from '../../public/graphics/stickers/sun-omg.svg';
 
 interface Props {
   deco: Extract<GraphicName, `${string}-hero-deco` | 'rainbow-clouds'>;
@@ -17,14 +24,25 @@ interface Props {
 }
 
 const { deco, sticker, stickerSide = 'left' } = Astro.props;
+const artworks = {
+  'angebot-hero-deco': AngebotArtwork,
+  'raeume-hero-deco': RaeumeArtwork,
+  'team-hero-deco': TeamArtwork,
+  'aktuelles-hero-deco': AktuellesArtwork,
+  'rainbow-clouds': RainbowArtwork,
+  'rechtliches-hero-deco': LegalArtwork,
+};
+const Artwork = artworks[deco];
 ---
 
-<section class:list={["mx-hero", deco === "rechtliches-hero-deco" && "mx-hero--legal"]}>
+<section class:list={["mx-hero", deco === "rechtliches-hero-deco" && "mx-hero--legal", sticker && "mx-hero--has-sticker"]}>
   <div class="mx-hero__deco">
-    <Graphic name={deco} loading="eager" />
+    <Artwork class="mx-hero__artwork" role="group" aria-label="Interaktive Header-Illustration" />
   </div>
   <h1 class="mx-display mx-hero__title"><slot /></h1>
-  {sticker && <Graphic name={sticker} class:list={['mx-hero__sticker', `mx-hero__sticker--${stickerSide}`]} />}
+  {sticker === 'sun-omg' ? (
+    <SunArtwork class={`mx-hero__sticker mx-hero__sticker--${stickerSide}`} role="group" aria-label="Interaktive Sonne" />
+  ) : sticker && <Graphic name={sticker} class={`mx-hero__sticker mx-hero__sticker--${stickerSide}`} />}
 </section>
 
 <style>
@@ -46,7 +64,7 @@ const { deco, sticker, stickerSide = 'left' } = Astro.props;
     pointer-events: none;
   }
 
-  .mx-hero__deco :global(img) {
+  .mx-hero__deco :global(.mx-hero__artwork) {
     position: absolute;
     left: 50%;
     top: 0;
@@ -54,6 +72,7 @@ const { deco, sticker, stickerSide = 'left' } = Astro.props;
     height: auto;
     max-width: none;
     transform: translateX(-50%);
+    overflow: visible;
   }
 
   .mx-hero--legal { z-index: 1; overflow: visible; }
@@ -79,5 +98,12 @@ const { deco, sticker, stickerSide = 'left' } = Astro.props;
   @media (max-width: 860px) {
     .mx-hero { height: 560px; }
     .mx-hero :global(.mx-hero__sticker) { display: block; }
+    .mx-hero--has-sticker .mx-hero__deco :global([data-play]),
+    .mx-hero--has-sticker .mx-hero__deco :global([data-speech-subject]) { display: none; }
   }
+  :global([data-play][role="button"]) { transform-box: fill-box; }
+  :global([data-speech-bubble]) { opacity: 0; pointer-events: none; }
+  :global([data-speech-subject].is-speaking > [data-speech-bubble]) { opacity: 1; }
+  :global([data-play][role="button"]:focus-visible) { outline: 3px solid var(--ink); outline-offset: 5px; }
+  :global([data-play][role="button"]:focus:not(:focus-visible)) { outline: none; }
 </style>

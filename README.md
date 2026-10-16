@@ -29,16 +29,18 @@ src/
   scripts/campus/  3D-Modell der MatriX für die Startseite (Three.js, wird erst bei Bedarf geladen)
   assets/       Fotos & Bitmaps – werden beim Build optimiert (AVIF/WebP, mehrere Größen)
 public/
-  graphics/     Sticker, Formen, Hero-Ebenen (SVG, unverändert aus dem Design)
+  graphics/     Sticker, Formen, Hero-Ebenen (Design-SVGs mit interaktiven Figuren)
   fonts/        selbst gehostete Schriften (Boogaloo, Figtree – SIL OFL)
 ```
 
 ### Inhalte pflegen
 
 - **Texte, Termine, Team, Angebote:** in `src/data/*.ts` – die Seiten lesen von dort.
+- **Schreibstil:** Website-Texte verwenden keine Gedankenstriche. Stattdessen passende Punkte, Kommas, Doppelpunkte oder neue Sätze setzen. Uhrzeiten mit „bis“ verbinden.
 - **Fotos austauschen:** neue Datei nach `src/assets/photos/` legen und den Import in der passenden Datei in `src/data/` (bzw. der Seite) anpassen. Zuschnitt und Rahmen ergeben sich aus der Komponente.
 - **Seitenfarbe:** jede Seite setzt genau eine Akzentfarbe (`accent` im `BaseLayout`). Die Startseite wählt mit `randomAccent` bei jedem Laden eine zufällige Farbe aus `homeAccents` in `src/data/site.ts`: Lila, Blau, Koralle und Grün, wie auf den Unterseiten. Sie vermeidet die vorherige Farbe, sofern Sitzungsspeicher verfügbar ist. Cursor-Ärmel, Textauswahl und 3D-Modell übernehmen die Seitenfarbe; der Handschuh bleibt weiß. Die farbigen Cursor-PNGs werden beim Build aus den vorhandenen Handgrafiken und den CSS-Farbwerten erzeugt.
-- **3D-Räume (Startseite):** Raumnamen, Texte, Fotos, Links und Marker-Positionen stehen in `src/data/campus.ts`.
+- **3D-Räume (Startseite):** Raumnamen, Texte, Fotos und Links stehen in `src/data/campus.ts`.
+- **3D-Grundriss:** `src/data/campus-plan.js` enthält die mit „Lageplan beschriftet.png“ abgeglichenen Raumflächen, Marker-Anker und vereinfachten Innenwände. Modellböden und Hervorhebungen verwenden dieselben Polygone. Gebäudehöhen und Möblierung bleiben schematisch; die Innenansicht zeigt niedrige Raumgrenzen statt kleinteiliger WC- und Techniktrennwände.
 
 ### Design-System
 

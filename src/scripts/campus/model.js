@@ -1,9 +1,7 @@
 // Die MatriX 3D diorama — procedural building model (approximate reconstruction)
-// Ported from the supplied interactive 3D demo; keep in sync with its behaviour.
+// Room layout follows the labeled floor plan; the cutaway keeps only essential walls.
 import * as THREE from "three";
-const S = 1 / 42,
-  X = (x) => (x - 1005) * S,
-  Z = (y) => (y - 620) * S;
+import { campusPlanRooms, campusServiceZones, campusPartitions, PLAN_SCALE as S, planX as X, planZ as Z } from '../../data/campus-plan.js';
 const M = (color, extra = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
 const mat = {
@@ -140,7 +138,7 @@ export function createModel() {
   model.add(floors, outside, inside, roof, furniture);
   floors.name = "Floor slabs";
   outside.name = "Exterior walls and glazing";
-  inside.name = "Half-height walls";
+  inside.name = "Simplified room boundaries";
   roof.name = "Roofs";
   furniture.name = "Schematic furniture";
   const outline = [
@@ -180,24 +178,16 @@ export function createModel() {
     -0.2,
     mat.floor,
   );
-  const zones = [
-    ["Event hall", 90, 65, 912, 492, "#c7c1ac"],
-    ["Foyer / lounge", 175, 535, 607, 910, "#d5d2bd"],
-    ["Café / bar", 175, 910, 1365, 1105, "#d7c8ac"],
-    ["Support rooms", 610, 633, 1035, 905, "#bdc6bd"],
-    ["Circulation", 1255, 140, 1360, 1105, "#d8d9c8"],
-    ["Group room 1", 1380, 45, 1580, 255, "#c5cbb7"],
-    ["Group room 2", 1600, 45, 1735, 255, "#c5cbb7"],
-    ["Group room 3", 1755, 45, 1950, 255, "#c5cbb7"],
-    ["Activity room", 1475, 347, 1835, 530, "#cad2ba"],
-    ["Workshop", 1475, 540, 1835, 718, "#ccbda5"],
-    ["Quiet lounge", 1475, 730, 1835, 908, "#c6ccc2"],
-    ["Meeting room 1", 1380, 1000, 1568, 1200, "#d2c5b5"],
-    ["Meeting room 2", 1580, 1000, 1768, 1200, "#d2c5b5"],
-    ["Meeting room 3", 1780, 1000, 1955, 1200, "#d2c5b5"],
-  ];
-  for (const [n, x, y, xx, yy, c] of zones)
-    rect(floors, n, x, y, xx, yy, 0.025, M(c));
+  for (const [id, room] of Object.entries(campusPlanRooms)) {
+    const material = M('#d5d2bd');
+    material.userData.role = 'floor';
+    material.userData.lightnessOffset = room.tone;
+    const floor = slab(floors, room.title, room.outline, [], 0.025, 0, material);
+    floor.userData.roomId = id;
+  }
+  for (const zone of campusServiceZones) {
+    rect(floors, zone.title, ...zone.bounds, 0.025, mat.floor);
+  }
   rect(floors, "Courtyard gravel", 1040, 640, 1250, 905, 0.04, mat.soil, -0.05);
   // External walls and glazing traced along the floor-plan perimeter.
   const facades = [];
@@ -305,7 +295,6 @@ export function createModel() {
     for (const [a, b] of f.windows.sort((a, b) => a[0] - b[0])) {
       if (a > cursor) {
         seg(outside, cursor, a, f.height, mat.clad);
-        seg(inside, cursor, a, 1.35, mat.wall);
       }
       const sill = i < 1 ? 1.15 : 0.15,
         wh = Math.min(2.7, f.height - 0.55) - sill;
@@ -322,94 +311,27 @@ export function createModel() {
         seg(outside, p, p + 2, sill + wh, mat.edge, 0, 0.13);
       }
       seg(outside, b - 2, b, sill + wh, mat.edge, 0, 0.13);
-      // Low glass plinth in the cutaway keeps the window positions readable.
-      seg(inside, a, b, 0.18, mat.glass, 0, 0.09);
       cursor = b;
     }
     if (cursor < end) {
       seg(outside, cursor, end, f.height, mat.clad);
-      seg(inside, cursor, end, 1.35, mat.wall);
     }
   }
-  // Partitions are split around actual door openings rather than continuous boxes.
-  const partitions = [
-    [1365, 265, 1450, 265],
-    [1510, 265, 1645, 265],
-    [1700, 265, 1810, 265],
-    [1875, 265, 1970, 265],
-    [1590, 30, 1590, 265],
-    [1745, 30, 1745, 265],
-    [1365, 340, 1475, 340],
-    [1530, 340, 1840, 340],
-    [1365, 340, 1365, 390],
-    [1365, 445, 1365, 535],
-    [1365, 535, 1420, 535],
-    [1475, 535, 1840, 535],
-    [1475, 440, 1475, 720],
-    [1475, 720, 1840, 720],
-    [1365, 535, 1365, 585],
-    [1365, 635, 1365, 815],
-    [1365, 870, 1365, 910],
-    [1365, 815, 1475, 815],
-    [1475, 635, 1475, 815],
-    [1365, 910, 1420, 910],
-    [1475, 910, 1840, 910],
-    [1365, 910, 1365, 950],
-    [1365, 1000, 1365, 1105],
-    [1365, 990, 1515, 990],
-    [1570, 990, 1670, 990],
-    [1725, 990, 1825, 990],
-    [1880, 990, 1970, 990],
-    [1575, 990, 1575, 1210],
-    [1775, 990, 1775, 1210],
-    [915, 125, 1040, 125],
-    [915, 230, 1255, 230],
-    [915, 385, 1255, 385],
-    [1128, 230, 1128, 385],
-    [1128, 325, 1255, 325],
-    [1035, 385, 1035, 535],
-    [915, 430, 1035, 430],
-    [1255, 135, 1255, 265],
-    [1255, 315, 1255, 385],
-    [1255, 430, 1255, 535],
-    [610, 633, 625, 633],
-    [680, 633, 790, 633],
-    [845, 633, 1035, 633],
-    [610, 633, 610, 905],
-    [735, 633, 735, 905],
-    [855, 633, 855, 905],
-    [1035, 633, 1035, 905],
-    [610, 723, 665, 723],
-    [710, 723, 735, 723],
-    [735, 713, 780, 713],
-    [825, 713, 855, 713],
-    [855, 723, 925, 723],
-    [975, 723, 1035, 723],
-    [665, 723, 665, 905],
-    [780, 713, 780, 905],
-    [610, 760, 665, 760],
-    [610, 795, 665, 795],
-    [610, 830, 665, 830],
-    [610, 865, 665, 865],
-    [735, 775, 780, 775],
-    [735, 835, 780, 835],
-    [610, 905, 935, 905],
-    [985, 905, 1035, 905],
-    [530, 910, 530, 1000],
-    [530, 1000, 1040, 1000],
-    [1040, 1000, 1040, 910],
-  ];
-  for (const p of partitions) {
-    strip(outside, "Interior partition", ...p, 3.3, mat.partition);
-    strip(inside, "Cut partition", ...p, 1.35, mat.partition);
+  // A single low perimeter per facade replaces the many window fragments
+  // in the cutaway, while the closed building retains its detailed glazing.
+  for (const f of facades) {
+    strip(inside, 'Low perimeter', f.x1, f.y1, f.x2, f.y2, 0.48, mat.wall, 0, 0.22);
   }
-  // Main flat roof, open lightwell and raised hall roof.
+  for (const partition of campusPartitions) {
+    for (const segment of partition.segments) {
+      strip(outside, partition.name, ...segment, 3.3, mat.partition);
+      strip(inside, partition.name, ...segment, partition.height ?? 0.7, mat.partition);
+    }
+  }
+  // The roof bridges the recessed rear entrance with one straight outer edge.
+  // The walls below retain their recess; the courtyard stays open.
   const roofOutline = [
     [40, 30],
-    [1040, 30],
-    [1040, 135],
-    [1365, 135],
-    [1365, 30],
     [1970, 30],
     [1970, 1210],
     [40, 1210],
@@ -425,10 +347,6 @@ export function createModel() {
     "Low gravel roof",
     [
       [915, 30],
-      [1040, 30],
-      [1040, 135],
-      [1365, 135],
-      [1365, 30],
       [1970, 30],
       [1970, 1210],
       [40, 1210],
@@ -486,18 +404,6 @@ export function createModel() {
   ]) {
     box(roof, "Vent", X(x), 3.87, Z(y), 0.17, 0.4, 0.17, mat.metal);
   }
-  // Recessed entrance canopy columns.
-  for (const x of [190, 480, 790, 1080, 1340])
-    rect(
-      outside,
-      "Entrance canopy column",
-      x - 3,
-      1190,
-      x + 3,
-      1196,
-      3.65,
-      mat.metal,
-    );
   // Furniture: positions follow the supplied plan; designs remain schematic.
   const fbox = (n, x, y, w, d, h, m = mat.wood, base = 0) =>
     rect(furniture, n, x - w / 2, y - d / 2, x + w / 2, y + d / 2, h, m, base);
@@ -512,9 +418,7 @@ export function createModel() {
     furniture.add(group);
     box(group, "Chair seat", 0, 0.43, 0, 0.43, 0.08, 0.43, mat.seat);
     box(group, "Chair back", 0, 0.49, -0.2, 0.43, 0.45, 0.06, mat.seat);
-    for (const a of [-0.17, 0.17])
-      for (const b of [-0.17, 0.17])
-        box(group, "Chair leg", a, 0, b, 0.035, 0.43, 0.035, mat.metal);
+    box(group, "Chair base", 0, 0, 0, 0.26, 0.43, 0.26, mat.metal);
     group.position.set(X(x), 0, Z(y));
     group.rotation.y = rot;
     return group;
@@ -531,68 +435,75 @@ export function createModel() {
     group.position.set(X(x), 0, Z(y));
     group.rotation.y = rot;
   }
-  // Main hall: table banks / seats shown in plan.
-  for (const x of [230, 350, 475, 595]) {
-    for (const y of [190, 275, 360]) {
-      table(x, y, 62, 70);
-      for (const dy of [-23, 0, 23]) {
-        chair(x - 44, y + dy, Math.PI / 2);
-        chair(x + 44, y + dy, -Math.PI / 2);
-      }
-    }
+  // Stage footprint from the blue annotation. Its front edge and step face
+  // +planY, which projects towards the bottom left in the default view.
+  fbox('Hall stage', 745, 275, 240, 350, 0.45, mat.wood);
+  fbox('Hall stage front step', 745, 465, 220, 30, 0.22, mat.wood);
+  for (const x of [300, 410, 520]) {
+    for (const y of [155, 265, 375]) chair(x, y, Math.PI / 2);
   }
-  // Lounge and bar.
+
+  // Foyer seating and the actual U-shaped counter. Counter wings are low
+  // furniture, not the three full-height walls used in the original model.
   sofa(270, 740, 95, 40, Math.PI / 2);
   sofa(300, 850, 95, 40, Math.PI / 2);
-  sofa(530, 700, 100, 40, -Math.PI / 2);
   table(365, 780, 45, 40);
-  fbox("Bar counter", 790, 970, 490, 40, 1.02, mat.wood);
-  fbox("Bar worktop", 790, 970, 500, 44, 0.08, mat.edge, 1.02);
-  for (let x = 625; x <= 1000; x += 40) chair(x, 1025);
-  // Service rooms and WC cubicles.
-  for (const y of [743, 778, 813, 848, 883]) {
-    fbox("WC", 640, y, 15, 20, 0.4, mat.white);
-  }
-  for (const y of [748, 810, 870]) fbox("WC", 755, y, 15, 20, 0.4, mat.white);
-  for (const x of [880, 915, 950, 985])
-    fbox("Kitchen counter", x, 875, 34, 35, 0.9, mat.white);
-  for (const y of [260, 310, 360]) {
-    table(1060, y, 90, 30);
-  }
-  // East activity / craft / lounge rooms.
-  table(1600, 425, 80, 70);
-  for (const y of [395, 430, 465]) {
-    chair(1540, y, Math.PI / 2);
-    chair(1660, y, -Math.PI / 2);
+  fbox('Theke front', 790, 982, 500, 32, 1.02, mat.wood);
+  fbox('Theke left wing', 540, 952, 22, 90, 1.02, mat.wood);
+  fbox('Theke right wing', 1028, 952, 22, 90, 1.02, mat.wood);
+  for (const x of [630, 730, 830, 930]) chair(x, 1040, Math.PI);
+
+  // Gruppenraum, Werkstatt, Mädchenzimmer — north to south, as labeled.
+  table(1640, 430, 90, 60);
+  for (const y of [405, 455]) {
+    chair(1575, y, Math.PI / 2);
+    chair(1705, y, -Math.PI / 2);
   }
   sofa(1775, 495, 95, 40);
-  table(1690, 630, 130, 80);
-  for (let x = 1640; x <= 1740; x += 33) {
+  table(1670, 630, 115, 65);
+  for (const x of [1640, 1700]) {
     chair(x, 575);
     chair(x, 685, Math.PI);
   }
-  for (const y of [600, 640]) {
-    chair(1595, y, Math.PI / 2);
-    chair(1785, y, -Math.PI / 2);
-  }
-  fbox("Workbench", 1500, 650, 35, 110, 0.9);
+  fbox('Workbench', 1500, 630, 35, 120, 0.9);
   sofa(1540, 770, 95, 40);
-  table(1600, 820, 40, 40);
-  sofa(1750, 770, 60, 35, 0.65);
-  sofa(1750, 860, 65, 35, -0.5);
+  table(1630, 820, 55, 45);
+  sofa(1750, 780, 75, 35, 0.3);
+  sofa(1750, 865, 75, 35, -0.3);
+
+  // Studio control desk and recording position, separate from the band room.
+  fbox('Studio mixing desk', 1490, 115, 125, 55, 0.8, mat.wood);
+  fbox('Studio display', 1490, 95, 55, 9, 0.4, mat.metal, 0.8);
+  chair(1490, 165);
+  sofa(1435, 215, 85, 35);
+  fbox('Studio microphone stand', 1660, 150, 4, 4, 1.2, mat.metal);
+  fbox('Studio microphone', 1660, 150, 18, 6, 0.08, mat.metal, 1.2);
+
+  // A handful of bold shapes reads as a drum kit even at phone size.
+  function drum(name, x, y, radius, height, base = 0) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 16), mat.wood);
+    mesh.name = name;
+    mesh.position.set(X(x), base + height / 2, Z(y));
+    mesh.castShadow = mesh.receiveShadow = true;
+    furniture.add(mesh);
+    return mesh;
+  }
+  drum('Bass drum', 1845, 145, 0.52, 0.55).rotation.x = Math.PI / 2;
+  drum('Snare drum', 1805, 175, 0.3, 0.22, 0.55);
+  drum('Tom drum', 1845, 110, 0.28, 0.3, 0.6);
+  fbox('Cymbal stand', 1895, 155, 4, 4, 1.1, mat.metal);
+  drum('Cymbal', 1895, 155, 0.43, 0.035, 1.1);
+  fbox('Band amplifier', 1910, 75, 42, 25, 0.9, mat.metal);
+  fbox('Band amplifier', 1790, 75, 42, 25, 0.9, mat.metal);
+
+  // Offices remain as context rather than another dense set of meeting rooms.
   for (const x of [1475, 1675, 1875]) {
-    table(x, 1125, 65, 80);
-    for (const y of [1100, 1145]) {
-      chair(x - 45, y, Math.PI / 2);
-      chair(x + 45, y, -Math.PI / 2);
-    }
-    table(x, 1050, 35, 35);
-    chair(x - 35, 1025, 0.7);
-    chair(x + 35, 1025, -0.7);
+    table(x, 1125, 75, 55);
+    chair(x, 1080, Math.PI);
   }
   // Interior courtyard planting.
-  for (let x = 1065; x < 1240; x += 38)
-    for (let y = 665; y < 890; y += 40) {
+  for (let x = 1075; x < 1240; x += 55)
+    for (let y = 675; y < 890; y += 65) {
       const o = new THREE.Mesh(
         new THREE.IcosahedronGeometry(0.2, 0),
         mat.green,
@@ -619,32 +530,17 @@ export function createModel() {
   );
   sign.position.set(X(110), 2.7, Z(1210) + 0.03);
   outside.add(sign);
-  const roomLabels = [
-    ["EVENT HALL", 490, 280],
-    ["FOYER / LOUNGE", 370, 650],
-    ["CAFÉ / BAR", 800, 1055],
-    ["WC / SUPPORT", 795, 680],
-    ["COURTYARD", 1145, 775],
-    ["GROUP 1", 1480, 145],
-    ["GROUP 2", 1670, 145],
-    ["GROUP 3", 1850, 145],
-    ["ACTIVITY", 1670, 375],
-    ["WORKSHOP", 1690, 555],
-    ["QUIET LOUNGE", 1660, 875],
-    ["MEETING 1", 1475, 1190],
-    ["MEETING 2", 1675, 1190],
-    ["MEETING 3", 1870, 1190],
-  ];
+  const roomLabels = Object.values(campusPlanRooms).map((room) => [room.title, ...room.anchor.plan]);
   inside.visible = false;
-  const setMode = (cut, height = 1.35) => {
+  const setMode = (cut, height = 0.7) => {
     outside.visible = !cut;
     roof.visible = !cut;
     inside.visible = cut;
-    inside.scale.y = height / 1.35;
+    inside.scale.y = height / 0.7;
   };
   model.userData = {
     description:
-      "Approximate visual reconstruction from supplied floor plan and photographs. Dimensions, heights, room uses and furniture are indicative.",
+      "Room layout checked against the supplied labeled floor plan. Building heights, exterior details and furniture remain illustrative.",
     unit: "metre",
     estimatedWidth: 46,
     estimatedDepth: 28.1,

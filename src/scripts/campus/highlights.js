@@ -1,26 +1,13 @@
 // Die MatriX 3D diorama — selected-room highlight
-// Ported from the supplied interactive 3D demo; keep in sync with its behaviour.
 import * as THREE from "three";
-const bounds = {
-  saal: [90, 65, 912, 492],
-  treffpunkt: [175, 535, 607, 910],
-  bar: [530, 910, 1040, 1105],
-  werkstatt: [1475, 540, 1835, 718],
-  chillout: [1475, 730, 1835, 908],
-  medien: [1475, 347, 1835, 530],
-  musik: [1380, 45, 1950, 255],
-};
+import { campusPlanRooms, planX, planZ } from '../../data/campus-plan.js';
 export function createRoomHighlights(ink = "#241b36") {
   const group = new THREE.Group(),
     entries = new Map();
-  for (const [id, b] of Object.entries(bounds)) {
-    const [x, y, xx, yy] = b,
-      w = (xx - x) / 42,
-      d = (yy - y) / 42,
-      cx = ((x + xx) / 2 - 1005) / 42,
-      cz = ((y + yy) / 2 - 620) / 42;
+  for (const [id, room] of Object.entries(campusPlanRooms)) {
+    const shape = new THREE.Shape(room.outline.map(([x, y]) => new THREE.Vector2(planX(x), -planZ(y))));
     const fill = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, d),
+      new THREE.ShapeGeometry(shape),
       new THREE.MeshBasicMaterial({
         color: "#9b65df",
         transparent: true,
@@ -30,14 +17,10 @@ export function createRoomHighlights(ink = "#241b36") {
       }),
     );
     fill.rotation.x = -Math.PI / 2;
-    fill.position.set(cx, 0.06, cz);
+    fill.name = `Room highlight · ${id}`;
+    fill.position.y = 0.06;
     fill.userData.noInk = true;
-    const corners = [
-      [-w / 2, 0, -d / 2],
-      [w / 2, 0, -d / 2],
-      [w / 2, 0, d / 2],
-      [-w / 2, 0, d / 2],
-    ].map((p) => new THREE.Vector3(...p));
+    const corners = room.outline.map(([x, y]) => new THREE.Vector3(planX(x), 0, planZ(y)));
     const edge = new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints(corners),
       new THREE.LineBasicMaterial({
@@ -47,13 +30,13 @@ export function createRoomHighlights(ink = "#241b36") {
         depthWrite: false,
       }),
     );
-    edge.position.set(cx, 0.07, cz);
+    edge.position.y = 0.07;
     group.add(fill, edge);
     entries.set(id, {
       fill,
       edge,
       amount: 0,
-      roof: id === "saal" ? 6.13 : 4.12,
+      roof: room.anchor.height + 0.03,
     });
   }
   let active = null;

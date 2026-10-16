@@ -5,13 +5,10 @@
 import * as THREE from "three";
 import { createPointerCamera } from "./camera-motion.js";
 import { createModel } from "./model.js";
-import { createPalette, toonify, createComicLandscape, createComicRenderer, setInk } from "./comic.js";
+import { createPalette, toonify, createComicLandscape, createComicRenderer, comicRenderSettings, setInk } from "./comic.js";
 import { createRoomHighlights } from "./highlights.js";
 import { placeRoomCard } from "./card-placement.js";
-
-const S = 1 / 42;
-const planX = (x) => (x - 1005) * S;
-const planZ = (y) => (y - 620) * S;
+import { planX, planZ } from '../../data/campus-plan.js';
 
 /**
  * @param {HTMLElement} root the Campus3D element
@@ -40,7 +37,7 @@ export function mountCampus(root) {
   } catch {
     return null;
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(comicRenderSettings(phone.matches, devicePixelRatio).pixelRatio);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
@@ -394,7 +391,10 @@ export function mountCampus(root) {
     [0, 0], [30, 0], [-30, 0], [0, 36], [0, -36], [36, 30], [-36, -30], [50, 0], [-50, 0],
   ];
   function placeMarkers() {
-    const placed = [];
+    // Reserve the hovered marker before placing any neighbours, even when
+    // it occurs later in the room list. Otherwise a moving neighbour can
+    // take its spot between pointerenter and click and open the wrong room.
+    const placed = active && !phone.matches ? [active] : [];
     const w = host.clientWidth;
     const h = host.clientHeight;
     for (const m of markers) {
@@ -429,7 +429,7 @@ export function mountCampus(root) {
         m.stem.setAttribute("x2", String(m.x));
         m.stem.setAttribute("y2", String(m.y));
       }
-      if (!offscreen) placed.push(m);
+      if (!offscreen && m !== active) placed.push(m);
     }
   }
 
@@ -492,8 +492,9 @@ export function mountCampus(root) {
     camera.updateProjectionMatrix();
   }
   function resize() {
+    renderer.setPixelRatio(comicRenderSettings(phone.matches, devicePixelRatio).pixelRatio);
     renderer.setSize(host.clientWidth, host.clientHeight);
-    comic.resize(host.clientWidth, host.clientHeight);
+    comic.resize(host.clientWidth, host.clientHeight, phone.matches);
     fit();
     boundsStale = true;
     const rect = root.getBoundingClientRect();

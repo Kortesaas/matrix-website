@@ -10,6 +10,7 @@ export const site = {
   name: 'Die MatriX',
   legalName: 'Jugendfreizeitstätte MatriX',
   operator: 'Kreisjugendring Augsburg-Land',
+  operatorUrl: 'https://www.kjr-augsburg.de/',
   operatorLine: 'Ein Haus des Kreisjugendrings Augsburg-Land',
   address: {
     street: 'Alter Postweg 2',
@@ -19,9 +20,9 @@ export const site = {
   phone: { display: '08231 957606-0', href: 'tel:+4982319576060' },
   email: 'info@diematrix.de',
   hours: [
-    { days: 'Montag', time: '12:00 – 18:00 Uhr' },
-    { days: 'Dienstag & Mittwoch', time: '12:00 – 20:00 Uhr' },
-    { days: 'Donnerstag & Freitag', time: '15:00 – 20:00 Uhr' },
+    { days: 'Montag', time: '12:00 bis 18:00 Uhr' },
+    { days: 'Dienstag & Mittwoch', time: '12:00 bis 20:00 Uhr' },
+    { days: 'Donnerstag & Freitag', time: '15:00 bis 20:00 Uhr' },
   ],
 };
 

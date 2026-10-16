@@ -1,12 +1,14 @@
 import type { ImageMetadata } from 'astro';
+import { campusPlanRooms } from './campus-plan.js';
 
 import saal from '../assets/campus/room-saal.jpg';
-import treffpunkt from '../assets/campus/room-treffpunkt.jpg';
-import bar from '../assets/campus/room-bar.jpg';
-import werkstatt from '../assets/campus/room-werkstatt.jpg';
-import chillout from '../assets/campus/room-chillout.jpg';
-import medien from '../assets/campus/room-medienraum.jpg';
-import musik from '../assets/campus/room-musik.jpg';
+import foyer from '../assets/photos/r128.jpg';
+import theke from '../assets/photos/r161.jpg';
+import werkstatt from '../assets/photos/p3.jpg';
+import maedchenzimmer from '../assets/photos/r29.jpg';
+import gruppenraum from '../assets/photos/r46.jpg';
+import tonstudio from '../assets/photos/r55.jpg';
+import bandraum from '../assets/photos/r74.jpg';
 
 /** Where a marker sits in the 3D model. */
 export type CampusAnchor =
@@ -16,8 +18,8 @@ export type CampusAnchor =
   | { scene: [number, number, number] };
 
 export interface CampusRoom {
-  /** Must match the room ids of the 3D highlights (saal, treffpunkt, bar, werkstatt, chillout, medien, musik). */
-  id: string;
+  /** Shares its id with the floor-plan polygon and highlight. */
+  id: keyof typeof campusPlanRooms | 'basketball';
   title: string;
   /** One-sentence description for the compact map preview. */
   summary: string;
@@ -31,7 +33,7 @@ export interface CampusRoom {
   link?: { label: string; href: string };
 }
 
-// Room uses and photo-to-room mapping are approximate — verify with the MatriX team.
+// Room identities follow the labeled floor plan; photos match the Räume page.
 // Photos: @aboutusmedia.
 export const campusRooms: CampusRoom[] = [
   {
@@ -41,28 +43,58 @@ export const campusRooms: CampusRoom[] = [
     text: 'Viel Platz und eine Bühne mit Lichttechnik: der große Raum der MatriX für Musik, Bewegung und gemeinsame Veranstaltungen.',
     image: saal,
     alt: 'Der Saal mit Bühne',
-    anchor: { plan: [490, 280], height: 6.1 },
+    anchor: campusPlanRooms.saal.anchor,
     link: { label: 'Zum Saal', href: '/raeume/#saal' },
   },
   {
-    id: 'treffpunkt',
-    title: 'Offener Treff',
+    id: 'foyer',
+    title: 'Foyer',
     summary: 'Leute treffen, Billard spielen und gemeinsam chillen.',
     text: 'Ankommen, Leute treffen und zusammen Zeit verbringen. Mit Sofaecken, Billard und Kicker ist hier Platz für eine Pause oder eine kleine Spielrunde.',
-    image: treffpunkt,
-    alt: 'Der offene Treff mit Sofas und Kicker',
-    anchor: { plan: [360, 715] },
+    image: foyer,
+    alt: 'Die Chill-Lounge im Foyer',
+    anchor: campusPlanRooms.foyer.anchor,
     link: { label: 'Zur Chill-Lounge', href: '/raeume/#chill-lounge' },
   },
   {
-    id: 'bar',
-    title: 'X-Bar',
+    id: 'theke',
+    title: 'Theke',
     summary: 'Dein Platz für Getränke und eine Pause mit Freunden.',
     text: 'Die lange Theke mitten im offenen Bereich. Ein Platz zum Zusammensitzen, Reden und für eine Pause zwischendurch.',
-    image: bar,
+    image: theke,
     alt: 'Die lange Theke der X-Bar',
-    anchor: { plan: [820, 1040] },
+    anchor: campusPlanRooms.theke.anchor,
     link: { label: 'Zu Theke & Küche', href: '/raeume/#theke-kueche' },
+  },
+  {
+    id: 'tonstudio',
+    title: 'Tonstudio',
+    summary: 'Nimm deine Stimme, deinen Song oder deinen Podcast auf.',
+    text: 'Mikrofone, Mischpult und Aufnahmetechnik für deine eigenen Sounds. Das Tonstudio liegt direkt neben dem Bandraum.',
+    image: tonstudio,
+    alt: 'Tonstudio mit Mischpult und Aufnahmetechnik',
+    anchor: campusPlanRooms.tonstudio.anchor,
+    link: { label: 'Zum Tonstudio', href: '/raeume/#studio-band' },
+  },
+  {
+    id: 'bandraum',
+    title: 'Bandraum',
+    summary: 'Zusammen proben und euren eigenen Sound finden.',
+    text: 'Ein eigener Proberaum mit Schlagzeug und Musiktechnik für eure Band und gemeinsame Sessions.',
+    image: bandraum,
+    alt: 'Bandraum mit Schlagzeug und Instrumenten',
+    anchor: campusPlanRooms.bandraum.anchor,
+    link: { label: 'Zum Bandraum', href: '/raeume/#studio-band' },
+  },
+  {
+    id: 'gruppenraum',
+    title: 'Gruppenraum',
+    summary: 'Platz für deine Gruppe, Workshops und gemeinsame Ideen.',
+    text: 'Ein gemütlicher Raum für Gruppen, Workshops und Besprechungen mit Sofas und viel Tageslicht.',
+    image: gruppenraum,
+    alt: 'Der Gruppenraum mit Chesterfield-Sofas',
+    anchor: campusPlanRooms.gruppenraum.anchor,
+    link: { label: 'Zum Gruppenraum', href: '/raeume/#gruppenraum' },
   },
   {
     id: 'werkstatt',
@@ -71,38 +103,18 @@ export const campusRooms: CampusRoom[] = [
     text: 'Werkbänke, Werkzeug und jede Menge Materialien. Hier dreht sich alles ums Ausprobieren, Bauen und kreative Ideen.',
     image: werkstatt,
     alt: 'Die Werkstatt mit Werkbänken und Regalen',
-    anchor: { plan: [1690, 630] },
+    anchor: campusPlanRooms.werkstatt.anchor,
     link: { label: 'Zur Werkstatt', href: '/werkstatt/' },
   },
   {
-    id: 'chillout',
-    title: 'Chillout',
-    summary: 'Mach’s dir auf dem Sofa gemütlich und schalte ab.',
-    text: 'Sofas, Kunst an den Wänden und ein bisschen Abstand vom Trubel. Eine gemütliche Ecke zum Abschalten und Zusammensitzen.',
-    image: chillout,
-    alt: 'Der Chillout-Raum mit Sofas und Bildern',
-    anchor: { plan: [1680, 820] },
-    link: { label: 'Zu den Räumen', href: '/raeume/' },
-  },
-  {
-    id: 'medien',
-    title: 'Medienraum',
-    summary: 'Zusammen zocken und Medien entdecken.',
-    text: 'Eine Sofaecke und ein großer Bildschirm. Der Raum bietet einen gemütlichen Rahmen für gemeinsame Medien- und Spielpausen.',
-    image: medien,
-    alt: 'Der Medienraum mit Sofa und Bildschirm',
-    anchor: { plan: [1660, 420] },
-    link: { label: 'Zu den Räumen', href: '/raeume/' },
-  },
-  {
-    id: 'musik',
-    title: 'Musikräume',
-    summary: 'Hier ist Platz für Bandproben und deinen eigenen Sound.',
-    text: 'Schlagzeug, Mikrofone und Musiktechnik. In diesem Bereich geht es um gemeinsame Sounds, Proben und eigene musikalische Ideen.',
-    image: musik,
-    alt: 'Ein Musikraum mit Schlagzeug',
-    anchor: { plan: [1665, 145] },
-    link: { label: 'Zu Studio & Band', href: '/raeume/#studio-band' },
+    id: 'maedchenzimmer',
+    title: 'Mädchenzimmer',
+    summary: 'Dein Raum zum Quatschen, Ausruhen und Kreativsein.',
+    text: 'Ein eigener Raum für Mädchen: zum Zusammensitzen, Basteln, Entspannen und für Projekte, die ihr selbst plant.',
+    image: maedchenzimmer,
+    alt: 'Das Mädchenzimmer mit Sofa und Fotowand',
+    anchor: campusPlanRooms.maedchenzimmer.anchor,
+    link: { label: 'Zum Mädchenzimmer', href: '/raeume/#maedchenzimmer' },
   },
   {
     id: 'basketball',

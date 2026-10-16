@@ -61,10 +61,10 @@ import { campusRooms } from '../data/campus';
       <span class="mx-label">Deine kleine Roomtour</span>
       <button type="button" class="mx-campus__toggle" data-campus-toggle aria-pressed="false"><span data-toggle-label>Haus öffnen</span><span aria-hidden="true"> ↗</span></button>
     </div>
-    <p class="mx-campus__tip">Raum antippen – die Markierung zeigt dir, wo er liegt.</p>
+    <p class="mx-campus__tip">Raum antippen: Die Markierung zeigt dir, wo er liegt.</p>
     <div class="mx-campus__rooms" role="group" aria-label="Räume entdecken">
       {campusRooms.map((room) => (
-        <button type="button" data-mobile-room={room.id} aria-expanded="false" aria-controls={`mx-campus-card-${room.id}`}>{room.title}<span aria-hidden="true"> +</span></button>
+        <button type="button" data-mobile-room={room.id} aria-expanded="false" aria-controls={`mx-campus-card-${room.id}`}><span class="mx-campus__room-name">{room.title}</span><span aria-hidden="true"> +</span></button>
       ))}
     </div>
   </div>
@@ -334,14 +334,15 @@ import { campusRooms } from '../data/campus';
     .mx-campus__rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 3px 3px 10px; }
     .mx-campus__rooms button { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 44px; padding: 9px 10px; border: 2px solid var(--ink); border-radius: 8px; background: var(--white); box-shadow: 2px 2px 0 var(--ink); font: 19px/1.1 var(--font-display); }
     .mx-campus__rooms button[aria-expanded="true"] { background: var(--ink); color: var(--white); }
-    .mx-campus__rooms button span { font-size: 24px; }
+    .mx-campus__rooms button:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .mx-campus__rooms button > span:last-child { flex-shrink: 0; font-size: 24px; }
+    .mx-campus__room-name { min-width: 0; text-align: left; overflow-wrap: anywhere; hyphens: auto; }
 
-    .mx-hotspot { width: 34px; height: 34px; margin: -17px 0 0 -17px; font-size: 23px; box-shadow: 0 0 0 4px var(--hotspot-halo), 0 2px 0 var(--ink); }
-    .mx-hotspot[aria-expanded="true"] { display: grid; pointer-events: none; box-shadow: 0 0 0 5px var(--white), 0 0 0 8px var(--ink); }
-    .mx-hotspot[aria-expanded="true"] .mx-hotspot__label { display: block; position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 130px; padding: 5px 8px; border: 2px solid var(--ink); border-radius: 8px; background: var(--white); color: var(--ink); text-align: center; font: 16px/1.1 var(--font-display); }
-    @media (prefers-reduced-motion: no-preference) {
-      .mx-hotspot[aria-expanded="true"]::after { animation: mx-campus-ping 1.8s ease-out infinite; }
-    }
+    .mx-hotspot { width: 0; height: 0; margin: 0; background: transparent; box-shadow: none; transition: none; }
+    .mx-hotspot[aria-expanded="true"] { display: block; pointer-events: none; background: transparent; box-shadow: none; }
+    .mx-hotspot > span:first-child { display: none; }
+    .mx-hotspot::after { display: none; }
+    .mx-hotspot[aria-expanded="true"] .mx-hotspot__label { display: block; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 110px; padding: 3px 6px; border: 1px solid var(--ink); border-radius: 5px; background: var(--white); color: var(--ink); text-align: center; font: 13px/1.1 var(--font-display); }
 
     /* Keep the selected location and all room choices clear of the details. */
     .mx-mapcard {

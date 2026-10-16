@@ -135,17 +135,19 @@ const isCurrent = (key: string) => key === current;
   .mx-nav.is-hidden { translate: 0 calc(-100% - var(--space-6)); }
 
   .mx-nav__bar {
+    --nav-inset: var(--space-3);
     display: flex;
     align-items: center;
     gap: var(--space-6);
     height: var(--nav-height);
-    padding: 0 var(--space-3) 0 var(--space-5);
+    padding: 0 var(--nav-inset) 0 var(--space-5);
     background: var(--white);
-    border-radius: var(--radius-lg);
+    border-radius: calc(var(--radius-sm) + var(--nav-inset));
     box-shadow: var(--shadow-press);
     view-transition-name: mx-nav;
     transition: box-shadow var(--motion-slow) var(--ease-matrix);
   }
+  .mx-nav__cta :global(.mx-btn) { min-height: calc(var(--nav-height) - 2 * var(--nav-inset)); }
   /* Same size everywhere; over content it just gets a soft lift. */
   .mx-nav.is-scrolled .mx-nav__bar {
     box-shadow: var(--shadow-press), var(--shadow-float);
@@ -209,6 +211,8 @@ const isCurrent = (key: string) => key === current;
   .mx-nav__burger {
     display: none;
     margin-left: auto;
+    width: calc(var(--nav-height) - 2 * var(--nav-inset));
+    height: calc(var(--nav-height) - 2 * var(--nav-inset));
   }
 
   .mx-nav__burger span,
@@ -226,6 +230,7 @@ const isCurrent = (key: string) => key === current;
   .mx-nav__burger span::after { position: absolute; top: 7px; }
 
   @media (max-width: 860px) {
+    .mx-nav__bar { --nav-inset: var(--space-2); }
     .mx-nav__links,
     .mx-nav__cta { display: none; }
     .mx-nav__burger { display: inline-flex; }

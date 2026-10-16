@@ -48,7 +48,7 @@ const { chips, label } = Astro.props;
     font-size: 23px;
     line-height: 1;
     text-decoration: none;
-    box-shadow: inset 0 0 0 2px var(--line);
+    box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--chip, var(--accent-strong)) 25%, var(--white));
     transition:
       box-shadow var(--motion-fast) var(--ease-matrix),
       transform var(--motion-fast) var(--ease-matrix),

@@ -94,7 +94,7 @@
       const overText = !!(target && target.closest(TEXT));
       // Easter eggs: playable stickers give the hand their own state (Play.astro).
       const play = !overText && target && target.closest('[data-play]');
-      const mode = play ? play.getAttribute('data-play') : '';
+      const mode = play && !play.closest('.mx-hero, .home-welcome__cat') ? play.getAttribute('data-play') : '';
       if ((cursor.dataset.mode || '') !== mode) {
         if (mode) cursor.dataset.mode = mode;
         else delete cursor.dataset.mode;

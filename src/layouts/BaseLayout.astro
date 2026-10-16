@@ -28,7 +28,7 @@ interface Props {
 
 const { title, description, accent, randomAccent = false, current, peeker, peekerLeft, peekerWidth, noindex = false } = Astro.props;
 
-const fullTitle = Astro.url.pathname === '/' ? `${site.name} – Jugendzentrum Königsbrunn` : `${title} – ${site.name} Königsbrunn`;
+const fullTitle = Astro.url.pathname === '/' ? `${site.name} | Jugendzentrum Königsbrunn` : `${title} | ${site.name} Königsbrunn`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 

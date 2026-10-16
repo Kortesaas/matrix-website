@@ -162,7 +162,7 @@ button { font: inherit; color: inherit; }
 }
 
 .mx-link {
-  color: var(--purple-700);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
@@ -193,5 +193,5 @@ button { font: inherit; color: inherit; }
 .mx-prose h4 { font-size: var(--fs-body); font-weight: 600; margin: var(--space-5) 0 0; }
 .mx-prose p, .mx-prose li { margin: 0; overflow-wrap: anywhere; }
 .mx-prose h4 + p { margin-top: var(--space-1); }
-.mx-prose a { color: var(--purple-700); font-weight: 600; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.mx-prose a { color: var(--accent-strong); font-weight: 600; text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .mx-prose a:hover { text-decoration-color: var(--accent); }

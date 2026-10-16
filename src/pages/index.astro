@@ -28,7 +28,7 @@ const chips = [
 
 <BaseLayout
   title="Startseite"
-  description="Die MatriX ist das Jugendzentrum in Königsbrunn: Kreativangebote, Werkstatt, Tonstudio, Events – oder einfach chillen. Komm rein!"
+  description="Die MatriX ist das Jugendzentrum in Königsbrunn: Kreativangebote, Werkstatt, Tonstudio, Events oder einfach chillen. Komm rein!"
   accent="purple"
   randomAccent
   peeker="dino-pez"
@@ -38,7 +38,9 @@ const chips = [
 
   <!-- Welcome band with the campus map -->
   <section class="mx-section mx-section--accent home-welcome" id="roomtour">
-    <Graphic name="cat-hi" class="home-welcome__cat" />
+    <button class="home-welcome__cat" type="button" data-play="pet" aria-label="Hi-Katze begrüßen">
+      <Graphic name="cat-hi" play={false} />
+    </button>
     <Graphic name="flowers" class="home-welcome__flowers" />
     <div class="mx-container">
       <div class="mx-welcome">
@@ -61,7 +63,7 @@ const chips = [
         <div class="mx-split__a">
           <h2 class="mx-h2">Bei uns ist für alle was dabei.</h2>
           <p class="mx-lead">
-            Du bist kreativ? Technisch begeistert? Interessierst dich für Nachhaltigkeit? Egal, was dich interessiert – hier findest du deins.
+            Du bist kreativ? Technisch begeistert? Interessierst dich für Nachhaltigkeit? Egal, was dich interessiert: Hier findest du deins.
           </p>
           <Button href="/mitmachen/">Mitmachen!</Button>
         </div>
@@ -78,7 +80,7 @@ const chips = [
     <div class="mx-container home-events">
       <SectionHeading
         title="Was geht zur Zeit?"
-        lead="Bei uns ist immer was los – egal ob große Events oder unsere Day-to-Day-Aktivitäten."
+        lead="Bei uns ist immer was los, egal ob große Events oder unsere Day-to-Day-Aktivitäten."
       />
       <EventList columns={eventColumns} />
       <div class="home-events__more">
@@ -101,7 +103,7 @@ const chips = [
         <div class="mx-teaser__text">
           <h2 class="mx-h2">Wir sind für euch da!</h2>
           <p class="mx-body">
-            Wir sind euer Team zum Reden, Zuhören, Austauschen – oder einfach, um gemeinsam eine gute Zeit zu haben. Immer offen, immer unkompliziert und jederzeit an eurer Seite.
+            Wir sind euer Team zum Reden, Zuhören und Austauschen. Oder einfach, um gemeinsam eine gute Zeit zu haben. Immer offen, immer unkompliziert und jederzeit an eurer Seite.
           </p>
           <Button href="/team/" variant="outline">Lern’ uns kennen</Button>
         </div>
@@ -118,11 +120,18 @@ const chips = [
     position: absolute;
     z-index: 5;
     left: 4%;
-    top: -150px;
+    top: 0;
     width: clamp(120px, 11vw, 190px);
     height: auto;
-    pointer-events: none;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    /* Anchor the belly to the photo edge, with the paws hanging over it. */
+    transform: translateY(-90%);
+    transform-origin: 30% 90%;
   }
+  .home-welcome :global(.home-welcome__cat:hover) { translate: 0 0; }
 
   .home-welcome :global(.home-welcome__flowers) {
     position: absolute;
@@ -222,7 +231,4 @@ const chips = [
     .mx-teaser__media :global(.mx-teaser__sticker) { left: -12px; width: 120px; }
   }
 
-  @media (max-width: 600px) {
-    .home-welcome :global(.home-welcome__cat) { top: -110px; }
-  }
 </style>
