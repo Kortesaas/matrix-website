@@ -1,0 +1,224 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PhotoHero from '../components/PhotoHero.astro';
+import CampusMap from '../components/CampusMap.astro';
+import ChipList from '../components/ChipList.astro';
+import Button from '../components/Button.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import EventList from '../components/EventList.astro';
+import PhotoFrame from '../components/PhotoFrame.astro';
+import Graphic from '../components/Graphic.astro';
+import { mapSpots } from '../data/rooms';
+import { offers } from '../data/offers';
+import { eventColumns } from '../data/events';
+import p11 from '../assets/photos/p11.jpg';
+import r99 from '../assets/photos/r99.jpg';
+
+const chips = offers.map((o) => ({ label: o.title, href: `/angebot/#${o.slug}`, hot: o.hot }));
+---
+
+<BaseLayout
+  title="Startseite"
+  description="Die MatriX ist das Jugendzentrum in Königsbrunn: Kreativangebote, Werkstatt, Tonstudio, Events – oder einfach chillen. Komm rein!"
+  accent="purple"
+  peeker="dino-pez"
+>
+  <PhotoHero image={p11} alt="Die Chill-Lounge der MatriX mit Kicker und Sofas" />
+
+  <!-- Welcome band with the campus map -->
+  <section class="mx-section mx-section--accent home-welcome" id="roomtour">
+    <Graphic name="cat-hi" class="home-welcome__cat" />
+    <Graphic name="flowers" class="home-welcome__flowers" />
+    <div class="mx-container">
+      <div class="mx-welcome">
+        <h1 class="mx-h1">
+          <span class="mx-welcome__kicker">Willkommen im Jugendzentrum</span>
+          MatriX Königsbrunn
+        </h1>
+        <p class="mx-lead">
+          Kreativangebote, Veranstaltungen, Tonstudio oder einfach chillen. Schau dich doch erstmal um – klick auf die Räume!
+        </p>
+        <CampusMap spots={mapSpots} alt="Illustrierter Lageplan der MatriX mit Werkstatt, Saal und Chill-Lounge" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Offer chips -->
+  <section class="mx-section">
+    <div class="mx-container">
+      <div class="mx-split">
+        <div class="mx-split__a">
+          <h2 class="mx-h2">Bei uns ist für alle was dabei.</h2>
+          <p class="mx-lead">
+            Du bist kreativ? Technisch begeistert? Interessierst dich für Nachhaltigkeit? Egal, was dich interessiert – hier findest du deins.
+          </p>
+          <Button href="/mitmachen/">Mitmachen!</Button>
+        </div>
+        <div class="mx-split__b">
+          <ChipList chips={chips} label="Unsere Angebote" />
+          <p class="mx-small mx-split__more"><a class="mx-link" href="/angebot/">Alle Angebote ansehen</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Events -->
+  <section class="mx-section mx-section--accent">
+    <div class="mx-container home-events">
+      <SectionHeading
+        title="Was geht zur Zeit?"
+        lead="Bei uns ist immer was los – egal ob große Events oder unsere Day-to-Day-Aktivitäten."
+        onDark
+      />
+      <EventList columns={eventColumns} />
+      <div class="home-events__more">
+        <Graphic name="hand-point" class="home-events__hand" />
+        <Button href="/aktuelles/" variant="inverse">Alle Events anzeigen</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team teaser -->
+  <section class="mx-section mx-section--loose-top">
+    <div class="mx-container">
+      <div class="mx-teaser">
+        <div class="mx-teaser__media">
+          <svg class="mx-teaser__outline" viewBox="0 0 600 520" aria-hidden="true">
+            <path d="M20 30 L580 150 L200 500 Z"></path>
+          </svg>
+          <Graphic name="dino-camera" class="mx-teaser__sticker" />
+          <PhotoFrame src={r99} alt="Medienprojekt in der MatriX" ratio="4/3" offset="br" tilt="l" sizes="(max-width: 860px) 92vw, 620px" />
+        </div>
+        <div class="mx-teaser__text">
+          <h2 class="mx-h2">Wir sind für euch da!</h2>
+          <p class="mx-body">
+            Wir sind euer Team zum Reden, Zuhören, Austauschen – oder einfach, um gemeinsam eine gute Zeit zu haben. Immer offen, immer unkompliziert und jederzeit an eurer Seite.
+          </p>
+          <Button href="/team/" variant="outline">Lern’ uns kennen</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ---------- Welcome band ---------- */
+  .home-welcome { overflow: visible; }
+
+  .home-welcome :global(.home-welcome__cat) {
+    position: absolute;
+    z-index: 5;
+    left: 4%;
+    top: -150px;
+    width: clamp(120px, 11vw, 190px);
+    height: auto;
+    pointer-events: none;
+  }
+
+  .home-welcome :global(.home-welcome__flowers) {
+    position: absolute;
+    z-index: 5;
+    right: 6%;
+    bottom: -40px;
+    width: clamp(96px, 9vw, 160px);
+    height: auto;
+    pointer-events: none;
+  }
+
+  .mx-welcome {
+    position: relative;
+    text-align: center;
+    color: var(--white);
+  }
+  .mx-welcome .mx-h1 { color: var(--white); }
+  .mx-welcome__kicker {
+    display: block;
+    font-size: 0.62em;
+    margin-bottom: 0.1em;
+  }
+  .mx-welcome .mx-lead {
+    max-width: 560px;
+    margin: var(--space-5) auto var(--space-8);
+  }
+
+  /* ---------- Offer chips ---------- */
+  .mx-split {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+    align-items: start;
+  }
+  .mx-split__a { grid-column: 1 / span 4; }
+  .mx-split__b { grid-column: 6 / span 7; }
+  .mx-split__a .mx-lead { margin: var(--space-4) 0 var(--space-6); }
+  .mx-split__more { margin-top: var(--space-5); }
+
+  /* ---------- Events ---------- */
+  .home-events { max-width: 1160px; }
+  .home-events__more {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: var(--space-8);
+  }
+  .home-events__more :global(.home-events__hand) {
+    width: 64px;
+    height: auto;
+    transform: rotate(-12deg);
+  }
+
+  /* ---------- Team teaser ---------- */
+  .mx-teaser {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+    align-items: center;
+  }
+  .mx-teaser__media { grid-column: 1 / span 6; position: relative; }
+  .mx-teaser__text { grid-column: 8 / span 5; }
+  .mx-teaser__text .mx-body { margin: var(--space-4) 0 var(--space-6); max-width: var(--measure-body); }
+
+  .mx-teaser__outline {
+    position: absolute;
+    z-index: 0;
+    left: 8%;
+    top: -12%;
+    width: 92%;
+    height: auto;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .mx-teaser__outline path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-linejoin: round;
+  }
+
+  .mx-teaser__media :global(.mx-teaser__sticker) {
+    position: absolute;
+    z-index: 3;
+    left: -56px;
+    top: -64px;
+    width: 168px;
+    height: auto;
+    transform: rotate(-8deg);
+    pointer-events: none;
+  }
+
+  @media (max-width: 860px) {
+    .mx-split__a,
+    .mx-split__b,
+    .mx-teaser__media,
+    .mx-teaser__text { grid-column: 1 / -1; }
+    .mx-split__b { margin-top: var(--space-7); }
+    .mx-teaser__text { margin-top: var(--space-8); }
+    .mx-teaser__media :global(.mx-teaser__sticker) { left: -12px; width: 120px; }
+  }
+
+  @media (max-width: 600px) {
+    .home-welcome :global(.home-welcome__cat) { top: -110px; }
+  }
+</style>
