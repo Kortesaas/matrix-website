@@ -1,0 +1,120 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import { site } from '../data/site';
+
+// TODO: have the legal texts reviewed before launch. They are taken from the
+// concept; e.g. § 8 TMG has been replaced by the Digitale-Dienste-Gesetz (DDG),
+// the USt-ID number is missing, and the privacy notice should name the hoster.
+---
+
+<BaseLayout
+  title="Impressum & Datenschutz"
+  description="Impressum und Datenschutzerklärung der Jugendfreizeitstätte MatriX Königsbrunn."
+  accent="purple"
+  peeker="flower-face"
+  peekerLeft="12%"
+>
+  <PageHero deco="rechtliches-hero-deco">Impressum &amp;<br />Datenschutz</PageHero>
+
+  <section class="mx-section">
+    <div class="mx-container">
+      <article class="mx-prose">
+        <h2 id="impressum">Impressum</h2>
+
+        <h3>Herausgeber</h3>
+        <p>
+          {site.legalName}<br />
+          {site.address.street}<br />
+          {site.address.zip} {site.address.city}<br />
+          Telefon: <a href={site.phone.href}>{site.phone.display}</a><br />
+          E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
+        <p>Bürgermeister Franz Feigl</p>
+        <p>USt-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz</p>
+        <p>Verantwortlich für den Inhalt: Stefan Klier (Anschrift siehe oben).</p>
+        <p>Namentlich gekennzeichnete Internetseiten geben die Auffassungen und Erkenntnisse der genannten Personen wieder.</p>
+
+        <h3>Nutzungsbedingungen</h3>
+        <p>Texte, Bilder, Grafiken sowie die Gestaltung dieser Internetseiten können dem Urheberrecht unterliegen.</p>
+        <p>Nicht urheberrechtlich geschützt sind nach § 5 des Urheberrechtsgesetz (UrhG)</p>
+        <p>
+          Gesetze, Verordnungen, amtliche Erlasse und Bekanntmachungen sowie Entscheidungen und amtlich verfasste Leitsätze zu Entscheidungen und andere amtliche Werke, die im amtlichen Interesse zur allgemeinen Kenntnisnahme veröffentlicht worden sind, mit der Einschränkung, dass die Bestimmungen über Änderungsverbot und Quellenangabe in § 62 Abs. 1 bis 3 und § 63 Abs. 1 und 2 UrhG entsprechend anzuwenden sind.
+        </p>
+        <p>
+          Als Privatperson dürfen Sie urheberrechtlich geschütztes Material zum privaten und sonstigen eigenen Gebrauch im Rahmen des § 53 UrhG verwenden. Eine Vervielfältigung oder Verwendung urheberrechtlich geschützten Materials dieser Seiten oder Teilen davon in anderen elektronischen oder gedruckten Publikationen und deren Veröffentlichung ist nur mit unserer Einwilligung gestattet. Diese Einwilligung erteilen auf Anfrage die für den Inhalt Verantwortlichen. Der Nachdruck und die Auswertung von Pressemitteilungen und Reden sind mit Quellenangabe allgemein gestattet.
+        </p>
+        <p>
+          Weiterhin können Texte, Bilder, Grafiken und sonstige Dateien ganz oder teilweise dem Urheberrecht Dritter unterliegen. Auch über das Bestehen möglicher Rechte Dritter geben Ihnen die für den Inhalt Verantwortlichen nähere Auskünfte.
+        </p>
+
+        <h3>Haftungsausschluss</h3>
+        <p>
+          Alle auf dieser Internetseite bereitgestellten Informationen haben wir nach bestem Wissen und Gewissen erarbeitet und geprüft. Eine Gewähr für die jederzeitige Aktualität, Richtigkeit, Vollständigkeit und Verfügbarkeit der bereit gestellten Informationen können wir allerdings nicht übernehmen. Ein Vertragsverhältnis mit den Nutzern des Internetangebots kommt nicht zustande.
+        </p>
+        <p>
+          Wir haften nicht für Schäden, die durch die Nutzung dieses Internetangebots entstehen. Dieser Haftungsausschluss gilt nicht, soweit die Vorschriften des § 839 BGB (Haftung bei Amtspflichtverletzung) einschlägig sind. Für etwaige Schäden, die beim Aufrufen oder Herunterladen von Daten durch Schadsoftware oder der Installation oder Nutzung von Software verursacht werden, übernehmen wir keine Haftung.
+        </p>
+        <p>
+          Der Haftungsausschluss gilt nicht für Informationen, die in den Anwendungsbereich der Europäischen Dienstleistungsrichtlinie (Richtlinie 2006/123/EG – DLRL) fallen. Für diese Informationen wird die Richtigkeit und Aktualität gewährleistet.
+        </p>
+
+        <h3>Links</h3>
+        <p>
+          Von unseren eigenen Inhalten sind Querverweise („Links“) auf die Webseiten anderer Anbieter zu unterscheiden. Durch diese Links ermöglichen wir lediglich den Zugang zur Nutzung fremder Inhalte nach § 8 Telemediengesetz. Bei der erstmaligen Verknüpfung mit diesen Internetangeboten haben wir diese fremden Inhalte daraufhin überprüft, ob durch sie eine mögliche zivilrechtliche oder strafrechtliche Verantwortlichkeit ausgelöst wird. Wir können diese fremden Inhalte aber nicht ständig auf Veränderungen überprüfen und daher auch keine Verantwortung dafür übernehmen. Für illegale, fehlerhafte oder unvollständige Inhalte und insbesondere für Schäden, die aus der Nutzung oder Nichtnutzung von Informationen Dritter entstehen, haftet allein der jeweilige Anbieter der Seite.
+        </p>
+
+        <h2 id="datenschutz">Datenschutz</h2>
+
+        <h3>Allgemeine Hinweise</h3>
+        <p>
+          Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können. Ausführliche Informationen zum Thema Datenschutz entnehmen Sie unserer unter diesem Text aufgeführten Datenschutzerklärung.
+        </p>
+
+        <h4>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</h4>
+        <p>
+          Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Impressum dieser Website entnehmen.
+        </p>
+
+        <h4>Wie erfassen wir Ihre Daten?</h4>
+        <p>
+          Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z.&nbsp;B. um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z.&nbsp;B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs). Die Erfassung dieser Daten erfolgt automatisch, sobald Sie unsere Website betreten.
+        </p>
+
+        <h4>Wofür nutzen wir Ihre Daten?</h4>
+        <p>
+          Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten. Andere Daten können zur Analyse Ihres Nutzerverhaltens verwendet werden.
+        </p>
+
+        <h4>Welche Rechte haben Sie bezüglich Ihrer Daten?</h4>
+        <p>
+          Sie haben jederzeit das Recht unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung, Sperrung oder Löschung dieser Daten zu verlangen. Hierzu sowie zu weiteren Fragen zum Thema Datenschutz können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden. Des Weiteren steht Ihnen ein Beschwerderecht bei der zuständigen Aufsichtsbehörde zu.
+        </p>
+
+        <h4>Analyse-Tools und Tools von Drittanbietern</h4>
+        <p>
+          Beim Besuch unserer Website kann Ihr Surf-Verhalten statistisch ausgewertet werden. Das geschieht vor allem mit Cookies und mit sogenannten Analyseprogrammen. Die Analyse Ihres Surf-Verhaltens erfolgt in der Regel anonym; das Surf-Verhalten kann nicht zu Ihnen zurückverfolgt werden. Sie können dieser Analyse widersprechen oder sie durch die Nichtbenutzung bestimmter Tools verhindern. Detaillierte Informationen dazu finden Sie in der folgenden Datenschutzerklärung. Sie können dieser Analyse widersprechen. Über die Widerspruchsmöglichkeiten werden wir Sie in dieser Datenschutzerklärung informieren.
+        </p>
+
+        <h3>Allgemeine Hinweise und Pflichtinformationen</h3>
+        <h4>Hinweis zur verantwortlichen Stelle</h4>
+        <p>Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
+        <p>
+          {site.legalName}<br />
+          {site.address.street}<br />
+          {site.address.zip} {site.address.city}<br />
+          Telefon: <a href={site.phone.href}>{site.phone.display}</a><br />
+          E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
+        <p>
+          Verantwortliche Stelle ist die natürliche oder juristische Person, die allein oder gemeinsam mit anderen über die Zwecke und Mittel der Verarbeitung von personenbezogenen Daten (z.&nbsp;B. Namen, E-Mail-Adressen o.&nbsp;Ä.) entscheidet.
+        </p>
+
+        <h4>SSL- bzw. TLS-Verschlüsselung</h4>
+        <p>
+          Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung vertraulicher Inhalte, wie zum Beispiel Bestellungen oder Anfragen, die Sie an uns als Seitenbetreiber senden, eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von „http://“ auf „https://“ wechselt und an dem Schloss-Symbol in Ihrer Browserzeile. Wenn die SSL- bzw. TLS-Verschlüsselung aktiviert ist, können die Daten, die Sie an uns übermitteln, nicht von Dritten mitgelesen werden.
+        </p>
+      </article>
+    </div>
+  </section>
+</BaseLayout>

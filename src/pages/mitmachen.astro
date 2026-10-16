@@ -1,0 +1,156 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import Graphic from '../components/Graphic.astro';
+import Photo from '../components/Photo.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import { site } from '../data/site';
+import videoStill from '../assets/photos/video-still.png';
+
+// TODO: link the "Warum mitmachen?" video once it is published.
+const videoUrl = '';
+---
+
+<BaseLayout
+  title="Mitmachen"
+  description="Die MatriX lebt von Ideen und Engagement. Komm vorbei oder schreib uns – Telefon, E-Mail und Social Media der MatriX Königsbrunn."
+  accent="blue"
+  current="mitmachen"
+  peeker="dino-wave"
+  peekerLeft="16%"
+>
+  <PageHero deco="rainbow-clouds">Mitmachen</PageHero>
+
+  <section class="mx-section">
+    <div class="mx-container">
+      <SectionHeading
+        size="h1"
+        lead="Die MatriX lebt von Ideen und Engagement! Egal ob du eine Veranstaltung organisieren willst, kreative Ideen hast oder einfach neue Leute kennenlernen möchtest – hier bist du richtig!"
+      >
+        <Fragment slot="title">Komm vorbei <span class="mx-tag-word">oder</span> schreib uns!</Fragment>
+      </SectionHeading>
+
+      <div class="why">
+        <div class="why__text">
+          <h2 class="mx-h1">Warum es sich lohnt, mitzumachen?</h2>
+          <p class="mx-body">
+            Du lernst Leute kennen, probierst Neues aus und stellst eigene Projekte auf die Beine – vom Konzert bis zum Upcycling-Workshop. Wir helfen dir dabei, und du bestimmst mit, was in der MatriX passiert.
+          </p>
+        </div>
+        <div class="why__media">
+          <div class="why__computer">
+            <Graphic name="retro-computer" class="why__art" />
+            <div class="why__screen">
+              <Photo src={videoStill} alt="Standbild aus dem MatriX-Video: Eine Jugendliche und eine Seniorin beim Gärtnern" sizes="(max-width: 860px) 34vw, 220px" widths={[320, 640]} />
+              {
+                videoUrl && (
+                  <a class="why__play" href={videoUrl} target="_blank" rel="noopener">
+                    <span class="mx-visually-hidden">Video ansehen</span>
+                  </a>
+                )
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-section" id="kontakt">
+    <div class="mx-container">
+      <SectionHeading title="Hier findest du uns überall:" />
+      <SocialLinks />
+      <address class="contact">
+        <p>
+          <span>Telefon: <a href={site.phone.href}>{site.phone.display}</a></span>
+          <span>E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a></span>
+        </p>
+        <p>
+          {site.legalName}<br />
+          {site.address.street}, {site.address.zip} {site.address.city}
+        </p>
+      </address>
+    </div>
+  </section>
+
+  <CtaBlock
+    title="Schon eine Idee im Kopf?"
+    lead="Schreib uns einfach, was du vorhast – oder komm während der Öffnungszeiten vorbei und sprich uns direkt an."
+    label="Schreib uns!"
+    href={`mailto:${site.email}`}
+  />
+</BaseLayout>
+
+<style>
+  /* ---------- Why join ---------- */
+  .why {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+    align-items: center;
+    margin-top: var(--space-10);
+  }
+  .why__text { grid-column: 1 / span 5; }
+  .why__text .mx-body { margin-top: var(--space-5); max-width: var(--measure-body); }
+  .why__media { grid-column: 7 / span 6; }
+
+  .why__computer { position: relative; }
+  .why__computer :global(.why__art) { width: 100%; height: auto; }
+
+  /* The still sits on the monitor's screen (measured on the 635×509 art). */
+  .why__screen {
+    position: absolute;
+    left: 22.8%;
+    top: 14.6%;
+    width: 35.8%;
+    height: 38%;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .why__screen :global(picture) { height: 100%; }
+  .why__screen :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .why__play {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  .why__play::before {
+    content: "";
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--white);
+    box-shadow: var(--shadow-press);
+  }
+  .why__play::after {
+    content: "";
+    position: absolute;
+    border-style: solid;
+    border-width: 11px 0 11px 18px;
+    border-color: transparent transparent transparent var(--accent-strong);
+    transform: translateX(3px);
+  }
+
+  /* ---------- Contact ---------- */
+  .contact {
+    margin-top: var(--space-8);
+    font-style: normal;
+    text-align: center;
+  }
+  .contact p { margin: 0; }
+  .contact p + p { margin-top: var(--space-4); }
+  .contact span { display: inline-block; margin: 0 var(--space-4); }
+  .contact a { color: var(--purple-700); font-weight: 600; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+  @media (max-width: 860px) {
+    .why { display: flex; flex-direction: column-reverse; gap: var(--space-7); margin-top: var(--space-9); }
+  }
+</style>

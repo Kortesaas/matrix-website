@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import OfferCard from '../components/OfferCard.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import { offers } from '../data/offers';
+---
+
+<BaseLayout
+  title="Angebot"
+  description="Offener Betrieb, Musik, Werkstatt, Theater, Events und mehr: In der MatriX Königsbrunn ist für alle was dabei."
+  accent="blue"
+  current="angebot"
+  peeker="dino-pez"
+  peekerLeft="16%"
+>
+  <PageHero deco="angebot-hero-deco" sticker="skater-yeah">Angebot</PageHero>
+
+  <section class="mx-section">
+    <div class="mx-container">
+      <SectionHeading
+        title="In der MatriX ist für alle was dabei."
+        size="h1"
+        lead="Egal ob du kreativ sein willst, dich sportlich auspowern, Bock auf Musik hast oder einfach chillen willst."
+      />
+      <div class="mx-offers">
+        {offers.map((offer, i) => <OfferCard offer={offer} offset={i % 2 === 0 ? 'bl' : 'br'} />)}
+      </div>
+    </div>
+  </section>
+
+  <CtaBlock
+    title="Nichts Passendes gefunden?"
+    lead="Wir sind immer offen für neue Ideen und coole Sachen. Erzähl uns, was dir fehlt – vielleicht machen wir’s zusammen."
+    label="Mitmachen!"
+    href="/mitmachen/"
+  />
+</BaseLayout>
+
+<style>
+  .mx-offers {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-8) var(--space-7);
+  }
+
+  @media (max-width: 1024px) {
+    .mx-offers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 600px) {
+    .mx-offers { gap: var(--space-7) var(--space-5); }
+  }
+</style>

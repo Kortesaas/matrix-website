@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+---
+
+<BaseLayout
+  title="Seite nicht gefunden"
+  description="Diese Seite gibt es in der MatriX nicht."
+  accent="purple"
+  peeker="dino-wave"
+  noindex
+>
+  <PageHero deco="raeume-hero-deco" sticker="sun-omg" stickerSide="right">Ups!</PageHero>
+
+  <CtaBlock
+    title="Hier gibt’s leider nichts zu sehen."
+    lead="Die Seite, die du suchst, gibt es nicht (mehr). Auf der Startseite findest du alles, was in der MatriX los ist."
+    label="Zur Startseite"
+    href="/"
+  />
+</BaseLayout>

@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import EventList from '../components/EventList.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import { eventColumns } from '../data/events';
+---
+
+<BaseLayout
+  title="Aktuelles"
+  description="Konzerte, Turniere, Partys und feste Termine jede Woche: Das ist gerade los in der MatriX Königsbrunn."
+  accent="green"
+  current="aktuelles"
+  peeker="daisy-face"
+  peekerLeft="18%"
+>
+  <PageHero deco="aktuelles-hero-deco" sticker="flower-face" stickerSide="right">Aktuelles</PageHero>
+
+  <section class="mx-section">
+    <div class="mx-container aktuelles-events">
+      <SectionHeading
+        title="Bei uns ist immer was los!"
+        lead="Große Events und feste Termine jede Woche – hier siehst du, was als Nächstes ansteht."
+      />
+      <EventList columns={eventColumns} />
+    </div>
+  </section>
+
+  <section class="mx-section">
+    <div class="mx-container">
+      <SectionHeading title="Hier folgen, um nichts zu verpassen:" />
+      <SocialLinks />
+    </div>
+  </section>
+
+  <CtaBlock
+    title="Du hast eine Idee für ein Event?"
+    lead="Konzert, Turnier oder Workshop – erzähl uns davon. Vieles, was hier läuft, haben Jugendliche selbst auf die Beine gestellt."
+    label="Mitmachen!"
+    href="/mitmachen/"
+  />
+</BaseLayout>
+
+<style>
+  .aktuelles-events { max-width: 1160px; }
+</style>

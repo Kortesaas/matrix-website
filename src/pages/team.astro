@@ -1,0 +1,95 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import TeamCard from '../components/TeamCard.astro';
+import PhotoFrame from '../components/PhotoFrame.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import { teamGroups, groupPhotos } from '../data/team';
+
+const [wide, ...pair] = groupPhotos;
+---
+
+<BaseLayout
+  title="Team"
+  description="Sozialpädagoginnen, Sozialpädagogen und FSJler: Das Team der MatriX Königsbrunn ist für dich da."
+  accent="coral"
+  current="team"
+  peeker="flame"
+>
+  <PageHero deco="team-hero-deco" sticker="egg-hi">Team</PageHero>
+
+  <section class="mx-section">
+    <div class="mx-container">
+      <SectionHeading
+        title="Uns triffst du in der MatriX garantiert:"
+        lead="Das Team der MatriX besteht aus Sozialpädagoginnen und Sozialpädagogen, die für dich da sind."
+      />
+
+      {
+        teamGroups.map((group) => (
+          <section class="team-group">
+            <h2 class="mx-h2 team-group__title">{group.title}</h2>
+            <div class="mx-team">
+              {group.members.map((member) => (
+                <TeamCard member={member} />
+              ))}
+            </div>
+          </section>
+        ))
+      }
+
+      {
+        wide && (
+          <section class="team-group">
+            <h2 class="mx-h2 team-group__title">Die Jugendlichen</h2>
+            <div class="team-photos">
+              <PhotoFrame src={wide.image} alt={wide.alt} ratio="16/9" offset="tr" class="team-photos__wide" sizes="(max-width: 860px) 92vw, 1280px" />
+              {pair.map((p, i) => (
+                <PhotoFrame src={p.image} alt={p.alt} ratio="4/3" offset={i === 0 ? 'bl' : 'br'} sizes="(max-width: 600px) 92vw, 620px" />
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </div>
+  </section>
+
+  <CtaBlock
+    title="Weißt du, wer da aber noch fehlt? Du!"
+    lead="Wir sind immer offen für neue Ideen und coole Sachen – und für neue Leute sowieso. Komm vorbei und mach mit."
+    label="Mitmachen!"
+    href="/mitmachen/"
+  />
+</BaseLayout>
+
+<style>
+  .team-group + .team-group { margin-top: var(--space-10); }
+  .team-group__title { margin-bottom: var(--space-7); }
+
+  .mx-team {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-8) var(--space-7);
+  }
+
+  .team-photos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-7);
+  }
+  .team-photos :global(.team-photos__wide) { grid-column: 1 / -1; }
+
+  @media (max-width: 1024px) {
+    .mx-team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 860px) {
+    .team-group + .team-group { margin-top: var(--space-9); }
+  }
+
+  @media (max-width: 600px) {
+    .mx-team { grid-template-columns: 1fr; gap: var(--space-7); }
+    .team-photos { grid-template-columns: 1fr; gap: var(--space-6); }
+  }
+</style>
