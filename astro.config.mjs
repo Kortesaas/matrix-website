@@ -11,5 +11,7 @@ export default defineConfig({
     format: 'directory',
     inlineStylesheets: 'auto',
   },
+  // Load a page's HTML as soon as a link is hovered, so the switch is near-instant.
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   devToolbar: { enabled: false },
 });

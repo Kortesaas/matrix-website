@@ -106,6 +106,7 @@
   --motion-fast: 0.12s;   /* buttons, chips: lift / press */
   --motion-normal: 0.15s; /* nav underline */
   --motion-slow: 0.18s;   /* offer-card tilt, sheets */
+  --motion-page: 0.2s;    /* crossfade between pages */
   --ease-matrix: ease;
 
   /* Press interaction (buttons). The drop is the hard shadow under the

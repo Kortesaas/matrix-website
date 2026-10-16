@@ -14,6 +14,37 @@ html {
   html { scroll-behavior: smooth; }
 }
 
+/* ---------- Page transitions ----------
+   Native cross-document view transitions: pages crossfade briefly while the
+   nav bar (mx-nav) and the cursor (mx-cursor) stay put. Browsers without
+   support simply navigate as before. */
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-page);
+  animation-timing-function: var(--ease-matrix);
+}
+
+/* While the hand is active, the transition overlay must not show the system
+   cursor either (it would otherwise fall back to the arrow). */
+:root.mx-has-cursor::view-transition,
+:root.mx-has-cursor::view-transition-group(*),
+:root.mx-has-cursor::view-transition-image-pair(*),
+:root.mx-has-cursor::view-transition-old(*),
+:root.mx-has-cursor::view-transition-new(*) {
+  cursor: none;
+}
+
+/* The hand cursor doesn't fade or morph — it simply stays where it is. */
+::view-transition-old(mx-cursor) { display: none; }
+::view-transition-group(mx-cursor),
+::view-transition-new(mx-cursor) { animation: none; }
+
 body {
   margin: 0;
   background: var(--accent-tint);
@@ -32,8 +63,8 @@ body {
    devices Cursor.astro replaces it with the animated one. The image-set
    line adds the sharp 2x version where supported. */
 html {
-  cursor: url("/graphics/cursors/hand.png") 1 2, auto;
-  cursor: image-set(url("/graphics/cursors/hand.png") 1x, url("/graphics/cursors/hand@2x.png") 2x) 1 2, auto;
+  cursor: url("/graphics/cursors/hand.png") 2 2, auto;
+  cursor: image-set(url("/graphics/cursors/hand.png") 1x, url("/graphics/cursors/hand@2x.png") 2x) 2 2, auto;
 }
 :where(a[href], button:not(:disabled), [role="button"], summary, label[for], select) {
   cursor: url("/graphics/cursors/hand-tap.png") 10 10, pointer;

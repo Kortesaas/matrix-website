@@ -6,31 +6,42 @@
  * the static CSS cursors from global.css.
  *
  * Geometry matches the static cursor images: a 46×35 box with the hand at
- * (10, 8) and the fingertip hotspot at (10, 10).
+ * (10, 8) and the fingertip hotspot at (10, 10), tilted 20° clockwise around
+ * the fingertip so it points up-left like a system arrow.
  */
 ---
 
 <div class="mx-cursor" aria-hidden="true" data-cursor hidden>
-  <div class="mx-cursor__hand">
-    <img src="/graphics/cursors/hand@2x.png" width="36" height="27" alt="" decoding="async" />
+  <div class="mx-cursor__tilt">
+    <div class="mx-cursor__hand">
+      <img src="/graphics/cursors/hand-flat@2x.png" width="36" height="27" alt="" decoding="sync" />
+    </div>
+    <svg class="mx-cursor__taps" viewBox="0 0 46 35" width="46" height="35">
+      <path d="M7 6 4 3" />
+      <path d="M6 10H2" />
+      <path d="M7 14 4 17" />
+    </svg>
   </div>
-  <svg class="mx-cursor__taps" viewBox="0 0 46 35" width="46" height="35">
-    <path d="M7 6 4 3" />
-    <path d="M6 10H2" />
-    <path d="M7 14 4 17" />
-  </svg>
 </div>
 
-<script>
-  const CLICKABLE = 'a[href], button:not(:disabled), [role="button"], summary, label[for], select';
-  const TEXT = 'input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]), textarea, [contenteditable]';
-  const HOTSPOT = 10;
+<!-- Inline (not bundled) so it runs during parsing, before the first paint
+     of a newly loaded page — the hand is back in place without waiting for
+     the first mouse move. -->
+<script is:inline>
+  (() => {
+    const CLICKABLE = 'a[href], button:not(:disabled), [role="button"], summary, label[for], select';
+    const TEXT = 'input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]), textarea, [contenteditable]';
+    const HOTSPOT = 10;
+    const STORE = 'mx-cursor';
+    const FRESH_MS = 10000;
 
-  const cursor = document.querySelector<HTMLElement>('[data-cursor]');
-  const mouse = window.matchMedia('(hover: hover) and (pointer: fine)');
-
-  if (cursor && mouse.matches) {
+    const cursor = document.querySelector('[data-cursor]');
     const root = document.documentElement;
+    if (!cursor || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      root.classList.remove('mx-has-cursor');
+      return;
+    }
+
     let x = 0;
     let y = 0;
     let frame = 0;
@@ -57,25 +68,45 @@
       cursor.style.transform = `translate3d(${x - HOTSPOT}px, ${y - HOTSPOT}px, 0)`;
     };
 
-    const show = (visible: boolean) => {
+    const show = (visible) => {
       cursor.classList.toggle('is-visible', visible);
       root.classList.toggle('mx-has-cursor', visible);
     };
 
-    const update = (target: Element | null) => {
-      const overText = !!target?.closest(TEXT);
-      cursor.classList.toggle('is-link', !overText && !!target?.closest(CLICKABLE));
+    const update = (target) => {
+      const overText = !!(target && target.closest(TEXT));
+      cursor.classList.toggle('is-link', !overText && !!(target && target.closest(CLICKABLE)));
       show(!overText);
     };
+
+    // Remember where the mouse was so the next page can draw the hand at once.
+    const save = () => {
+      try {
+        sessionStorage.setItem(STORE, JSON.stringify({ x, y, t: Date.now() }));
+      } catch {}
+    };
+
+    try {
+      const last = JSON.parse(sessionStorage.getItem(STORE) || 'null');
+      if (last && Date.now() - last.t < FRESH_MS) {
+        x = last.x;
+        y = last.y;
+        render();
+        update(document.elementFromPoint(x, y));
+      } else {
+        root.classList.remove('mx-has-cursor');
+      }
+    } catch {
+      root.classList.remove('mx-has-cursor');
+    }
 
     document.addEventListener(
       'pointermove',
       (event) => {
-        if (event.pointerType !== 'mouse') return show(false);
+        if (event.pointerType === 'touch' || event.pointerType === 'pen') return show(false);
         x = event.clientX;
         y = event.clientY;
         if (!frame) frame = requestAnimationFrame(render);
-
         update(event.target instanceof Element ? event.target : null);
       },
       { passive: true },
@@ -91,12 +122,20 @@
     );
 
     document.addEventListener('pointerdown', (event) => {
-      if (event.pointerType === 'mouse') cursor.classList.add('is-down');
+      if (event.pointerType !== 'mouse') return;
+      cursor.classList.add('is-down');
+      save();
     });
     document.addEventListener('pointerup', () => cursor.classList.remove('is-down'));
-    root.addEventListener('pointerleave', () => show(false));
-    window.addEventListener('blur', () => show(false));
-  }
+    window.addEventListener('pagehide', save);
+    // Back/forward cache: the page comes back as it was left, minus the press.
+    window.addEventListener('pageshow', () => cursor.classList.remove('is-down'));
+    // Hide only when the mouse really leaves the window. (Over the browser's
+    // own scrollbar the system arrow always shows — that can't be styled.)
+    document.addEventListener('mouseout', (event) => {
+      if (!event.relatedTarget) show(false);
+    });
+  })();
 </script>
 
 <style>
@@ -114,6 +153,7 @@
     pointer-events: none;
     visibility: hidden;
     will-change: transform;
+    view-transition-name: mx-cursor;
   }
   .mx-cursor.is-visible { visibility: visible; }
 
@@ -121,6 +161,14 @@
   :global(html.mx-has-cursor),
   :global(html.mx-has-cursor *) {
     cursor: none !important;
+  }
+  :global(html.mx-has-cursor ::backdrop) { cursor: none !important; }
+
+  .mx-cursor__tilt {
+    position: absolute;
+    inset: 0;
+    transform: rotate(20deg);
+    transform-origin: 10px 10px;
   }
 
   .mx-cursor__hand {

@@ -37,6 +37,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="/fonts/boogaloo-latin-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/graphics/cursors/hand-flat@2x.png" as="image" />
+    <script is:inline>
+      // Coming from another page with the MatriX hand: hide the system cursor
+      // from the first frame on, Cursor.astro then draws the hand in place.
+      try {
+        if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+          const last = JSON.parse(sessionStorage.getItem('mx-cursor') || 'null');
+          if (last && Date.now() - last.t < 10000) document.documentElement.classList.add('mx-has-cursor');
+        }
+      } catch {}
+    </script>
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="de_DE" />
     <meta property="og:site_name" content={site.name} />
