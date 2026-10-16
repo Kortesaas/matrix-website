@@ -1,0 +1,153 @@
+/* MatriX design tokens.
+   Colour, spacing, layout, radius and shadow values are taken 1:1 from the
+   design handoff (tokens.json). Type, motion and offset tokens collect the
+   values the handoff's component CSS uses so components never hard-code them.
+
+   Breakpoints (media queries cannot read custom properties):
+     --bp-lg 1024px  grids drop to 2 columns, footer to 2 columns
+     --bp-md  860px  nav becomes the burger, feature rows stack (media first)
+     --bp-sm  600px  single column, phone margins */
+
+:root {
+  /* ---------- Colour ---------- */
+  --purple-500: #907BE0;
+  --purple-600: #7C64D6;
+  --purple-700: #5B42B8;
+  --purple-100: #E6E0FA;
+  --purple-50: #F6F3FF;
+  --blue-500: #5AAEEE;
+  --blue-600: #2F8AD6;
+  --blue-50: #EAF5FD;
+  --coral-500: #FA7C79;
+  --coral-600: #E8524E;
+  --coral-50: #FFF2E9;
+  --green-500: #91D039;
+  --green-600: #5E9E12;
+  --green-50: #F6FCEC;
+  --yellow-500: #FFBF09;
+  --yellow-600: #B07500;
+  --pink-500: #F5A0CC;
+  --pink-600: #C54FB6;
+  --cyan-500: #0FCEE0;
+  --orange-500: #FF5E06;
+  --mint-500: #00B877;
+  --ink: #131A22;
+  --ink-muted: #4A5361;
+  --line: #DCD6EE;
+  --white: #FFFFFF;
+  --surface: var(--purple-50);
+  --text: var(--ink);
+  --focus: var(--ink);
+
+  --ink-scrim-soft: rgba(19, 26, 34, 0.05);
+  --ink-scrim-strong: rgba(19, 26, 34, 0.55);
+  --on-dark-text: rgba(255, 255, 255, 0.82);
+  --on-dark-meta: rgba(255, 255, 255, 0.7);
+  --on-dark-line: rgba(255, 255, 255, 0.16);
+  --on-dark-fill: rgba(255, 255, 255, 0.1);
+  --hotspot-halo: rgba(255, 255, 255, 0.35);
+
+  /* ---------- Spacing ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+  --space-11: 160px;
+
+  /* ---------- Layout ---------- */
+  --container-max: 1280px;
+  --grid-gutter: 32px;
+  --page-margin: 40px;
+  --nav-height: 72px;
+  --measure-lead: 60ch;
+  --measure-body: 62ch;
+
+  /* ---------- Radius ---------- */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-press: 0 4px 0 var(--ink);
+  --shadow-float: 0 18px 40px rgba(19, 26, 34, 0.18);
+  --shadow-title: 8px 8px 0 var(--ink);
+  --shadow-title-offset: 0.045em;
+  --shadow-map: drop-shadow(0 18px 30px rgba(19, 26, 34, 0.18));
+  --shadow-mark: drop-shadow(0 6px 18px rgba(19, 26, 34, 0.35));
+
+  /* ---------- Type ---------- */
+  --font-display: "Boogaloo", "Arial Narrow", "Avenir Next Condensed", system-ui, sans-serif;
+  --font-sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --fs-display: clamp(76px, 9.4vw, 168px);
+  --fs-h1: clamp(44px, 5vw, 80px);
+  --fs-h2: clamp(36px, 3.6vw, 56px);
+  --fs-h3: clamp(32px, 3vw, 48px);
+  --fs-h4: clamp(24px, 2vw, 28px);
+  --fs-label: 22px;
+  --fs-button: 24px;
+  --fs-lead: clamp(18px, 1.4vw, 21px);
+  --fs-body: 17px;
+  --lh-body: 27px;
+  --fs-small: 14px;
+  --lh-small: 20px;
+  --fs-footer: 15px;
+  --lh-footer: 26px;
+
+  /* ---------- Motion ----------
+     The brand moves in short, hard "sticker" lifts and presses. */
+  --motion-fast: 0.12s;   /* buttons, chips: lift / press */
+  --motion-normal: 0.15s; /* nav underline */
+  --motion-slow: 0.18s;   /* offer-card tilt, sheets */
+  --ease-matrix: ease;
+
+  /* Press interaction (buttons). The drop is the hard shadow under the
+     element; the lift/sink moves the face. Rest 4px, hover 6px, press 1px. */
+  --press-drop-rest: 4px;
+  --press-drop-hover: 6px;
+  --press-drop-active: 1px;
+  --press-lift-hover: -2px;
+  --press-sink-active: 3px;
+  --press-ring: 3px;
+
+  /* ---------- Photo frame ---------- */
+  --photo-offset: 12px;
+  --tilt-l: -1.6deg;
+  --tilt-r: 1.4deg;
+  --tilt-hover: -1.2deg;
+  --lift-hover: -4px;
+}
+
+@media (max-width: 860px) {
+  :root {
+    --grid-gutter: 24px;
+    --nav-height: 64px;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --page-margin: 20px;
+    --photo-offset: 8px;
+    --fs-button: 22px;
+  }
+}
+
+/* ---------- Page accent ----------
+   Every page carries ONE accent. data-accent on <body> or any section;
+   components read --accent (fills, frames), --accent-strong (text, buttons)
+   and --accent-tint (grounds). */
+:root,
+[data-accent="purple"] { --accent: var(--purple-500); --accent-strong: var(--purple-600); --accent-tint: var(--purple-50); }
+[data-accent="blue"]   { --accent: var(--blue-500);   --accent-strong: var(--blue-600);   --accent-tint: var(--blue-50); }
+[data-accent="coral"]  { --accent: var(--coral-500);  --accent-strong: var(--coral-600);  --accent-tint: var(--coral-50); }
+[data-accent="green"]  { --accent: var(--green-500);  --accent-strong: var(--green-600);  --accent-tint: var(--green-50); }
+[data-accent="yellow"] { --accent: var(--yellow-500); --accent-strong: var(--yellow-600); --accent-tint: var(--purple-50); }
+[data-accent="pink"]   { --accent: var(--pink-500);   --accent-strong: var(--pink-600);   --accent-tint: var(--purple-50); }
