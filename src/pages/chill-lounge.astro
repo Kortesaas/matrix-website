@@ -1,0 +1,13 @@
+---
+import RoomPage from '../components/RoomPage.astro';
+import FlappyHeads from '../components/gags/FlappyHeads.astro';
+import { rooms } from '../data/rooms';
+import { roomPages } from '../data/room-pages';
+
+const room = rooms.find(r => r.slug === 'chill-lounge')!;
+const page = roomPages['chill-lounge'];
+---
+
+<RoomPage title={room.title} description="Die Chill-Lounge der MatriX: Sofas, Konsole, Kicker, Tischtennis und Spiele. Flieg mit dem MatriX-Team durch die Röhren." accent={room.accent} peeker="egg-hi" hero={page.hero} heroAlt={page.heroAlt} heading="Hier hängst du ab." lead={room.text.split('\n\n')[0]} sections={page.sections}>
+  <FlappyHeads slot="gag" />
+</RoomPage>

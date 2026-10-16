@@ -1,0 +1,10 @@
+---
+import RoomPage from '../components/RoomPage.astro';
+import { rooms } from '../data/rooms';
+import { roomPages } from '../data/room-pages';
+
+const room = rooms.find(r => r.slug === 'theke-kueche')!;
+const page = roomPages['theke-kueche'];
+---
+
+<RoomPage title={room.title} description="Die X-Bar und Küche der MatriX: Getränke, Snacks zu kleinen Preisen und gemeinsames Kochen." accent={room.accent} peeker="dino-pez" hero={page.hero} heroAlt={page.heroAlt} heading="Erst mal was trinken." lead={room.text.split('\n\n')[0]} sections={page.sections}></RoomPage>

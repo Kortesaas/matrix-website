@@ -25,9 +25,11 @@
   --green-600: #5E9E12;
   --green-50: #F6FCEC;
   --yellow-500: #FFBF09;
-  --yellow-600: #B07500;
+  --yellow-600: #A87B00;
+  --yellow-50: #FFF8E6;
   --pink-500: #F5A0CC;
-  --pink-600: #C54FB6;
+  --pink-600: #CC3380;
+  --pink-50: #FDF1F7;
   --cyan-500: #0FCEE0;
   --orange-500: #FF5E06;
   --mint-500: #00B877;
@@ -150,5 +152,5 @@
 [data-accent="blue"]   { --accent: var(--blue-500);   --accent-strong: var(--blue-600);   --accent-tint: var(--blue-50); }
 [data-accent="coral"]  { --accent: var(--coral-500);  --accent-strong: var(--coral-600);  --accent-tint: var(--coral-50); }
 [data-accent="green"]  { --accent: var(--green-500);  --accent-strong: var(--green-600);  --accent-tint: var(--green-50); }
-[data-accent="yellow"] { --accent: var(--yellow-500); --accent-strong: var(--yellow-600); --accent-tint: var(--purple-50); }
-[data-accent="pink"]   { --accent: var(--pink-500);   --accent-strong: var(--pink-600);   --accent-tint: var(--purple-50); }
+[data-accent="yellow"] { --accent: var(--yellow-500); --accent-strong: var(--yellow-600); --accent-tint: var(--yellow-50); }
+[data-accent="pink"]   { --accent: var(--pink-500);   --accent-strong: var(--pink-600);   --accent-tint: var(--pink-50); }

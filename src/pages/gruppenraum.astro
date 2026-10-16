@@ -1,0 +1,13 @@
+---
+import RoomPage from '../components/RoomPage.astro';
+import Whiteboard from '../components/gags/Whiteboard.astro';
+import { rooms } from '../data/rooms';
+import { roomPages } from '../data/room-pages';
+
+const room = rooms.find(r => r.slug === 'gruppenraum')!;
+const page = roomPages['gruppenraum'];
+---
+
+<RoomPage title={room.title} description="Der Gruppenraum der MatriX: für Workshops, Meetings und Spieleabende. Mal deine Ideen an die Tafel." accent={room.accent} peeker="dino-wave" hero={page.hero} heroAlt={page.heroAlt} heading="Platz für eure Pläne." lead={room.text.split('\n\n')[0]} sections={page.sections}>
+  <Whiteboard slot="gag" />
+</RoomPage>

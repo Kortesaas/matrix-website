@@ -1,44 +1,73 @@
 ---
-/** Shared, keyboard-accessible viewer for framed photos. */
+/**
+ * Shared, keyboard-accessible viewer for framed photos. Full screen, the photo
+ * keeps the brand's offset colour block; arrows, Esc, swipe and backdrop
+ * clicks navigate or close.
+ */
 ---
 
 <dialog class="mx-photo-viewer" data-photo-viewer aria-label="Fotoansicht">
-  <div class="mx-photo-viewer__bar">
-    <span class="mx-label">Ein Blick in die MatriX</span>
-    <span class="mx-photo-viewer__count" data-photo-count></span>
-    <button type="button" class="mx-photo-viewer__close" data-photo-close aria-label="Fotoansicht schließen" autofocus>×</button>
-  </div>
-  <div class="mx-photo-viewer__stage">
-    <button type="button" class="mx-photo-viewer__arrow" data-photo-prev aria-label="Vorheriges Foto">‹</button>
-    <figure>
-      <img data-photo-image alt="" />
-      <figcaption data-photo-caption></figcaption>
-    </figure>
-    <button type="button" class="mx-photo-viewer__arrow" data-photo-next aria-label="Nächstes Foto">›</button>
-  </div>
+  <button type="button" class="mx-photo-viewer__btn mx-photo-viewer__close" data-photo-close aria-label="Fotoansicht schließen" autofocus>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+  </button>
+  <button type="button" class="mx-photo-viewer__btn mx-photo-viewer__arrow mx-photo-viewer__arrow--prev" data-photo-prev aria-label="Vorheriges Foto">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+  </button>
+  <figure class="mx-photo-viewer__figure" data-photo-stage>
+    <div class="mx-photo-viewer__frame"><img data-photo-image alt="" /></div>
+    <figcaption><span data-photo-caption></span><span class="mx-photo-viewer__count" data-photo-count></span></figcaption>
+  </figure>
+  <button type="button" class="mx-photo-viewer__btn mx-photo-viewer__arrow mx-photo-viewer__arrow--next" data-photo-next aria-label="Nächstes Foto">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+  </button>
 </dialog>
 
 <script>
   const viewer = document.querySelector<HTMLDialogElement>('[data-photo-viewer]');
   const image = viewer?.querySelector<HTMLImageElement>('[data-photo-image]');
+  const stage = viewer?.querySelector<HTMLElement>('[data-photo-stage]');
   const caption = viewer?.querySelector<HTMLElement>('[data-photo-caption]');
   const counter = viewer?.querySelector<HTMLElement>('[data-photo-count]');
   const previous = viewer?.querySelector<HTMLButtonElement>('[data-photo-prev]');
   const next = viewer?.querySelector<HTMLButtonElement>('[data-photo-next]');
-  if (viewer && image) {
+  if (viewer && image && stage) {
     let photos: HTMLButtonElement[] = [];
     let current = 0;
     let opener: HTMLButtonElement | null = null;
-    const show = (index: number) => {
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const preload = (index: number) => {
+      const photo = photos[(index + photos.length) % photos.length];
+      if (photo?.dataset.photoSrc) new Image().src = photo.dataset.photoSrc;
+    };
+    const show = (index: number, direction = 0) => {
       current = (index + photos.length) % photos.length;
       const photo = photos[current];
-      image.src = photo.dataset.photoSrc ?? '';
-      image.alt = photo.dataset.photoAlt ?? '';
-      if (caption) caption.textContent = image.alt;
-      if (counter) counter.textContent = `${current + 1} / ${photos.length}`;
-      if (previous) previous.hidden = photos.length < 2;
-      if (next) next.hidden = photos.length < 2;
+      const swap = () => {
+        image.src = photo.dataset.photoSrc ?? '';
+        image.alt = photo.dataset.photoAlt ?? '';
+        if (caption) caption.textContent = image.alt;
+        if (counter) counter.textContent = photos.length > 1 ? `${current + 1} / ${photos.length}` : '';
+      };
+      if (!direction || reduced.matches) swap();
+      else {
+        // Slide out, swap once decoded, slide in from the other side.
+        stage.dataset.leaving = direction > 0 ? 'left' : 'right';
+        setTimeout(async () => {
+          swap();
+          try { await image.decode(); } catch {}
+          stage.dataset.leaving = '';
+          stage.dataset.entering = direction > 0 ? 'right' : 'left';
+          requestAnimationFrame(() => requestAnimationFrame(() => { stage.dataset.entering = ''; }));
+        }, 140);
+      }
+      const single = photos.length < 2;
+      previous!.hidden = single;
+      next!.hidden = single;
+      preload(current + 1);
+      preload(current - 1);
     };
+
     document.addEventListener('click', (event) => {
       const trigger = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-photo-open]') : null;
       if (!trigger) return;
@@ -48,17 +77,28 @@
       show(photos.indexOf(trigger));
       viewer.showModal();
     });
-    previous?.addEventListener('click', () => show(current - 1));
-    next?.addEventListener('click', () => show(current + 1));
+    previous?.addEventListener('click', () => show(current - 1, -1));
+    next?.addEventListener('click', () => show(current + 1, 1));
     viewer.querySelector('[data-photo-close]')?.addEventListener('click', () => viewer.close());
     viewer.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowRight') { event.preventDefault(); show(current + 1); }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); show(current - 1); }
+      if (photos.length < 2) return;
+      if (event.key === 'ArrowRight') { event.preventDefault(); show(current + 1, 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); show(current - 1, -1); }
     });
+    // Anything that isn't the photo or a button closes the viewer.
     viewer.addEventListener('click', (event) => {
-      if (event.target !== viewer) return;
-      const rect = viewer.getBoundingClientRect();
-      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) viewer.close();
+      const target = event.target as Element;
+      if (!target.closest('img, button, figcaption')) viewer.close();
+    });
+    // Swipe left/right on touch screens.
+    let touch: { x: number; y: number } | null = null;
+    viewer.addEventListener('touchstart', (event) => { touch = { x: event.touches[0].clientX, y: event.touches[0].clientY }; }, { passive: true });
+    viewer.addEventListener('touchend', (event) => {
+      if (!touch || photos.length < 2) return;
+      const dx = event.changedTouches[0].clientX - touch.x;
+      const dy = event.changedTouches[0].clientY - touch.y;
+      touch = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
     });
     viewer.addEventListener('close', () => opener?.focus({ preventScroll: true }));
   }
@@ -68,37 +108,54 @@
   html:has(.mx-photo-viewer[open]) { overflow: hidden; }
   .mx-photo-viewer {
     position: fixed;
-    inset: 16px;
-    width: min(1200px, calc(100vw - 32px));
-    height: min(900px, calc(100svh - 32px));
+    inset: 0;
+    width: 100vw;
+    height: 100svh;
     max-width: none;
     max-height: none;
-    margin: auto;
-    padding: 18px;
-    border: 3px solid var(--white);
-    border-radius: 16px;
-    background: var(--ink);
+    margin: 0;
+    padding: 72px 96px 32px;
+    border: 0;
+    background: transparent;
     color: var(--white);
-    box-shadow: 8px 8px 0 #0006;
+    overflow: hidden;
   }
-  .mx-photo-viewer::backdrop { background: #131a22d9; backdrop-filter: blur(5px); }
-  .mx-photo-viewer__bar { display: flex; gap: 20px; align-items: center; margin-bottom: 16px; }
-  .mx-photo-viewer__bar .mx-label { font-size: 24px; }
-  .mx-photo-viewer__count { margin-left: auto; font: 15px/1 var(--font-sans); white-space: nowrap; }
-  .mx-photo-viewer button { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; padding: 0; border: 2px solid var(--white); border-radius: 8px; background: transparent; color: var(--white); font: 32px/1 var(--font-display); }
-  .mx-photo-viewer button:hover { background: var(--white); color: var(--ink); }
-  .mx-photo-viewer button:active { scale: .95; }
-  .mx-photo-viewer button[hidden] { visibility: hidden; display: grid; }
-  .mx-photo-viewer__stage { height: calc(100% - 60px); display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 16px; align-items: center; }
-  .mx-photo-viewer figure { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 16px; height: 100%; min-height: 0; }
-  .mx-photo-viewer img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
-  .mx-photo-viewer figcaption { text-align: center; font: 20px/1.3 var(--font-display); }
-  @media (max-width: 600px) {
-    .mx-photo-viewer { inset: 8px; width: calc(100vw - 16px); height: calc(100svh - 16px); padding: 12px; }
-    .mx-photo-viewer__bar { gap: 10px; }
-    .mx-photo-viewer__bar .mx-label { font-size: 20px; }
-    .mx-photo-viewer__stage { grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 6px; }
-    .mx-photo-viewer__arrow { width: 36px !important; }
-    .mx-photo-viewer figcaption { font-size: 18px; }
+  .mx-photo-viewer[open] { display: grid; place-items: center; animation: mx-viewer-in .2s ease; }
+  .mx-photo-viewer::backdrop { background: rgba(19, 26, 34, .96); backdrop-filter: blur(6px); }
+  @keyframes mx-viewer-in { from { opacity: 0; } }
+
+  .mx-photo-viewer__figure { display: grid; justify-items: center; gap: 22px; margin: 0; max-width: 100%; max-height: 100%; transition: opacity .14s ease, translate .14s ease; }
+  .mx-photo-viewer__figure[data-leaving='left'] { opacity: 0; translate: -24px 0; }
+  .mx-photo-viewer__figure[data-leaving='right'] { opacity: 0; translate: 24px 0; }
+  .mx-photo-viewer__figure[data-entering='left'] { opacity: 0; translate: -24px 0; transition: none; }
+  .mx-photo-viewer__figure[data-entering='right'] { opacity: 0; translate: 24px 0; transition: none; }
+  .mx-photo-viewer__frame { position: relative; isolation: isolate; line-height: 0; }
+  .mx-photo-viewer__frame::before { content: ''; position: absolute; z-index: -1; inset: 0; background: var(--accent); translate: 14px 14px; }
+  .mx-photo-viewer img { display: block; max-width: min(1280px, calc(100vw - 220px)); max-height: calc(100svh - 190px); width: auto; height: auto; }
+  .mx-photo-viewer figcaption { display: flex; justify-content: center; align-items: baseline; gap: 16px; max-width: 70ch; padding-left: 14px; font: 22px/1.25 var(--font-display); text-align: center; }
+  .mx-photo-viewer__count { font: 14px/1 var(--font-sans); color: var(--on-dark-meta); white-space: nowrap; }
+
+  .mx-photo-viewer__btn { position: absolute; display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border: 2px solid var(--ink); border-radius: 50%; background: var(--white); color: var(--ink); cursor: pointer; box-shadow: 0 4px 0 var(--ink); transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease; }
+  .mx-photo-viewer__btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .mx-photo-viewer__btn[hidden] { display: none; }
+  @media (hover: hover) { .mx-photo-viewer__btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); background: var(--accent); } }
+  .mx-photo-viewer__btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .mx-photo-viewer__btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .mx-photo-viewer__close { top: 18px; right: 18px; }
+  .mx-photo-viewer__arrow { top: 50%; margin-top: -26px; }
+  .mx-photo-viewer__arrow--prev { left: 24px; }
+  .mx-photo-viewer__arrow--next { right: 24px; }
+  @media (prefers-reduced-motion: reduce) { .mx-photo-viewer[open], .mx-photo-viewer__figure { animation: none; transition: none; } }
+
+  @media (max-width: 700px) {
+    .mx-photo-viewer { padding: 76px 16px 96px; }
+    .mx-photo-viewer img { max-width: calc(100vw - 46px); max-height: calc(100svh - 230px); }
+    .mx-photo-viewer__frame::before { translate: 8px 8px; }
+    .mx-photo-viewer figcaption { flex-direction: column; align-items: center; gap: 6px; font-size: 19px; padding-left: 0; }
+    .mx-photo-viewer__close { top: 14px; right: 14px; width: 46px; height: 46px; }
+    /* Arrows move below the photo, within thumb reach. */
+    .mx-photo-viewer__arrow { top: auto; bottom: 22px; margin-top: 0; width: 46px; height: 46px; }
+    .mx-photo-viewer__arrow--prev { left: calc(50% - 58px); }
+    .mx-photo-viewer__arrow--next { right: calc(50% - 58px); }
   }
 </style>

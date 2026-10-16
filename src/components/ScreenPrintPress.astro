@@ -1,0 +1,37 @@
+---
+/**
+ * A small 3D screen-printing press as a playful aside (three.js, loaded when
+ * it scrolls near). Tap to step through a print, or drag the handle/squeegee.
+ */
+import { icons } from '../data/icons';
+const logo = icons.xmark;
+---
+
+<figure class="screen-print" data-screen-print data-state="open" data-logo-path={logo.paths[0].d} data-logo-box={logo.viewBox}>
+  <div class="screen-print__stage" data-print-stage tabindex="0" role="button" aria-label="Siebdruckpresse: nächster Schritt"></div>
+  <figcaption data-print-instruction role="status" aria-live="polite">Klick auf die Presse: Sieb runter.</figcaption>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-screen-print]').forEach((root) => {
+    const start = () => import('../scripts/screen-print-press').then(({ initScreenPrint }) => initScreenPrint(root));
+    if (!('IntersectionObserver' in window)) { start(); return; }
+    const io = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      io.disconnect();
+      start();
+    }, { rootMargin: '400px 0px' });
+    io.observe(root);
+  });
+</script>
+
+<style>
+  .screen-print { margin: 0; width: 100%; }
+  .screen-print__stage { position: relative; aspect-ratio: 1; touch-action: pan-y; border-radius: var(--radius-lg); }
+  .screen-print__stage:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 4px; }
+  .screen-print__stage :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .4s ease; }
+  .screen-print[data-ready] .screen-print__stage :global(canvas) { opacity: 1; }
+  .screen-print[data-dragging] .screen-print__stage { touch-action: none; }
+  .screen-print[data-fallback] { display: none; }
+  .screen-print figcaption { margin-top: -8px; text-align: center; font: 20px/1.2 var(--font-display); color: var(--accent-strong); }
+</style>

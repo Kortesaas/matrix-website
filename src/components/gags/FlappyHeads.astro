@@ -1,0 +1,199 @@
+---
+/**
+ * Chill-Lounge: a tiny Flappy Bird clone flown by the MatriX team. Every new
+ * round brings the next head. Tap, click or press space to flap.
+ */
+import { getImage } from 'astro:assets';
+import ralf from '../../assets/team/heads/ralf.png';
+import steve from '../../assets/team/heads/steve.png';
+import angi from '../../assets/team/heads/angi.png';
+import thomas from '../../assets/team/heads/thomas.png';
+import leonie from '../../assets/team/heads/leonie.png';
+import richy from '../../assets/team/heads/richy.png';
+
+// Cut-out heads, made from the team portraits (subject mask + face crop).
+const sources = { Ralf: ralf, Steve: steve, Angi: angi, Thomas: thomas, Leonie: leonie, Richy: richy };
+const heads = await Promise.all(Object.entries(sources).map(async ([name, src]) => ({
+  name,
+  src: (await getImage({ src, width: 128, height: 128, format: 'png' })).src,
+})));
+---
+
+<figure class="gag-flappy" data-flappy data-heads={JSON.stringify(heads)}>
+  <canvas tabindex="0" aria-label="Flappy MatriX: Klick, Tippen oder Leertaste zum Fliegen"></canvas>
+</figure>
+
+<script>
+  type Head = { name: string; src: string };
+  document.querySelectorAll<HTMLElement>('[data-flappy]').forEach((root) => {
+    const canvas = root.querySelector('canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const W = 320, H = 200, GROUND = 182, X = 84;
+    const GAP = 104, TUBE = 34, SPACING = 150, SPEED = 96, GRAVITY = 820, FLAP = -255, R = 15;
+    const ink = '#131A22';
+    // Each head gets a thick ink outline, like a sticker.
+    const heads = (JSON.parse(root.dataset.heads!) as Head[]).map(head => {
+      const sprite = document.createElement('canvas');
+      sprite.width = sprite.height = 140;
+      const img = new Image();
+      img.onload = () => {
+        const s = sprite.getContext('2d')!;
+        const tint = document.createElement('canvas');
+        tint.width = tint.height = 128;
+        const t = tint.getContext('2d')!;
+        t.drawImage(img, 0, 0, 128, 128);
+        t.globalCompositeOperation = 'source-in';
+        t.fillStyle = ink;
+        t.fillRect(0, 0, 128, 128);
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) s.drawImage(tint, 6 + Math.cos(a) * 5, 6 + Math.sin(a) * 5);
+        s.drawImage(img, 6, 6, 128, 128);
+        draw();
+      };
+      img.src = head.src;
+      return { ...head, sprite };
+    });
+
+    let state: 'ready' | 'play' | 'over' = 'ready';
+    let current = 0, y = 90, vy = 0, score = 0, best = 0, scroll = 0, last = 0, frame = 0, visible = false, shake = 0;
+    let tubes: { x: number; gap: number; passed: boolean }[] = [];
+    try { best = Number(localStorage.getItem('mx-flappy-best')) || 0; } catch {}
+
+    function resize() {
+      const ratio = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.round(canvas.clientWidth * ratio);
+      canvas.height = Math.round(canvas.clientWidth * H / W * ratio);
+      ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+      draw();
+    }
+    function reset() {
+      y = 90; vy = 0; score = 0;
+      tubes = [0, 1, 2].map(i => ({ x: W + 40 + i * SPACING, gap: randomGap(), passed: false }));
+    }
+    const randomGap = () => 30 + GAP / 2 + Math.random() * (GROUND - 30 - GAP);
+    function label(value: string, x: number, yy: number, size: number, fill = '#fff') {
+      ctx.font = `${size}px Boogaloo, "Arial Narrow", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = size / 5;
+      ctx.strokeStyle = ink;
+      ctx.strokeText(value, x, yy);
+      ctx.fillStyle = fill;
+      ctx.fillText(value, x, yy);
+    }
+    function tube(x: number, from: number, to: number, capAt: number) {
+      ctx.fillStyle = '#91D039';
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 2;
+      ctx.fillRect(x, from, TUBE, to - from);
+      ctx.strokeRect(x, from, TUBE, to - from);
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.fillRect(x + 5, from, 5, to - from);
+      ctx.fillStyle = '#91D039';
+      ctx.fillRect(x - 4, capAt, TUBE + 8, 12);
+      ctx.strokeRect(x - 4, capAt, TUBE + 8, 12);
+    }
+    function draw() {
+      ctx.save();
+      if (shake > 0) ctx.translate((Math.random() - .5) * shake * 6, (Math.random() - .5) * shake * 6);
+      ctx.fillStyle = '#BFE3F7';
+      ctx.fillRect(-10, -10, W + 20, H + 20);
+      // Two lazy clouds.
+      ctx.fillStyle = '#fff';
+      for (const [cx, cy] of [[60, 40], [230, 64]]) {
+        const x = ((cx - scroll * .2) % (W + 80) + W + 80) % (W + 80) - 40;
+        ctx.beginPath(); ctx.arc(x, cy, 12, 0, 7); ctx.arc(x + 14, cy - 6, 14, 0, 7); ctx.arc(x + 30, cy, 11, 0, 7); ctx.fill();
+      }
+      for (const t of tubes) {
+        tube(t.x, -4, t.gap - GAP / 2, t.gap - GAP / 2 - 12);
+        tube(t.x, t.gap + GAP / 2, GROUND, t.gap + GAP / 2);
+      }
+      ctx.fillStyle = '#E8C98A';
+      ctx.fillRect(0, GROUND, W, H - GROUND);
+      ctx.fillStyle = ink;
+      ctx.fillRect(0, GROUND, W, 2);
+      ctx.fillStyle = '#D4AE68';
+      for (let x = -(scroll % 14); x < W; x += 14) ctx.fillRect(x, GROUND + 6, 7, 3);
+
+      const head = heads[current];
+      ctx.save();
+      ctx.translate(X, y);
+      ctx.rotate(Math.max(-.45, Math.min(1.1, vy / 380)));
+      ctx.drawImage(head.sprite, -25, -25, 50, 50);
+      ctx.restore();
+
+      if (state === 'play' || state === 'over') label(String(score), W / 2, 36, 30);
+      if (state === 'ready') {
+        label(`${head.name} fliegt!`, W / 2, 62, 26);
+        label('Tippen zum Starten', W / 2, 140, 15);
+      }
+      if (state === 'over') {
+        label('Autsch!', W / 2, 84, 30, '#FA7C79');
+        label(`Rekord ${best} · Weiter mit ${heads[(current + 1) % heads.length].name}`, W / 2, 112, 14);
+      }
+      ctx.restore();
+    }
+    function step(time: number) {
+      const dt = Math.min(.033, (time - last) / 1000 || 0);
+      last = time;
+      shake = Math.max(0, shake - dt * 4);
+      if (state === 'play') {
+        vy += GRAVITY * dt;
+        y += vy * dt;
+        scroll += SPEED * dt;
+        for (const t of tubes) {
+          t.x -= SPEED * dt;
+          if (!t.passed && t.x + TUBE < X - R) { t.passed = true; score++; }
+          const nearestX = Math.max(t.x, Math.min(X, t.x + TUBE));
+          const inColumn = Math.abs(nearestX - X) < R;
+          if (inColumn && (y - R < t.gap - GAP / 2 || y + R > t.gap + GAP / 2)) crash();
+        }
+        if (tubes[0].x < -TUBE - 10) tubes.push({ ...tubes.shift()!, x: tubes[tubes.length - 1].x + SPACING, gap: randomGap(), passed: false });
+        if (y + R > GROUND) { y = GROUND - R; crash(); }
+        if (y < R) { y = R; vy = 0; }
+      } else if (state === 'ready') {
+        y = 90 + Math.sin(time / 240) * 5;
+        scroll += 30 * dt;
+      } else if (y + R < GROUND) {
+        // Fall to the ground after a crash.
+        vy += GRAVITY * dt;
+        y = Math.min(GROUND - R, y + vy * dt);
+      }
+      draw();
+      frame = visible ? requestAnimationFrame(step) : 0;
+    }
+    function crash() {
+      if (state !== 'play') return;
+      state = 'over';
+      shake = 1;
+      vy = Math.max(vy, 0);
+      if (score > best) {
+        best = score;
+        try { localStorage.setItem('mx-flappy-best', String(best)); } catch {}
+      }
+    }
+    function flap() {
+      if (state === 'ready') { reset(); state = 'play'; vy = FLAP; }
+      else if (state === 'play') vy = FLAP;
+      else { current = (current + 1) % heads.length; tubes = []; y = 90; state = 'ready'; }
+    }
+
+    canvas.addEventListener('pointerdown', (event) => { event.preventDefault(); canvas.focus({ preventScroll: true }); flap(); });
+    canvas.addEventListener('keydown', (event) => {
+      if (event.key !== ' ' && event.key !== 'ArrowUp' && event.key !== 'Enter') return;
+      event.preventDefault();
+      flap();
+    });
+    new ResizeObserver(resize).observe(canvas);
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && !frame) { last = performance.now(); frame = requestAnimationFrame(step); }
+    }).observe(root);
+    document.fonts.load('20px Boogaloo').then(draw).catch(() => {});
+  });
+</script>
+
+<style>
+  .gag-flappy { margin: 0; width: 100%; }
+  .gag-flappy canvas { display: block; width: 100%; aspect-ratio: 8 / 5; border: 2.5px solid var(--ink); border-radius: var(--radius-md); cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  .gag-flappy canvas:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 3px; }
+</style>

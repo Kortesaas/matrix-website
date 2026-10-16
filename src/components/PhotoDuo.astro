@@ -6,14 +6,16 @@ import PhotoFrame from './PhotoFrame.astro';
 interface Props {
   photos: [ImageMetadata, ImageMetadata];
   alt: string;
+  /** False when a containing link already provides the action. */
+  interactive?: boolean;
 }
 
-const { photos, alt } = Astro.props;
+const { photos, alt, interactive = true } = Astro.props;
 ---
 
 <div class="mx-photo-duo">
-  <PhotoFrame src={photos[0]} alt={alt} ratio="4/3" offset="tl" sizes="(max-width: 860px) 70vw, 400px" class="mx-photo-duo__a" />
-  <PhotoFrame src={photos[1]} alt={alt} ratio="1" offset="br" sizes="(max-width: 860px) 60vw, 350px" class="mx-photo-duo__b" />
+  <PhotoFrame src={photos[0]} alt={alt} ratio="4/3" offset="tl" sizes="(max-width: 860px) 70vw, 400px" class="mx-photo-duo__a" {interactive} />
+  <PhotoFrame src={photos[1]} alt={alt} ratio="1" offset="br" sizes="(max-width: 860px) 60vw, 350px" class="mx-photo-duo__b" {interactive} />
 </div>
 
 <style>

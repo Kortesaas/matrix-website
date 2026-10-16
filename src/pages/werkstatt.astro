@@ -1,56 +1,12 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import PhotoHero from '../components/PhotoHero.astro';
-import SectionHeading from '../components/SectionHeading.astro';
-import FeatureRow from '../components/FeatureRow.astro';
-import Squiggles from '../components/Squiggles.astro';
-import CtaBlock from '../components/CtaBlock.astro';
+import RoomPage from '../components/RoomPage.astro';
+import ScreenPrintPress from '../components/ScreenPrintPress.astro';
 import { workshopAreas } from '../data/workshop';
 import p3 from '../assets/photos/p3.jpg';
+
+const lead = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris eget ante non neque pellentesque tincidunt. Aliquam erat volutpat.';
 ---
 
-<BaseLayout
-  title="Werkstatt"
-  description="Siebdruck, Fahrrad, Elektrotechnik, Holz, 3D-Druck und Sprayen: Die Werkstatt der MatriX ist offen für alle. Vorwissen brauchst du keins."
-  accent="coral"
-  peeker="flame"
->
-  <PhotoHero image={p3} alt="Die Werkstatt der MatriX" title="Werkstatt" />
-
-  <section class="mx-section">
-    <Squiggles
-      items={[
-        { side: 'right', inset: '-40px', top: '22%' },
-        { side: 'left', inset: '-70px', top: '62%', rotate: 200 },
-      ]}
-    />
-    <div class="mx-container mx-layer">
-      <SectionHeading
-        title="Bauen, drucken, schrauben."
-        size="h1"
-        lead="Die Werkstatt ist offen für alle, die etwas mit den eigenen Händen machen wollen. Vorwissen brauchst du keins."
-      />
-      {
-        workshopAreas.map((area, i) => (
-          <FeatureRow
-            id={area.slug}
-            kicker={`Werkstatt · ${String(i + 1).padStart(2, '0')}`}
-            title={area.title}
-            text={area.text}
-            photos={area.photos}
-            alt={area.alt}
-            flip={i % 2 === 0}
-            offset={i % 2 === 0 ? 'tr' : 'br'}
-          />
-        ))
-      }
-    </div>
-  </section>
-
-  <CtaBlock
-    title="Du hast Bock oder eine eigene Idee?"
-    lead="Wir sind immer offen für neue Projekte. Komm vorbei und erzähl uns, was du bauen willst."
-    label="Mitmachen!"
-    href="/mitmachen/"
-  />
-</BaseLayout>
+<RoomPage title="Werkstatt" description="Entdecke die Werkstatt der MatriX: Siebdruck, Fahrrad, Elektrotechnik, Holz, 3D-Druck und Malen." accent="coral" peeker="flame" hero={p3} heroAlt="Die Werkstatt der MatriX mit Werkzeug, Materialregalen und großer Werkbank" heading="Platz für deine Ideen." {lead} sections={workshopAreas}>
+  <ScreenPrintPress slot="aside" />
+</RoomPage>

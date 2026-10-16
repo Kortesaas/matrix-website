@@ -18,47 +18,50 @@ export interface WorkshopArea {
   alt: string;
 }
 
-// Werkstatt detail page. Photos are placeholders.
+// The six activity sections follow the supplied Werkstatt reference.
+// Descriptions intentionally remain example copy until final text is available.
+export const workshopExampleText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris eget ante non neque pellentesque tincidunt. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae. Aliquam erat volutpat. Sed tempus, tortor sed facilisis sollicitudin, sapien purus efficitur nisl, eget finibus lacus neque sed velit.';
+
 export const workshopAreas: WorkshopArea[] = [
   {
     slug: 'siebdruck',
     title: 'Siebdruck',
-    text: 'Eigene Shirts, Beutel und Poster: Du lernst, Motive zu belichten, Farben zu mischen und sauber zu drucken. Bring deine Idee mit. Den Rest zeigen wir dir.',
+    text: workshopExampleText,
     photos: [r10, r20],
     alt: 'Siebdruck',
   },
   {
     slug: 'fahrrad',
     title: 'Fahrrad',
-    text: 'Platten, Kette, Bremsen: In der Selbsthilfe-Werkstatt reparierst du dein Rad selbst, mit Werkzeug, Ersatzteilen und jemandem, der dir hilft.',
+    text: workshopExampleText,
     photos: [r170],
     alt: 'Fahrradwerkstatt',
   },
   {
     slug: 'elektrotechnik',
     title: 'Elektrotechnik',
-    text: 'Löten, Schalten, Programmieren: Vom ersten Stromkreis bis zum kleinen Roboter lernst du hier, wie Technik funktioniert.',
+    text: workshopExampleText,
     photos: [r16],
     alt: 'Elektrotechnik',
   },
   {
     slug: 'holzbearbeitung',
     title: 'Holzbearbeitung',
-    text: 'Sägen, schleifen, bauen: An der Werkbank entsteht, was du dir vornimmst: Regale, Skateboard-Rampen oder Möbel aus Paletten.',
+    text: workshopExampleText,
     photos: [r86, r96],
     alt: 'Holzbearbeitung',
   },
   {
     slug: '3d-druck',
     title: '3D-Druck',
-    text: 'Vom Entwurf am Rechner zum fertigen Teil: Du lernst modellieren und druckst Ersatzteile, Figuren oder Prototypen.',
+    text: workshopExampleText,
     photos: [r155],
     alt: '3D-Drucker',
   },
   {
     slug: 'sprayen-malen',
     title: 'Sprayen & Malen',
-    text: 'Wand, Leinwand oder Skizzenbuch: Mit Dosen, Pinseln und Schablonen probierst du dich drinnen und draußen aus.',
+    text: workshopExampleText,
     photos: [r18, r90],
     alt: 'Sprayen und Malen',
   },

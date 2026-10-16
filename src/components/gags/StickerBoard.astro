@@ -1,0 +1,63 @@
+---
+/** Mädchenzimmer: tap the pinboard to stick a sticker on it. */
+import { graphics } from '../../data/graphics';
+const stickers = (['cat-hi', 'daisy-face', 'dino-wave', 'egg-hi', 'flame', 'flower-face', 'heart-bubble', 'sun-omg', 'star-pink', 'star-green', 'zigzag-yellow', 'bolt-yellow'] as const).map(name => graphics[name].src);
+const start = [
+  { src: graphics['heart-bubble'].src, x: 22, y: 30, r: -12 },
+  { src: graphics['daisy-face'].src, x: 72, y: 62, r: 9 },
+];
+---
+
+<figure class="gag-board" data-sticker-board data-stickers={JSON.stringify(stickers)}>
+  <div class="gag-board__surface" role="button" tabindex="0" aria-label="Sticker auf die Pinnwand kleben" data-board>
+        {start.map(s => <img src={s.src} alt="" style={`left:${s.x}%;top:${s.y}%;rotate:${s.r}deg`} draggable="false" />)}
+  </div>
+  <figcaption><span>Tipp auf die Pinnwand.</span><button type="button" data-clear>Aufräumen</button></figcaption>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-sticker-board]').forEach((root) => {
+    const board = root.querySelector<HTMLElement>('[data-board]')!;
+    const stickers: string[] = JSON.parse(root.dataset.stickers!);
+    let last = -1;
+    function stick(x: number, y: number) {
+      let pick = Math.floor(Math.random() * stickers.length);
+      if (pick === last) pick = (pick + 1) % stickers.length;
+      last = pick;
+      const img = document.createElement('img');
+      img.src = stickers[pick];
+      img.alt = '';
+      img.draggable = false;
+      img.className = 'is-new';
+      img.style.left = `${x}%`;
+      img.style.top = `${y}%`;
+      img.style.rotate = `${Math.round(Math.random() * 40 - 20)}deg`;
+      board.append(img);
+      // Keep the board from overflowing: the oldest stickers fall off.
+      const all = board.querySelectorAll('img');
+      if (all.length > 14) all[0].remove();
+    }
+    board.addEventListener('click', (event) => {
+      const rect = board.getBoundingClientRect();
+      stick((event.clientX - rect.left) / rect.width * 100, (event.clientY - rect.top) / rect.height * 100);
+    });
+    board.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      stick(15 + Math.random() * 70, 15 + Math.random() * 70);
+    });
+    root.querySelector('[data-clear]')!.addEventListener('click', () => board.querySelectorAll('img').forEach(img => img.remove()));
+  });
+</script>
+
+<style>
+  .gag-board { margin: 0; width: 100%; max-width: 480px; }
+  .gag-board__surface { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-lg); background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent-strong) 35%, transparent) 1.2px, transparent 1.6px) 0 0 / 16px 16px, color-mix(in srgb, var(--accent) 14%, var(--white)); cursor: copy; }
+  .gag-board__surface:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 4px; }
+  .gag-board__surface :global(img) { position: absolute; width: 26%; height: auto; translate: -50% -50%; pointer-events: none; }
+  .gag-board__surface :global(img.is-new) { animation: gag-board-stick .3s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes gag-board-stick { from { scale: 1.5; opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .gag-board__surface :global(img.is-new) { animation: none; } }
+  .gag-board figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; font: 19px/1.2 var(--font-display); color: var(--accent-strong); }
+  .gag-board button { border: 0; padding: 0; background: none; font: 13px var(--font-sans); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+</style>

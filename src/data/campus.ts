@@ -8,7 +8,6 @@ import werkstatt from '../assets/photos/p3.jpg';
 import maedchenzimmer from '../assets/photos/r29.jpg';
 import gruppenraum from '../assets/photos/r46.jpg';
 import tonstudio from '../assets/photos/r55.jpg';
-import bandraum from '../assets/photos/r74.jpg';
 
 /** Where a marker sits in the 3D model. */
 export type CampusAnchor =
@@ -33,7 +32,8 @@ export interface CampusRoom {
   link?: { label: string; href: string };
 }
 
-// Room identities follow the labeled floor plan; photos match the Räume page.
+// Room identities follow the labeled floor plan; titles match the room pages
+// (studio and band room share one marker, like they share one page).
 // Photos: @aboutusmedia.
 export const campusRooms: CampusRoom[] = [
   {
@@ -44,47 +44,38 @@ export const campusRooms: CampusRoom[] = [
     image: saal,
     alt: 'Der Saal mit Bühne',
     anchor: campusPlanRooms.saal.anchor,
-    link: { label: 'Zum Saal', href: '/raeume/#saal' },
+    link: { label: 'Zum Saal', href: '/saal/' },
   },
   {
     id: 'foyer',
-    title: 'Foyer',
+    title: 'Chill-Lounge',
     summary: 'Leute treffen, Billard spielen und gemeinsam chillen.',
     text: 'Ankommen, Leute treffen und zusammen Zeit verbringen. Mit Sofaecken, Billard und Kicker ist hier Platz für eine Pause oder eine kleine Spielrunde.',
     image: foyer,
     alt: 'Die Chill-Lounge im Foyer',
     anchor: campusPlanRooms.foyer.anchor,
-    link: { label: 'Zur Chill-Lounge', href: '/raeume/#chill-lounge' },
+    link: { label: 'Zur Chill-Lounge', href: '/chill-lounge/' },
   },
   {
     id: 'theke',
-    title: 'Theke',
+    title: 'Theke & Küche',
     summary: 'Dein Platz für Getränke und eine Pause mit Freunden.',
     text: 'Die lange Theke mitten im offenen Bereich. Ein Platz zum Zusammensitzen, Reden und für eine Pause zwischendurch.',
     image: theke,
     alt: 'Die lange Theke der X-Bar',
     anchor: campusPlanRooms.theke.anchor,
-    link: { label: 'Zu Theke & Küche', href: '/raeume/#theke-kueche' },
+    link: { label: 'Zu Theke & Küche', href: '/theke-kueche/' },
   },
   {
     id: 'tonstudio',
-    title: 'Tonstudio',
-    summary: 'Nimm deine Stimme, deinen Song oder deinen Podcast auf.',
-    text: 'Mikrofone, Mischpult und Aufnahmetechnik für deine eigenen Sounds. Das Tonstudio liegt direkt neben dem Bandraum.',
+    title: 'Studio & Band',
+    summary: 'Proben, aufnehmen und deinen eigenen Sound finden.',
+    text: 'Tonstudio mit Mischpult und Aufnahmetechnik, direkt daneben der Proberaum mit Schlagzeug für eure Band.',
     image: tonstudio,
     alt: 'Tonstudio mit Mischpult und Aufnahmetechnik',
-    anchor: campusPlanRooms.tonstudio.anchor,
-    link: { label: 'Zum Tonstudio', href: '/raeume/#studio-band' },
-  },
-  {
-    id: 'bandraum',
-    title: 'Bandraum',
-    summary: 'Zusammen proben und euren eigenen Sound finden.',
-    text: 'Ein eigener Proberaum mit Schlagzeug und Musiktechnik für eure Band und gemeinsame Sessions.',
-    image: bandraum,
-    alt: 'Bandraum mit Schlagzeug und Instrumenten',
-    anchor: campusPlanRooms.bandraum.anchor,
-    link: { label: 'Zum Bandraum', href: '/raeume/#studio-band' },
+    // Between the studio and the band room, which share this marker.
+    anchor: { plan: [1665, 150] },
+    link: { label: 'Zu Studio & Band', href: '/studio-band/' },
   },
   {
     id: 'gruppenraum',
@@ -93,8 +84,10 @@ export const campusRooms: CampusRoom[] = [
     text: 'Ein gemütlicher Raum für Gruppen, Workshops und Besprechungen mit Sofas und viel Tageslicht.',
     image: gruppenraum,
     alt: 'Der Gruppenraum mit Chesterfield-Sofas',
-    anchor: campusPlanRooms.gruppenraum.anchor,
-    link: { label: 'Zum Gruppenraum', href: '/raeume/#gruppenraum' },
+    // The three east rooms are staggered inside their rooms so their markers
+    // don't crowd each other in the 3D view.
+    anchor: { ...campusPlanRooms.gruppenraum.anchor, plan: [1760, 435] },
+    link: { label: 'Zum Gruppenraum', href: '/gruppenraum/' },
   },
   {
     id: 'werkstatt',
@@ -103,7 +96,7 @@ export const campusRooms: CampusRoom[] = [
     text: 'Werkbänke, Werkzeug und jede Menge Materialien. Hier dreht sich alles ums Ausprobieren, Bauen und kreative Ideen.',
     image: werkstatt,
     alt: 'Die Werkstatt mit Werkbänken und Regalen',
-    anchor: campusPlanRooms.werkstatt.anchor,
+    anchor: { ...campusPlanRooms.werkstatt.anchor, plan: [1640, 630] },
     link: { label: 'Zur Werkstatt', href: '/werkstatt/' },
   },
   {
@@ -113,8 +106,8 @@ export const campusRooms: CampusRoom[] = [
     text: 'Ein eigener Raum für Mädchen: zum Zusammensitzen, Basteln, Entspannen und für Projekte, die ihr selbst plant.',
     image: maedchenzimmer,
     alt: 'Das Mädchenzimmer mit Sofa und Fotowand',
-    anchor: campusPlanRooms.maedchenzimmer.anchor,
-    link: { label: 'Zum Mädchenzimmer', href: '/raeume/#maedchenzimmer' },
+    anchor: { ...campusPlanRooms.maedchenzimmer.anchor, plan: [1520, 815] },
+    link: { label: 'Zum Mädchenzimmer', href: '/maedchenzimmer/' },
   },
   {
     id: 'basketball',

@@ -1,0 +1,13 @@
+---
+import RoomPage from '../components/RoomPage.astro';
+import DrumPads from '../components/gags/DrumPads.astro';
+import { rooms } from '../data/rooms';
+import { roomPages } from '../data/room-pages';
+
+const room = rooms.find(r => r.slug === 'studio-band')!;
+const page = roomPages['studio-band'];
+---
+
+<RoomPage title={room.title} description="Tonstudio und Bandproberaum der MatriX: Mischpult, Turntables, Schlagzeug und Aufnahmeraum. Probier die Drumpads aus." accent={room.accent} peeker="daisy-face" hero={page.hero} heroAlt={page.heroAlt} heading="Mach mal lauter." lead={room.text.split('\n\n')[0]} sections={page.sections}>
+  <DrumPads slot="gag" />
+</RoomPage>

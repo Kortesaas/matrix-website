@@ -1,0 +1,102 @@
+---
+/** Studio & Band: four drum pads, synthesised in the browser (keys A S D F). */
+const pads = [
+  { sound: 'kick', label: 'Kick', key: 'A' },
+  { sound: 'snare', label: 'Snare', key: 'S' },
+  { sound: 'hat', label: 'Hi-Hat', key: 'D' },
+  { sound: 'clap', label: 'Clap', key: 'F' },
+];
+---
+
+<figure class="gag-pads" data-drum-pads>
+  <div class="gag-pads__grid" role="group" aria-label="Drumpads">
+    {pads.map(pad => <button type="button" data-sound={pad.sound} data-key={pad.key.toLowerCase()} aria-label={`${pad.label} spielen`}><span>{pad.label}</span><kbd>{pad.key}</kbd></button>)}
+  </div>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-drum-pads]').forEach((root) => {
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-sound]')];
+    let ctx: AudioContext | null = null;
+    let noise: AudioBuffer | null = null;
+
+    function audio() {
+      ctx ??= new AudioContext();
+      if (!noise) {
+        noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        const data = noise.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      }
+      return ctx;
+    }
+    function envelope(c: AudioContext, peak: number, decay: number, at = c.currentTime) {
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(peak, at);
+      gain.gain.exponentialRampToValueAtTime(.001, at + decay);
+      gain.connect(c.destination);
+      return gain;
+    }
+    function burst(c: AudioContext, type: BiquadFilterType, frequency: number, peak: number, decay: number, at = c.currentTime) {
+      const source = c.createBufferSource();
+      source.buffer = noise;
+      const filter = c.createBiquadFilter();
+      filter.type = type;
+      filter.frequency.value = frequency;
+      source.connect(filter).connect(envelope(c, peak, decay, at));
+      source.start(at);
+      source.stop(at + decay);
+    }
+    const sounds: Record<string, (c: AudioContext) => void> = {
+      kick(c) {
+        const osc = c.createOscillator();
+        osc.frequency.setValueAtTime(150, c.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, c.currentTime + .25);
+        osc.connect(envelope(c, 1, .4));
+        osc.start(); osc.stop(c.currentTime + .4);
+      },
+      snare(c) {
+        burst(c, 'highpass', 1200, .6, .2);
+        const osc = c.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = 190;
+        osc.connect(envelope(c, .4, .12));
+        osc.start(); osc.stop(c.currentTime + .12);
+      },
+      hat(c) { burst(c, 'highpass', 7000, .35, .06); },
+      clap(c) { [0, .012, .024].forEach(t => burst(c, 'bandpass', 1500, .7, .12, c.currentTime + t)); },
+    };
+    function hit(button: HTMLButtonElement) {
+      const c = audio();
+      if (c.state === 'suspended') c.resume();
+      sounds[button.dataset.sound!](c);
+      // Press down briefly, then spring back up.
+      button.classList.add('is-hit');
+      clearTimeout(Number(button.dataset.timer));
+      button.dataset.timer = String(setTimeout(() => button.classList.remove('is-hit'), 110));
+    }
+    buttons.forEach(button => button.addEventListener('pointerdown', (event) => { event.preventDefault(); hit(button); }));
+    buttons.forEach(button => button.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); hit(button); } }));
+    // Letter keys only while the pads are on screen and nothing else has focus.
+    let visible = false;
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(root);
+    window.addEventListener('keydown', (event) => {
+      if (!visible || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+      if ((event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+      const button = buttons.find(b => b.dataset.key === event.key.toLowerCase());
+      if (button) hit(button);
+    });
+  });
+</script>
+
+<style>
+  .gag-pads { margin: 0; width: 100%; max-width: 400px; }
+  .gag-pads__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .gag-pads button { position: relative; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; aspect-ratio: 1; padding: 10px 12px; border: 2.5px solid var(--ink); border-radius: var(--radius-md); background: var(--accent); color: var(--ink); font: 26px/1 var(--font-display); text-align: left; cursor: pointer; box-shadow: 0 4px 0 var(--ink); transition: translate .08s ease, box-shadow .08s ease; touch-action: manipulation; }
+  .gag-pads button:nth-child(2) { background: var(--yellow-500); }
+  .gag-pads button:nth-child(3) { background: var(--cyan-500); }
+  .gag-pads button:nth-child(4) { background: var(--green-500); }
+  .gag-pads button.is-hit { translate: 0 3px; box-shadow: 0 1px 0 var(--ink); }
+  .gag-pads kbd { align-self: flex-end; font: 12px/1 var(--font-sans); opacity: .6; }
+  .gag-pads button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 3px; }
+  @media (hover: none) { .gag-pads kbd { display: none; } }
+</style>

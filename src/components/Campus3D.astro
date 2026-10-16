@@ -13,6 +13,10 @@
 import Photo from './Photo.astro';
 import CourtIllustration from './CourtIllustration.astro';
 import { campusRooms } from '../data/campus';
+import { rooms } from '../data/rooms';
+
+// Each card takes the accent of the room page it links to.
+const accentFor = (href?: string) => rooms.find((room) => room.href === href)?.accent;
 ---
 
 <div class="mx-campus" data-campus>
@@ -29,6 +33,7 @@ import { campusRooms } from '../data/campus';
             data-room={room.id}
             data-anchor={JSON.stringify(room.anchor)}
             data-outdoor={room.outdoor ? 'true' : undefined}
+            data-href={room.link?.href}
             aria-label={`${room.title} entdecken`}
             aria-expanded="false"
             aria-controls={`mx-campus-card-${room.id}`}
@@ -72,7 +77,7 @@ import { campusRooms } from '../data/campus';
   <div class="mx-campus__cards">
     {
       campusRooms.map((room) => (
-        <div class="mx-mapcard" id={`mx-campus-card-${room.id}`} data-card={room.id} role="region" aria-label={room.title} hidden>
+        <div class="mx-mapcard" id={`mx-campus-card-${room.id}`} data-card={room.id} data-accent={accentFor(room.link?.href)} role="region" aria-label={room.title} hidden>
           <button class="mx-mapcard__close" type="button" data-card-close aria-label="Karte schließen">
             <span aria-hidden="true">×</span>
           </button>
@@ -317,7 +322,7 @@ import { campusRooms } from '../data/campus';
   }
   .mx-mapcard__close span { transform: translateY(1px); }
 
-  .mx-mapcard h3 { margin: 14px 8px 6px; color: var(--coral-600); }
+  .mx-mapcard h3 { margin: 14px 8px 6px; color: var(--accent-strong); }
   .mx-mapcard p { margin: 0 8px; font-size: 15px; line-height: 22px; }
   .mx-mapcard a { margin: 12px 8px 0; display: inline-block; }
 

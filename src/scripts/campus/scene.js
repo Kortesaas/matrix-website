@@ -303,7 +303,11 @@ export function mountCampus(root) {
     // Keyboard focus opens the full card. Pointer presses are handled by
     // click so moving focus during a tap does not open a second preview.
     let pressed = false;
-    on(m.button, "pointerdown", () => (pressed = true));
+    let pressType = "";
+    on(m.button, "pointerdown", (e) => {
+      pressed = true;
+      pressType = e.pointerType;
+    });
     on(m.button, "focus", () => {
       if (!pressed && !restoringFocus) {
         previewPointer = null;
@@ -317,6 +321,15 @@ export function mountCampus(root) {
     on(m.button, "click", (e) => {
       e.stopPropagation();
       pressed = false;
+      // With a mouse the hover preview already shows the room, so a click
+      // goes straight to its page. Touch and keyboard still pin the card.
+      const href = m.button.dataset.href;
+      const mouse = pressType === "mouse" || pressType === "pen";
+      pressType = "";
+      if (href && mouse && !phone.matches) {
+        window.location.href = href;
+        return;
+      }
       if (active === m && pinnedCard) close();
       else open(m, true);
     });
@@ -557,10 +570,18 @@ export function mountCampus(root) {
   resize();
   refreshDesired();
   root.dataset.state = "ready";
+  // A frame drawn while a cross-document view transition is still showing the
+  // old page snapshot can be lost (e.g. arriving via /#roomtour with the tour
+  // already in view). Render on demand would then never redraw, so redraw a
+  // few times while the page settles.
+  const settleTimers = [120, 400, 900, 1600].map((delay) => setTimeout(() => {
+    if (!raf && inView && !document.hidden) raf = requestAnimationFrame(frame);
+  }, delay));
 
   return {
     destroy() {
       cancelAnimationFrame(raf);
+      settleTimers.forEach(clearTimeout);
       clearTimeout(hoverTimer);
       cancelClose();
       resizeObserver.disconnect();

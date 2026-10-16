@@ -26,15 +26,14 @@ import { rooms } from '../data/rooms';
     />
     <div class="mx-container mx-layer">
       <SectionHeading
-        title="Komm rein in die heiligen Hallen."
+        title="So sieht’s bei uns aus."
         size="h1"
-        lead="Sieben Räume, ein Haus: Hier ist Platz zum Chillen, Bauen, Proben und Feiern."
+        lead="Bei uns ist Platz zum Chillen, Werken, Proben und Feiern."
       />
       {
         rooms.map((room, i) => (
           <FeatureRow
             id={room.slug}
-            kicker={`Raum ${String(i + 1).padStart(2, '0')}`}
             title={room.title}
             text={room.text}
             photos={room.photos}
@@ -42,6 +41,7 @@ import { rooms } from '../data/rooms';
             accent={room.accent}
             flip={i % 2 === 1}
             offset={i % 2 === 1 ? 'bl' : 'br'}
+            link={{ href: room.href, label: 'Raum entdecken' }}
           />
         ))
       }

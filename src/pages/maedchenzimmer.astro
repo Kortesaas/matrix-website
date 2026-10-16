@@ -1,0 +1,13 @@
+---
+import RoomPage from '../components/RoomPage.astro';
+import StickerBoard from '../components/gags/StickerBoard.astro';
+import { rooms } from '../data/rooms';
+import { roomPages } from '../data/room-pages';
+
+const room = rooms.find(r => r.slug === 'maedchenzimmer')!;
+const page = roomPages['maedchenzimmer'];
+---
+
+<RoomPage title={room.title} description="Das Mädchenzimmer der MatriX: ein Safe Space zum Quatschen, Kreativsein und Ausruhen." accent={room.accent} peeker="flower-face" hero={page.hero} heroAlt={page.heroAlt} heading="Euer Raum, eure Regeln." lead={room.text.split('\n\n')[0]} sections={page.sections}>
+  <StickerBoard slot="gag" />
+</RoomPage>

@@ -1,0 +1,10 @@
+---
+import RoomPage from '../components/RoomPage.astro';
+import { rooms } from '../data/rooms';
+import { roomPages } from '../data/room-pages';
+
+const room = rooms.find(r => r.slug === 'saal')!;
+const page = roomPages['saal'];
+---
+
+<RoomPage title={room.title} description="Der Saal der MatriX: Konzerte, Partys, Theater und Veranstaltungen mit Bühne und Technik." accent={room.accent} peeker="cat-hi" hero={page.hero} heroAlt={page.heroAlt} heading="Bühne frei für dich." lead={room.text.split('\n\n')[0]} sections={page.sections}></RoomPage>

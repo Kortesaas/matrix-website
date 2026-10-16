@@ -1,0 +1,139 @@
+---
+/**
+ * Gruppenraum: a whiteboard to scribble ideas for the MatriX of tomorrow.
+ * Drawings stay in this browser only; nothing is sent anywhere.
+ */
+const markers = [
+  { color: '#131A22', name: 'Schwarz' },
+  { color: '#2F8AD6', name: 'Blau' },
+  { color: '#E8524E', name: 'Rot' },
+  { color: '#5E9E12', name: 'Grün' },
+];
+---
+
+<figure class="gag-wb" data-whiteboard>
+  <div>
+    <canvas data-canvas aria-label="Whiteboard zum Zeichnen. Mit Maus, Finger oder Stift malen."></canvas>
+  </div>
+  <div class="gag-wb__tray" role="toolbar" aria-label="Stifte">
+    {markers.map((marker, i) => <button type="button" class="gag-wb__pen" data-color={marker.color} aria-pressed={i === 0 ? 'true' : 'false'} aria-label={`Stift ${marker.name}`} style={`--marker: ${marker.color}`}></button>)}
+    <button type="button" class="gag-wb__eraser" data-eraser aria-pressed="false" aria-label="Radierer"></button>
+    <button type="button" class="gag-wb__clear" data-clear>Alles wegwischen</button>
+  </div>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-whiteboard]').forEach((root) => {
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]')!;
+    const ctx = canvas.getContext('2d')!;
+    const markers = [...root.querySelectorAll<HTMLButtonElement>('[data-color]')];
+    const eraser = root.querySelector<HTMLButtonElement>('[data-eraser]')!;
+    let erasing = false;
+    const W = 600, H = 400;
+    const KEY = 'mx-whiteboard';
+    type Stroke = { color: string; size: number; points: [number, number][] };
+    let strokes: Stroke[] = [];
+    let current: Stroke | null = null;
+    let color = markers[0].dataset.color!;
+    try { strokes = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { strokes = []; }
+
+    function prompt() {
+      // Printed header and a few starter ideas to get going.
+      ctx.fillStyle = '#2F8AD6';
+      ctx.font = '38px Boogaloo, "Arial Narrow", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Ideen für die MatriX von morgen', 26, 50);
+      
+      ctx.fillStyle = '#131A22';
+      ctx.font = '26px Boogaloo, "Arial Narrow", sans-serif';
+      ctx.fillText('– Kino-Abend im Saal?', 30, 108);
+      ctx.fillText('– Graffiti-Workshop', 30, 142);
+    }
+    function line(stroke: Stroke) {
+      const pts = stroke.points;
+      if (!pts.length) return;
+      ctx.strokeStyle = stroke.color;
+      ctx.fillStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      if (pts.length === 1) { ctx.arc(pts[0][0], pts[0][1], stroke.size / 2, 0, Math.PI * 2); ctx.fill(); return; }
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+        ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+      }
+      ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      ctx.stroke();
+    }
+    function redraw() {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, W, H);
+      prompt();
+      strokes.forEach(line);
+      if (current) line(current);
+    }
+    function resize() {
+      const ratio = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.round(canvas.clientWidth * ratio);
+      canvas.height = Math.round(canvas.clientWidth * H / W * ratio);
+      ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+      redraw();
+    }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(strokes.slice(-400))); } catch {} }
+    const point = (event: PointerEvent): [number, number] => {
+      const rect = canvas.getBoundingClientRect();
+      return [Math.round((event.clientX - rect.left) / rect.width * W), Math.round((event.clientY - rect.top) / rect.height * H)];
+    };
+
+    canvas.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      canvas.setPointerCapture(event.pointerId);
+      // The eraser paints white with a wide tip.
+      current = erasing ? { color: '#fff', size: 30, points: [point(event)] } : { color, size: 4, points: [point(event)] };
+      redraw();
+    });
+    canvas.addEventListener('pointermove', (event) => {
+      if (!current) return;
+      current.points.push(point(event));
+      line(current);
+    });
+    const end = () => {
+      if (!current) return;
+      strokes.push(current);
+      current = null;
+      redraw();
+      save();
+    };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    function choose(button: HTMLButtonElement) {
+      [...markers, eraser].forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+      erasing = button === eraser;
+      if (!erasing) color = button.dataset.color!;
+      root.toggleAttribute('data-erasing', erasing);
+    }
+    markers.forEach(button => button.addEventListener('click', () => choose(button)));
+    eraser.addEventListener('click', () => choose(eraser));
+    root.querySelector('[data-clear]')!.addEventListener('click', () => { strokes = []; save(); redraw(); });
+
+    new ResizeObserver(resize).observe(canvas);
+    document.fonts.load('34px Boogaloo').then(redraw).catch(() => {});
+  });
+</script>
+
+<style>
+  .gag-wb { margin: 0; width: 100%; }
+  .gag-wb canvas { display: block; width: 100%; aspect-ratio: 3 / 2; border: 2.5px solid var(--ink); border-bottom-width: 7px; border-radius: 6px; background: var(--white); cursor: crosshair; touch-action: none; }
+  .gag-wb__tray { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .gag-wb__pen { width: 24px; height: 24px; padding: 0; border: 2px solid var(--ink); border-radius: 50%; background: var(--marker); cursor: pointer; transition: translate var(--motion-fast) ease; }
+  .gag-wb__pen[aria-pressed='true'] { translate: 0 -4px; box-shadow: 0 4px 0 -1px var(--ink); }
+  .gag-wb__pen:focus-visible, .gag-wb__eraser:focus-visible, .gag-wb__clear:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 3px; }
+  .gag-wb__eraser { width: 34px; height: 18px; margin-left: 8px; padding: 0; border: 2px solid var(--ink); border-radius: 4px; background: linear-gradient(var(--yellow-500) 0 55%, #3A3F48 55%); cursor: pointer; transition: translate var(--motion-fast) ease; }
+  .gag-wb__eraser[aria-pressed='true'] { translate: 0 -4px; box-shadow: 0 4px 0 -1px var(--ink); }
+  .gag-wb[data-erasing] canvas { cursor: cell; }
+  .gag-wb__clear { margin-left: auto; padding: 0; border: 0; background: none; font: 13px var(--font-sans); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+</style>
