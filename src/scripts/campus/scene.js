@@ -1,7 +1,7 @@
 // Die MatriX 3D diorama — mounts the scene into the Campus3D component.
 // Behaviour follows the supplied demo (hover cutaway, walls before roof,
 // bounded pointer camera, pinned cards); markers and cards are the site's own
-// markup, and every colour comes from the page (--accent, --accent-tint, --ink).
+// markup, and every colour comes from the page (--accent for the hue, --ink).
 import * as THREE from "three";
 import { createPointerCamera } from "./camera-motion.js";
 import { createModel } from "./model.js";
@@ -33,7 +33,8 @@ export function mountCampus(root) {
   // ---------- Renderer ----------
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    // Transparent canvas: the diorama sits directly on the page section.
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
   } catch {
     return null;
   }
@@ -52,7 +53,6 @@ export function mountCampus(root) {
   // ---------- Scene ----------
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-50, 50, 35, -35, 0.1, 300);
-  scene.background = new THREE.Color(read("--accent-tint", "#F6F3FF"));
   scene.add(new THREE.HemisphereLight("#ffffff", "#c0c0c0", 1.6));
   const sun = new THREE.DirectionalLight("#ffffff", 2.1);
   sun.position.set(-35, 60, 35);
@@ -280,12 +280,20 @@ export function mountCampus(root) {
       if (e.pointerType !== "touch" && !transitioning && (!pinnedCard || active === m)) open(m, false);
     });
     on(m.button, "pointerleave", scheduleClose);
-    on(m.button, "focus", () => open(m, false));
+    // Keyboard focus previews the card; a tap or click opens it via "click" instead
+    // (on phones the card is a bottom sheet that would otherwise catch the tap).
+    let pressed = false;
+    on(m.button, "pointerdown", () => (pressed = true));
+    on(m.button, "focus", () => {
+      if (!pressed) open(m, false);
+      pressed = false;
+    });
     on(m.button, "blur", (e) => {
       if (!m.card?.contains(e.relatedTarget)) scheduleClose();
     });
     on(m.button, "click", (e) => {
       e.stopPropagation();
+      pressed = false;
       if (active === m && pinnedCard) close();
       else open(m, true);
     });

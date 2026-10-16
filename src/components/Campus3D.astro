@@ -2,9 +2,10 @@
 /**
  * The landing page's 3D campus: a toon-rendered diorama of the MatriX
  * (src/scripts/campus) with the site's "+" markers and room cards.
- * Every colour comes from the page: the scene's hue from --accent, its ground
- * from --accent-tint, outlines from --ink — change the page accent and the
- * whole diorama follows.
+ * The diorama sits directly on its section (transparent canvas) and takes
+ * every colour from the page: the hue from --accent, outlines from --ink —
+ * change the page accent and the whole diorama follows. On touch screens a
+ * tapped marker opens the house as well.
  *
  * Three.js loads only when the section comes near the viewport. Without
  * WebGL (or JavaScript) a plain list of the rooms is shown instead.
@@ -81,14 +82,6 @@ import { campusRooms } from '../data/campus';
     </div>
   </div>
 
-  <div class="mx-campus__controls">
-    <div class="mx-campus__toggle" role="group" aria-label="Ansicht">
-      <button type="button" data-campus-mode="exterior" aria-pressed="true" title="Über das Haus fahren, um hineinzuschauen">Auto</button>
-      <button type="button" data-campus-mode="interior" aria-pressed="false" title="Innenansicht offen halten">Offen halten</button>
-    </div>
-    <p class="mx-campus__hint" data-campus-hint>Über das Haus fahren · Mit + entdecken</p>
-  </div>
-
   <noscript><style>.mx-campus__loading { display: none; } .mx-campus__fallback { display: flex; }</style></noscript>
 </div>
 
@@ -135,10 +128,6 @@ import { campusRooms } from '../data/campus';
   .mx-campus__panel {
     position: relative;
     height: clamp(460px, 54vw, 700px);
-    background: var(--accent-tint);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-press);
-    overflow: hidden;
   }
 
   .mx-campus__viewer {
@@ -160,7 +149,7 @@ import { campusRooms } from '../data/campus';
     place-items: center;
     margin: 0;
     font-size: var(--fs-small);
-    color: var(--ink-muted);
+    color: var(--white);
   }
   .mx-campus[data-state="ready"] .mx-campus__loading,
   .mx-campus[data-state="unsupported"] .mx-campus__loading { display: none; }
@@ -179,6 +168,8 @@ import { campusRooms } from '../data/campus';
     font-family: var(--font-display);
     font-size: var(--fs-label);
   }
+  .mx-campus__fallback,
+  .mx-campus__fallback .mx-link { color: var(--white); }
   .mx-campus[data-state="unsupported"] .mx-campus__fallback { display: flex; }
 
   .mx-campus__stems {
@@ -309,46 +300,9 @@ import { campusRooms } from '../data/campus';
   .mx-mapcard p { margin: 0 8px; font-size: 15px; line-height: 22px; }
   .mx-mapcard a { margin: 12px 8px 0; display: inline-block; }
 
-  /* ---------- Controls ---------- */
-  .mx-campus__controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3) var(--space-5);
-    margin-top: var(--space-6);
-    visibility: hidden;
-  }
-  .mx-campus[data-state="ready"] .mx-campus__controls { visibility: visible; }
-
-  .mx-campus__toggle {
-    display: flex;
-    gap: 4px;
-    padding: 4px;
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-press);
-  }
-  .mx-campus__toggle button {
-    border: 0;
-    border-radius: 16px;
-    padding: 9px 16px 7px;
-    background: none;
-    color: var(--ink);
-    font: var(--fs-label) / 1 var(--font-display);
-  }
-  .mx-campus__toggle button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
-
-  .mx-campus__hint {
-    margin: 0;
-    font-size: var(--fs-small);
-    color: var(--white);
-  }
-
   @media (max-width: 600px) {
     .mx-campus__panel { height: clamp(300px, 84vw, 420px); }
     .mx-hotspot { width: 34px; height: 34px; margin: -17px 0 0 -17px; font-size: 23px; box-shadow: 0 0 0 4px var(--hotspot-halo), 0 2px 0 var(--ink); }
-    .mx-campus__toggle button { font-size: 18px; padding: 8px 13px 6px; }
 
     /* The room card opens as a bottom sheet over the page. */
     .mx-mapcard {
