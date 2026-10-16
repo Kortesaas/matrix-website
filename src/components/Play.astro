@@ -239,15 +239,36 @@
     // Hero layers drift a little with the mouse.
     if (finePointer.matches) {
       document.querySelectorAll<HTMLElement>('.mx-hero').forEach((hero) => {
+        // One update per frame; the box is measured once per visit, not per event.
+        let box: DOMRect | null = null;
+        let px = 0;
+        let py = 0;
+        let frame = 0;
+        const apply = () => {
+          frame = 0;
+          hero.style.setProperty('--px', px.toFixed(3));
+          hero.style.setProperty('--py', py.toFixed(3));
+        };
+        hero.addEventListener('pointerenter', () => {
+          box = hero.getBoundingClientRect();
+          hero.classList.add('is-drifting');
+        });
         hero.addEventListener('pointermove', (event) => {
-          const box = hero.getBoundingClientRect();
-          hero.style.setProperty('--px', (((event.clientX - box.left) / box.width) * 2 - 1).toFixed(3));
-          hero.style.setProperty('--py', (((event.clientY - box.top) / box.height) * 2 - 1).toFixed(3));
+          if (event.pointerType !== 'mouse') return;
+          box ??= hero.getBoundingClientRect();
+          px = ((event.clientX - box.left) / box.width) * 2 - 1;
+          py = ((event.clientY - box.top) / box.height) * 2 - 1;
+          if (!frame) frame = requestAnimationFrame(apply);
         });
         hero.addEventListener('pointerleave', () => {
-          hero.style.setProperty('--px', '0');
-          hero.style.setProperty('--py', '0');
+          box = null;
+          px = 0;
+          py = 0;
+          if (!frame) frame = requestAnimationFrame(apply);
+          // Let the layers settle back before releasing their GPU layer.
+          window.setTimeout(() => hero.classList.remove('is-drifting'), 600);
         });
+        window.addEventListener('scroll', () => (box = null), { passive: true });
       });
     }
   }
@@ -390,6 +411,13 @@
     .mx-hero__mark {
       translate: calc(var(--px, 0) * 10px) calc(var(--py, 0) * 6px);
       transition: translate 0.5s ease-out;
+    }
+    /* While the mouse is over the hero its layers stay on the GPU, so the
+       grain-heavy artwork is drawn once instead of after every movement. */
+    .mx-hero.is-drifting .mx-hero__deco img,
+    .mx-hero.is-drifting .mx-hero__title,
+    .mx-hero.is-drifting .mx-hero__mark {
+      will-change: translate;
     }
   }
 

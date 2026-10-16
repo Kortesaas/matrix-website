@@ -1,6 +1,7 @@
 ---
 /**
- * Animated MatriX hand cursor for mouse users. Over anything clickable the
+ * Animated MatriX hand cursor for mouse users. Elsewhere the hand is the
+ * static system cursor from global.css (no lag); over anything clickable the
  * hand pokes left and three tap lines draw in at the fingertip; holding the
  * button pushes the poke all the way. Touch devices and pages without JS keep
  * the static CSS cursors from global.css.
@@ -50,6 +51,11 @@
     let x = 0;
     let y = 0;
     let frame = 0;
+    let visible = false;
+    let inside = false;
+    // Right after a page load the hand is drawn at the remembered spot until
+    // the mouse moves — so there is no flash of the system arrow.
+    let restoring = false;
 
     // Keep the cursor above modal dialogs (the mobile menu) via the top layer.
     const usesTopLayer = 'showPopover' in cursor;
@@ -73,21 +79,29 @@
       cursor.style.transform = `translate3d(${x - HOTSPOT}px, ${y - HOTSPOT}px, 0)`;
     };
 
-    const show = (visible) => {
-      cursor.classList.toggle('is-visible', visible);
-      root.classList.toggle('mx-has-cursor', visible);
+    // Hybrid cursor: while moving around, the hand is the real system cursor
+    // (the static image from global.css — drawn by the OS, no lag). Only where
+    // it animates — links, buttons, playable stickers — this drawn hand takes over.
+    const show = (next) => {
+      if (next === visible) return;
+      visible = next;
+      if (next) render();
+      cursor.classList.toggle('is-visible', next);
+      root.classList.toggle('mx-has-cursor', next);
     };
 
     const update = (target) => {
       const overText = !!(target && target.closest(TEXT));
       // Easter eggs: playable stickers give the hand their own state (Play.astro).
-      const play = target && target.closest('[data-play]');
-      const mode = play && !overText ? play.getAttribute('data-play') : '';
-      if (mode) cursor.dataset.mode = mode;
-      else delete cursor.dataset.mode;
-      const clickable = !!(target && target.closest(CLICKABLE)) || mode === 'spin';
-      cursor.classList.toggle('is-link', !overText && clickable);
-      show(!overText);
+      const play = !overText && target && target.closest('[data-play]');
+      const mode = play ? play.getAttribute('data-play') : '';
+      if ((cursor.dataset.mode || '') !== mode) {
+        if (mode) cursor.dataset.mode = mode;
+        else delete cursor.dataset.mode;
+      }
+      const clickable = !overText && (!!(target && target.closest(CLICKABLE)) || mode === 'spin');
+      cursor.classList.toggle('is-link', clickable);
+      show(clickable || !!mode || (restoring && !overText));
     };
 
     // Remember where the mouse was so the next page can draw the hand at once.
@@ -102,7 +116,7 @@
       if (last && Date.now() - last.t < FRESH_MS) {
         x = last.x;
         y = last.y;
-        render();
+        restoring = true;
         update(document.elementFromPoint(x, y));
       } else {
         root.classList.remove('mx-has-cursor');
@@ -115,19 +129,26 @@
       'pointermove',
       (event) => {
         if (event.pointerType === 'touch' || event.pointerType === 'pen') return show(false);
+        inside = true;
+        restoring = false;
         x = event.clientX;
         y = event.clientY;
-        if (!frame) frame = requestAnimationFrame(render);
         update(event.target instanceof Element ? event.target : null);
+        if (visible && !frame) frame = requestAnimationFrame(render);
       },
       { passive: true },
     );
 
-    // Scrolling moves new elements under a resting mouse.
+    // Scrolling moves new elements under a resting mouse (checked once per frame).
+    let scrollFrame = 0;
     window.addEventListener(
       'scroll',
       () => {
-        if (cursor.classList.contains('is-visible')) update(document.elementFromPoint(x, y));
+        if (!inside || scrollFrame) return;
+        scrollFrame = requestAnimationFrame(() => {
+          scrollFrame = 0;
+          update(document.elementFromPoint(x, y));
+        });
       },
       { passive: true },
     );
@@ -144,7 +165,9 @@
     // Hide only when the mouse really leaves the window. (Over the browser's
     // own scrollbar the system arrow always shows — that can't be styled.)
     document.addEventListener('mouseout', (event) => {
-      if (!event.relatedTarget) show(false);
+      if (event.relatedTarget) return;
+      inside = false;
+      show(false);
     });
   })();
 </script>
