@@ -1,0 +1,76 @@
+---
+/**
+ * Notice on the start page ("Wir haben geschlossen …"), switched on in the
+ * admin area. A sticker card at the top of the welcome band, above the title.
+ * Only rendered by PHP: this component holds the markup template and styles.
+ */
+import Dynamic from './php/Dynamic.astro';
+import PhpTemplate from './php/PhpTemplate.astro';
+---
+
+<Dynamic render="notice" />
+<PhpTemplate name="notice">
+  <aside class="mx-notice mx-notice--%%tone%%" aria-labelledby="mx-notice-title">
+    <span class="mx-notice__badge">%%label%%</span>
+    <div class="mx-notice__body">
+      <h2 class="mx-notice__title" id="mx-notice-title">%%title%%</h2>
+      <p class="mx-notice__text">%%!text%%</p>
+    </div>
+  </aside>
+</PhpTemplate>
+
+<style>
+  .mx-notice {
+    --badge: var(--yellow-500);
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-5);
+    max-width: 820px;
+    margin: 0 auto var(--space-8);
+    padding: var(--space-5) var(--space-6);
+    text-align: left;
+    border: 3px solid var(--ink);
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    rotate: -0.6deg;
+  }
+
+  .mx-notice--closed { --badge: var(--coral-500); }
+  .mx-notice--special { --badge: var(--cyan-500); }
+
+  .mx-notice__badge {
+    flex: none;
+    padding: 8px 14px 5px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-pill);
+    background: var(--badge);
+    font-family: var(--font-display);
+    font-size: var(--fs-label);
+    line-height: 1;
+    rotate: -4deg;
+  }
+
+  .mx-notice__body { min-width: 0; }
+
+  .mx-notice__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-h4);
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .mx-notice__text {
+    margin: var(--space-1) 0 0;
+    overflow-wrap: anywhere;
+  }
+  .mx-notice__text:empty { display: none; }
+
+  @media (max-width: 600px) {
+    .mx-notice { flex-direction: column; gap: var(--space-3); padding: var(--space-5); }
+  }
+</style>

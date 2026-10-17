@@ -1,0 +1,379 @@
+---
+/**
+ * The Pinnwand on Aktuelles: a cork board in a wooden frame. The left slot
+ * always holds the Monatsprogramm, the right side the event posters, each
+ * with a paper note for title and text. Posters keep the aspect ratio of the
+ * uploaded picture. A tap opens a poster large (PhotoViewer), a second tap
+ * zooms in to read the small print. Event posters disappear on their own
+ * after their "sichtbar bis" date. Only rendered by PHP: this component holds
+ * the markup templates and styles (see server/_app/render.php, flyers()).
+ */
+import Dynamic from './php/Dynamic.astro';
+import PhpTemplate from './php/PhpTemplate.astro';
+import SectionHeading from './SectionHeading.astro';
+
+const zoomIcon = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5M10.5 7.5v6M7.5 10.5h6" /></svg>';
+---
+
+<Dynamic render="flyers" />
+
+<script>
+  // Masonry for the Pinnwand: every item spans as many grid rows as it is
+  // tall, so posters fill the shortest column. Re-measured when sizes change
+  // (fonts, images, window width).
+  for (const board of document.querySelectorAll<HTMLElement>('[data-pinwall]')) {
+    const items = [...board.children] as HTMLElement[];
+    let frame = 0;
+    const pack = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const style = getComputedStyle(board);
+        board.classList.add('is-packed');
+        const row = parseFloat(style.gridAutoRows) || 4;
+        for (const item of items) {
+          const { marginTop, marginBottom } = getComputedStyle(item);
+          const outer = item.offsetHeight + (parseFloat(marginTop) || 0) + (parseFloat(marginBottom) || 0);
+          item.style.gridRowEnd = `span ${Math.ceil(outer / row)}`;
+        }
+      });
+    };
+    const observer = new ResizeObserver(pack);
+    for (const item of items) observer.observe(item);
+    observer.observe(board);
+    pack();
+  }
+</script>
+<PhpTemplate name="flyer-section">
+  <section class="mx-section mx-pinwall-section">
+    <div class="mx-container">
+      <SectionHeading title="Bei uns ist immer was los!" lead="Große Events und feste Termine jede Woche. Hier siehst du, was als Nächstes ansteht." />
+      <div class="mx-pinwall">
+        <ul class="mx-pinwall__board" data-photo-gallery data-pinwall aria-label="Monatsprogramm und Events">%%!program%%%%!items%%</ul>
+      </div>
+    </div>
+  </section>
+</PhpTemplate>
+
+<PhpTemplate name="flyer-program">
+  <li class="mx-poster mx-poster--program">
+    <span class="mx-poster__pin" aria-hidden="true"></span>
+    <button class="mx-poster__open" type="button" data-photo-open data-photo-zoom data-photo-src="%%full%%" data-photo-alt="Monatsprogramm %%month%%" aria-label="Monatsprogramm %%month%% groß ansehen">
+      <img src="%%src%%" srcset="%%srcset%%" sizes="(max-width: 860px) 90vw, 520px" alt="Monatsprogramm %%month%% der MatriX" width="%%width%%" height="%%height%%" loading="lazy" decoding="async" />
+      <span class="mx-poster__zoom" aria-hidden="true" set:html={zoomIcon} />
+    </button>
+    <div class="mx-poster__note">
+      <span class="mx-poster__badge">Monatsprogramm</span>
+      <h3 class="mx-poster__title">%%month%%</h3>
+    </div>
+  </li>
+</PhpTemplate>
+
+<PhpTemplate name="flyer-program-empty">
+  <li class="mx-poster mx-poster--program mx-poster--missing">
+    <div class="mx-poster__slot">
+      <div class="mx-poster__paper">
+        <span class="mx-poster__pin" aria-hidden="true"></span>
+        <span class="mx-poster__badge">Monatsprogramm</span>
+        <h3 class="mx-poster__title">%%month%%</h3>
+        <p class="mx-poster__text">Das neue Programm wird gerade gedruckt und hängt bald hier. Bis dahin stehen alle Termine im Kalender.</p>
+        <a class="mx-poster__link" href="#kalender">Zum Kalender</a>
+      </div>
+    </div>
+  </li>
+</PhpTemplate>
+
+<PhpTemplate name="flyer-card">
+  <li class="mx-poster">
+    <span class="mx-poster__pin" aria-hidden="true"></span>
+    <button class="mx-poster__open" type="button" data-photo-open data-photo-zoom data-photo-src="%%full%%" data-photo-alt="%%title%%" aria-label="Plakat groß ansehen: %%title%%">
+      <img src="%%src%%" srcset="%%srcset%%" sizes="(max-width: 600px) 86vw, (max-width: 860px) 44vw, 360px" alt="%%alt%%" width="%%width%%" height="%%height%%" loading="lazy" decoding="async" />
+      <span class="mx-poster__zoom" aria-hidden="true" set:html={zoomIcon} />
+    </button>
+    <div class="mx-poster__note">
+      <h3 class="mx-poster__title">%%title%%</h3>
+      <p class="mx-poster__when">%%when%%</p>
+      <p class="mx-poster__text">%%!text%%</p>
+    </div>
+  </li>
+</PhpTemplate>
+
+<PhpTemplate name="flyer-note">
+  <li class="mx-poster mx-poster--note">
+    <span class="mx-poster__pin" aria-hidden="true"></span>
+    <div class="mx-poster__paper">
+      <h3 class="mx-poster__title">%%title%%</h3>
+      <p class="mx-poster__when">%%when%%</p>
+      <p class="mx-poster__text">%%!text%%</p>
+    </div>
+  </li>
+</PhpTemplate>
+
+<PhpTemplate name="flyer-events-empty">
+  <li class="mx-poster mx-poster--note mx-poster--empty">
+    <span class="mx-poster__pin" aria-hidden="true"></span>
+    <div class="mx-poster__paper">
+      <h3 class="mx-poster__title">Hier ist noch Platz!</h3>
+      <p class="mx-poster__when">Neue Plakate kommen bald</p>
+      <p class="mx-poster__text">Gerade hängt kein Event-Plakat. Was trotzdem los ist, siehst du im Kalender. Und wenn du eine Idee für ein Event hast: Erzähl uns davon!</p>
+      <p class="mx-poster__links">
+        <a class="mx-poster__link" href="#kalender">Zum Kalender</a>
+        <a class="mx-poster__link" href="/mitmachen/">Idee einreichen</a>
+      </p>
+    </div>
+  </li>
+</PhpTemplate>
+
+<style>
+  /* ---------- Board ---------- */
+  .mx-pinwall {
+    --cork: #C99A63;
+    --cork-dark: #A97A45;
+    --cork-light: #DDB27F;
+    --wood: #7A4E2A;
+    --wood-dark: #5C3818;
+    position: relative;
+    padding: clamp(14px, 1.6vw, 22px);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--wood) 0%, var(--wood-dark) 100%);
+    box-shadow: 0 8px 0 var(--ink);
+  }
+
+  /* Cork with fine speckles. The posters sit in a masonry grid: each one
+     spans as many 4px rows as it is tall (set by the script above), so they
+     pack into the shortest column instead of leaving holes. */
+  .mx-pinwall__board {
+    --col-gap: clamp(24px, 3vw, 44px);
+    --row-gap: clamp(40px, 4vw, 52px);
+    display: grid;
+    /* The first column (Monatsprogramm) is a bit wider than the others. */
+    grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 4px;
+    grid-auto-flow: row dense;
+    column-gap: var(--col-gap);
+    align-items: start;
+    margin: 0;
+    padding: clamp(40px, 5vw, 64px) clamp(20px, 4vw, 52px) 0;
+    list-style: none;
+    border-radius: var(--radius-md);
+    background-color: var(--cork);
+    background-image:
+      radial-gradient(circle at 20% 30%, var(--cork-dark) 0 1.2px, transparent 1.6px),
+      radial-gradient(circle at 70% 65%, var(--cork-light) 0 1.4px, transparent 1.8px),
+      radial-gradient(circle at 45% 80%, var(--cork-dark) 0 0.9px, transparent 1.3px);
+    background-size: 13px 11px, 17px 19px, 9px 7px;
+    box-shadow: inset 0 0 0 3px rgba(19, 26, 34, 0.25), inset 0 10px 24px rgba(19, 26, 34, 0.28);
+  }
+  /* Without the script (or before it runs) items simply stack in rows. */
+  .mx-pinwall__board > * { margin-bottom: var(--row-gap); }
+  .mx-pinwall__board > .mx-poster--program { grid-column: 1; grid-row-start: 1; }
+  .mx-pinwall__board:not(.is-packed) { grid-auto-rows: auto; }
+
+
+  /* ---------- Poster ---------- */
+  .mx-poster {
+    --tilt: -1.6deg;
+    --pin: var(--accent);
+    position: relative;
+    min-width: 0;
+    rotate: var(--tilt);
+    transition: rotate var(--motion-slow) var(--ease-matrix), translate var(--motion-slow) var(--ease-matrix);
+  }
+  .mx-poster:nth-child(4n + 2) { --tilt: 1.2deg; --pin: var(--yellow-500); }
+  .mx-poster:nth-child(4n + 3) { --tilt: -0.6deg; --pin: var(--pink-500); }
+  .mx-poster:nth-child(4n + 4) { --tilt: 1.8deg; --pin: var(--cyan-500); }
+
+  /* Pinned by hand: event posters vary a little in size, offset and tilt
+     (a fixed pattern, so the board looks the same on every visit). */
+  .mx-poster:not(.mx-poster--program) { width: var(--w, 100%); justify-self: var(--align, center); margin-top: var(--drop, 0px); translate: var(--nudge, 0) 0; }
+  .mx-poster:nth-child(5n + 2) { --w: 94%; --align: end; --drop: 8px; }
+  .mx-poster:nth-child(5n + 3) { --w: 88%; --align: start; --drop: 28px; --nudge: 6px; --tilt: 2.2deg; }
+  .mx-poster:nth-child(5n + 4) { --w: 100%; --drop: 0px; --nudge: -4px; }
+  .mx-poster:nth-child(5n + 5) { --w: 90%; --align: center; --drop: 20px; --tilt: -2.4deg; }
+  .mx-poster:nth-child(5n + 1):not(:first-child) { --w: 92%; --align: start; --drop: 14px; --nudge: 8px; }
+
+  /* The Monatsprogramm: the big slot on the left, red pin, a bit straighter. */
+  .mx-poster--program { --tilt: -0.8deg; --pin: var(--coral-500); }
+  .mx-poster__badge {
+    display: inline-block;
+    margin-bottom: var(--space-2);
+    padding: 5px 12px 3px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1;
+    rotate: -3deg;
+  }
+  /* Fallbacks: an empty, dashed spot for the missing Monatsprogramm with a
+     note pinned in it, and a note when no event poster hangs. */
+  .mx-poster__slot {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 5;
+    padding: var(--space-6) var(--space-5);
+    border: 3px dashed rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .mx-poster__slot .mx-poster__paper { width: 100%; max-width: 360px; rotate: 1.4deg; }
+  .mx-poster--missing .mx-poster__pin { --pin: var(--coral-500); }
+  .mx-poster__paper .mx-poster__pin { top: -16px; }
+  .mx-poster__slot .mx-poster__title { font-size: clamp(28px, 2.4vw, 36px); line-height: 1.05; }
+  .mx-poster__slot .mx-poster__text { margin-top: var(--space-3); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
+  .mx-poster__links { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-4) 0 0; }
+  .mx-poster__link {
+    display: inline-block;
+    margin-top: var(--space-4);
+    font-family: var(--font-display);
+    font-size: 21px;
+    line-height: 1;
+    color: var(--accent-strong);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .mx-poster__links .mx-poster__link { margin-top: 0; }
+  .mx-poster__link::after { content: " ↓"; text-decoration: none; display: inline-block; margin-left: 4px; }
+  .mx-poster__link[href^="/"]::after { content: " →"; }
+  .mx-poster__link:hover { color: var(--ink); }
+
+  @media (hover: hover) {
+    .mx-poster:hover { rotate: 0deg; translate: 0 -6px; }
+  }
+
+  /* Push pin: a coloured head with a highlight and a short shadow on the paper. */
+  .mx-poster__pin {
+    position: absolute;
+    z-index: 3;
+    top: -14px;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.75) 0 4px, transparent 5px), var(--pin);
+    box-shadow: 3px 5px 0 rgba(19, 26, 34, 0.35);
+    pointer-events: none;
+  }
+
+  .mx-poster__open {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: var(--white);
+    line-height: 0;
+    box-shadow: 0 2px 0 rgba(19, 26, 34, 0.2), 6px 12px 22px rgba(19, 26, 34, 0.35);
+  }
+  .mx-poster__open img { display: block; width: 100%; height: auto; }
+  .mx-poster__open:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+
+  .mx-poster__zoom {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    translate: 0 6px;
+    transition: opacity var(--motion-slow), translate var(--motion-slow);
+  }
+  .mx-poster__zoom :global(svg) { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+  .mx-poster__open:is(:hover, :focus-visible) .mx-poster__zoom { opacity: 1; translate: 0 0; }
+  @media (hover: none) { .mx-poster__zoom { opacity: 1; translate: 0 0; } }
+
+  /* Paper note under the poster, taped on. */
+  .mx-poster__note {
+    position: relative;
+    width: 88%;
+    margin: 14px auto 0;
+    padding: var(--space-5) var(--space-5) var(--space-4);
+    background: var(--white);
+    box-shadow: 4px 6px 0 rgba(19, 26, 34, 0.25);
+    rotate: calc(var(--tilt) * -1.4);
+  }
+  .mx-poster__note::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 84px;
+    height: 24px;
+    margin-left: -42px;
+    background: color-mix(in srgb, var(--yellow-500) 55%, transparent);
+    rotate: -3deg;
+  }
+
+  .mx-poster__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-h4);
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .mx-poster__when {
+    margin: var(--space-1) 0 0;
+    font-family: var(--font-display);
+    font-size: 20px;
+    line-height: 1.15;
+    color: var(--accent-strong);
+  }
+  .mx-poster__when:empty { display: none; }
+
+  /* An event without a poster: a big lined note pinned straight onto the cork. */
+  .mx-poster__paper {
+    position: relative;
+    padding: var(--space-7) var(--space-6) var(--space-6) 52px;
+    background-color: var(--white);
+    background-image: repeating-linear-gradient(transparent 0 31px, color-mix(in srgb, var(--ink) 8%, transparent) 31px 32px);
+    background-position: 0 18px;
+    box-shadow: 0 2px 0 rgba(19, 26, 34, 0.2), 6px 12px 22px rgba(19, 26, 34, 0.3);
+  }
+  .mx-poster__paper::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 34px;
+    width: 2px;
+    background: color-mix(in srgb, var(--coral-500) 35%, transparent);
+  }
+  .mx-poster--note .mx-poster__title { font-size: clamp(28px, 2.4vw, 36px); line-height: 1.05; }
+  .mx-poster__title,
+  .mx-poster__when { overflow-wrap: break-word; }
+  .mx-poster__text { overflow-wrap: break-word; hyphens: auto; }
+  .mx-poster--note .mx-poster__when { margin-top: var(--space-3); font-size: var(--fs-label); }
+  .mx-poster--note .mx-poster__text { margin-top: var(--space-3); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
+
+  .mx-poster__text {
+    margin: var(--space-2) 0 0;
+    font-size: var(--fs-small);
+    line-height: var(--lh-small);
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+  .mx-poster__text:empty { display: none; }
+
+  @media (max-width: 1024px) {
+    .mx-pinwall__board { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .mx-pinwall__board { grid-template-columns: minmax(0, 1fr); }
+    .mx-poster:not(.mx-poster--program) { width: 100%; translate: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mx-poster,
+    .mx-poster__zoom { transition: none; }
+  }
+</style>

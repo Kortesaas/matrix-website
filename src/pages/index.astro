@@ -8,8 +8,8 @@ import SectionHeading from '../components/SectionHeading.astro';
 import EventList from '../components/EventList.astro';
 import PhotoFrame from '../components/PhotoFrame.astro';
 import Graphic from '../components/Graphic.astro';
+import HomeNotice from '../components/HomeNotice.astro';
 import { offers } from '../data/offers';
-import { eventColumns } from '../data/events';
 import p11 from '../assets/photos/p11.jpg';
 import teamGroup from '../assets/team/team-group.png';
 import { rooms } from '../data/rooms';
@@ -43,6 +43,7 @@ const chips = [
     </button>
     <Graphic name="flowers" class="home-welcome__flowers" />
     <div class="mx-container">
+      <HomeNotice />
       <div class="mx-welcome">
         <h1 class="mx-h1">
           <span class="mx-welcome__kicker">Willkommen im Jugendzentrum</span>
@@ -82,7 +83,7 @@ const chips = [
         title="Was geht zur Zeit?"
         lead="Bei uns ist immer was los, egal ob große Events oder unsere Day-to-Day-Aktivitäten."
       />
-      <EventList columns={eventColumns} />
+      <EventList />
       <div class="home-events__more">
         <Button href="/aktuelles/" variant="inverse">Alle Events anzeigen</Button>
       </div>

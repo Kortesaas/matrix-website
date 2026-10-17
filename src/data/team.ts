@@ -1,4 +1,5 @@
 import type { ImageMetadata } from 'astro';
+import type { UploadedPhoto } from '../components/Photo.astro';
 
 import ralf from '../assets/team/ralf.png';
 import steve from '../assets/team/steve.png';
@@ -14,8 +15,11 @@ export interface TeamMember {
   name: string;
   role: string;
   /** Square, shoulders-up portrait in front of the X mural. Missing → placeholder tile. */
-  portrait?: ImageMetadata;
+  portrait?: ImageMetadata | UploadedPhoto;
 }
+
+/** The "Bewirb dich jetzt!" card at the end of the FSJ group. */
+export const fsjOpening = { open: true, title: 'Bewirb dich jetzt!', text: 'Jeden September starten neue FSJler', href: '/mitmachen/#kontakt' } as const;
 
 export interface OpenPosition {
   open: true;
@@ -25,13 +29,17 @@ export interface OpenPosition {
 }
 
 export interface TeamGroup {
+  /** Stable key, also used by the admin area ("hauptamtliche", "fsj"). */
+  key: string;
   title: string;
   members: (TeamMember | OpenPosition)[];
 }
 
+// Seed data: the admin area starts from this list and edits it from then on.
 // Staff portraits supplied in the design handoff.
 export const teamGroups: TeamGroup[] = [
   {
+    key: 'hauptamtliche',
     title: 'Die Hauptamtlichen',
     members: [
       { name: 'Ralf Engelstätter', portrait: ralf, role: 'CEO' },
@@ -43,12 +51,13 @@ export const teamGroups: TeamGroup[] = [
     ],
   },
   {
+    key: 'fsj',
     title: 'Die FSJler',
     members: [
       { name: 'Nick Diehl', role: 'FSJler' },
-      { open: true, title: 'Bewirb dich jetzt!', text: 'Jeden September starten neue FSJler', href: '/mitmachen/#kontakt' },
       // TODO: surname missing in the concept.
       { name: 'Cash Money', role: 'FSJler' },
+      fsjOpening,
     ],
   },
 ];

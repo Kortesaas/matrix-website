@@ -5,7 +5,12 @@ import SectionHeading from '../components/SectionHeading.astro';
 import TeamCard from '../components/TeamCard.astro';
 import PhotoFrame from '../components/PhotoFrame.astro';
 import CtaBlock from '../components/CtaBlock.astro';
-import { teamGroups, groupPhotos } from '../data/team';
+import Dynamic from '../components/php/Dynamic.astro';
+import PhpTemplate from '../components/php/PhpTemplate.astro';
+import { teamGroups, groupPhotos, fsjOpening } from '../data/team';
+
+// Placeholders PHP fills for each person edited in the admin area.
+const slot = { name: '%%name%%', role: '%%role%%' };
 
 const [wide, ...pair] = groupPhotos;
 ---
@@ -31,13 +36,25 @@ const [wide, ...pair] = groupPhotos;
           <section class="team-group">
             <h2 class="mx-h2 team-group__title">{group.title}</h2>
             <div class="mx-team" data-photo-gallery>
-              {group.members.map((member) => (
-                <TeamCard member={member} />
-              ))}
+              <Dynamic render="team" arg={group.key}>
+                {group.members.map((member) => (
+                  <TeamCard member={member} />
+                ))}
+              </Dynamic>
             </div>
           </section>
         ))
       }
+
+      <PhpTemplate name="team-card-photo">
+        <TeamCard member={{ ...slot, portrait: { src: '%%src%%', srcset: '%%srcset%%' } }} firstName="%%first%%" />
+      </PhpTemplate>
+      <PhpTemplate name="team-card-placeholder">
+        <TeamCard member={slot} firstName="%%first%%" />
+      </PhpTemplate>
+      <PhpTemplate name="team-card-open">
+        <TeamCard member={fsjOpening} />
+      </PhpTemplate>
 
       {
         wide && (
@@ -64,7 +81,8 @@ const [wide, ...pair] = groupPhotos;
 </BaseLayout>
 
 <style>
-  .team-group + .team-group { margin-top: var(--space-10); }
+  /* ~ rather than +: the built page has a script between the groups. */
+  .team-group ~ .team-group { margin-top: var(--space-10); }
   .team-group__title { margin-bottom: var(--space-7); }
 
   .mx-team {
@@ -85,7 +103,7 @@ const [wide, ...pair] = groupPhotos;
   }
 
   @media (max-width: 860px) {
-    .team-group + .team-group { margin-top: var(--space-9); }
+    .team-group ~ .team-group { margin-top: var(--space-9); }
   }
 
   @media (max-width: 600px) {

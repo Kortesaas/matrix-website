@@ -15,7 +15,7 @@
   </button>
   <figure class="mx-photo-viewer__figure" data-photo-stage>
     <div class="mx-photo-viewer__frame"><img data-photo-image alt="" /></div>
-    <figcaption><span data-photo-caption></span><span class="mx-photo-viewer__count" data-photo-count></span></figcaption>
+    <figcaption><span data-photo-caption></span><span class="mx-photo-viewer__count" data-photo-count></span><span class="mx-photo-viewer__hint" data-photo-hint>Tippen zum Vergrößern</span></figcaption>
   </figure>
   <button type="button" class="mx-photo-viewer__btn mx-photo-viewer__arrow mx-photo-viewer__arrow--next" data-photo-next aria-label="Nächstes Foto">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
@@ -44,6 +44,9 @@
       current = (index + photos.length) % photos.length;
       const photo = photos[current];
       const swap = () => {
+        // Posters (data-photo-zoom) can be tapped to show them at reading size.
+        viewer.classList.remove('is-zoomed');
+        viewer.toggleAttribute('data-zoomable', photo.hasAttribute('data-photo-zoom'));
         image.src = photo.dataset.photoSrc ?? '';
         image.alt = photo.dataset.photoAlt ?? '';
         if (caption) caption.textContent = image.alt;
@@ -77,6 +80,12 @@
       show(photos.indexOf(trigger));
       viewer.showModal();
     });
+    image.addEventListener('click', () => {
+      if (!viewer.hasAttribute('data-zoomable')) return;
+      const zoomed = viewer.classList.toggle('is-zoomed');
+      viewer.scrollTop = 0;
+      viewer.scrollLeft = zoomed ? (viewer.scrollWidth - viewer.clientWidth) / 2 : 0;
+    });
     previous?.addEventListener('click', () => show(current - 1, -1));
     next?.addEventListener('click', () => show(current + 1, 1));
     viewer.querySelector('[data-photo-close]')?.addEventListener('click', () => viewer.close());
@@ -100,7 +109,10 @@
       touch = null;
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
     });
-    viewer.addEventListener('close', () => opener?.focus({ preventScroll: true }));
+    viewer.addEventListener('close', () => {
+      viewer.classList.remove('is-zoomed');
+      opener?.focus({ preventScroll: true });
+    });
   }
 </script>
 
@@ -134,6 +146,16 @@
   .mx-photo-viewer img { display: block; max-width: min(1280px, calc(100vw - 220px)); max-height: calc(100svh - 190px); width: auto; height: auto; }
   .mx-photo-viewer figcaption { display: flex; justify-content: center; align-items: baseline; gap: 16px; max-width: 70ch; padding-left: 14px; font: 22px/1.25 var(--font-display); text-align: center; }
   .mx-photo-viewer__count { font: 14px/1 var(--font-sans); color: var(--on-dark-meta); white-space: nowrap; }
+  .mx-photo-viewer__hint { display: none; font: 14px/1 var(--font-sans); color: var(--on-dark-meta); white-space: nowrap; }
+
+  /* Zoom for posters: tap the image to read the small print, tap again to fit. */
+  .mx-photo-viewer[data-zoomable] .mx-photo-viewer__hint { display: inline; }
+  .mx-photo-viewer[data-zoomable] img { cursor: zoom-in; }
+  .mx-photo-viewer.is-zoomed { overflow: auto; place-items: start; padding: 72px 24px 32px; }
+  .mx-photo-viewer.is-zoomed img { width: min(1600px, calc(100vw - 48px)); max-width: none; max-height: none; cursor: zoom-out; }
+  .mx-photo-viewer.is-zoomed .mx-photo-viewer__hint { display: none; }
+  .mx-photo-viewer.is-zoomed .mx-photo-viewer__btn:not(.mx-photo-viewer__close) { display: none; }
+  .mx-photo-viewer.is-zoomed .mx-photo-viewer__close { position: fixed; }
 
   .mx-photo-viewer__btn { position: absolute; display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border: 2px solid var(--ink); border-radius: 50%; background: var(--white); color: var(--ink); cursor: pointer; box-shadow: 0 4px 0 var(--ink); transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease; }
   .mx-photo-viewer__btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -150,6 +172,7 @@
   @media (max-width: 700px) {
     .mx-photo-viewer { padding: 76px 16px 96px; }
     .mx-photo-viewer img { max-width: calc(100vw - 46px); max-height: calc(100svh - 230px); }
+    .mx-photo-viewer.is-zoomed img { width: 190vw; }
     .mx-photo-viewer__frame::before { translate: 8px 8px; }
     .mx-photo-viewer figcaption { flex-direction: column; align-items: center; gap: 6px; font-size: 19px; padding-left: 0; }
     .mx-photo-viewer__close { top: 14px; right: 14px; width: 46px; height: 46px; }

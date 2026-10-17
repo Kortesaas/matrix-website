@@ -2,11 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import EventList from '../components/EventList.astro';
 import EventCalendar from '../components/EventCalendar.astro';
+import FlyerWall from '../components/FlyerWall.astro';
 import SocialLinks from '../components/SocialLinks.astro';
 import CtaBlock from '../components/CtaBlock.astro';
-import { buildDate, calendarEvents, calendarSubscribeUrl, eventColumns } from '../data/events';
+import { todayInKoenigsbrunn } from '../data/events';
 ---
 
 <BaseLayout
@@ -19,23 +19,15 @@ import { buildDate, calendarEvents, calendarSubscribeUrl, eventColumns } from '.
 >
   <PageHero deco="aktuelles-hero-deco" sticker="flower-face" stickerSide="right">Aktuelles</PageHero>
 
-  <section class="mx-section">
-    <div class="mx-container aktuelles-events">
-      <SectionHeading
-        title="Bei uns ist immer was los!"
-        lead="Große Events und feste Termine jede Woche. Hier siehst du, was als Nächstes ansteht."
-      />
-      <EventList columns={eventColumns} />
-    </div>
-  </section>
+  <FlyerWall />
 
   <section class="mx-section" id="kalender">
     <div class="mx-container aktuelles-events">
       <SectionHeading
-        title="Der Kalender"
+        title="MatriX Kalender"
         lead="Tipp auf einen Tag, um zu sehen, was dort läuft. Mit den Pfeilen blätterst du durch die Monate."
       />
-      <EventCalendar events={calendarEvents} today={buildDate} subscribeUrl={calendarSubscribeUrl} />
+      <EventCalendar today={todayInKoenigsbrunn()} />
     </div>
   </section>
 

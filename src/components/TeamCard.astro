@@ -11,9 +11,12 @@ import type { OpenPosition, TeamMember } from '../data/team';
 
 interface Props {
   member: TeamMember | OpenPosition;
+  /** For "Hi, ich bin …"; defaults to the first word of the name. */
+  firstName?: string;
 }
 
 const { member } = Astro.props;
+const firstName = Astro.props.firstName ?? ('name' in member ? member.name.split(' ')[0] : '');
 const isOpen = 'open' in member;
 ---
 
@@ -33,12 +36,12 @@ const isOpen = 'open' in member;
       {member.portrait ? (
         <div class="mx-person__portrait">
           <PhotoFrame src={member.portrait} alt={member.name} ratio="1" sizes="(max-width: 600px) 90vw, (max-width: 1024px) 45vw, 400px" />
-          <span class="mx-person__hello" aria-hidden="true">Hi, ich bin {member.name.split(' ')[0]}!</span>
+          <span class="mx-person__hello" aria-hidden="true">Hi, ich bin {firstName}!</span>
         </div>
       ) : (
         <div class="mx-person__tile" role="img" aria-label={`Foto von ${member.name} folgt`}>
           <div class="mx-person__face">
-            <span class="mx-person__hello" aria-hidden="true">Hi, ich bin {member.name.split(' ')[0]}!</span>
+            <span class="mx-person__hello" aria-hidden="true">Hi, ich bin {firstName}!</span>
             <span class="mx-person__spin" data-play="spin">
               <Icon name="xmark" class="mx-person__mark" />
             </span>

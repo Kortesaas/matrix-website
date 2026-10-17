@@ -1,9 +1,26 @@
-# Die MatriX — Apache settings for the static build (shared hosting).
-# Everything here is optional: if a module is missing the block is skipped.
+# Die MatriX — Apache settings for the built site (shared hosting, PHP 8.4).
+# Pages are PHP files; code and data folders are never served directly.
+# Everything else here is optional: if a module is missing the block is skipped.
 
 Options -Indexes
-DirectoryIndex index.html
-ErrorDocument 404 /404.html
+DirectoryIndex index.php index.html
+ErrorDocument 404 /404.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(_app|_data)(/|$) - [F,L]
+</IfModule>
+
+# Never serve hidden files, backups, archives or logs, should any land here.
+<FilesMatch "(^\.|\.(?i:bak|old|orig|swp|zip|tar|gz|sql|log|lock|ini|env|json\.php)$|~$)">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
 
 # Uncomment once HTTPS is active on the domain:
 # <IfModule mod_rewrite.c>
@@ -21,7 +38,7 @@ ErrorDocument 404 /404.html
 
 # Compress text formats — the hero and sticker SVGs shrink by ~70%.
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript text/javascript image/svg+xml application/json
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/calendar application/javascript text/javascript image/svg+xml application/json
 </IfModule>
 
 <IfModule mod_expires.c>

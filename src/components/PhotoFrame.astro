@@ -4,13 +4,13 @@
  * block offset by 12px (8px on phones). No rounded corners, no soft shadows.
  */
 import type { ImageMetadata } from 'astro';
-import Photo from './Photo.astro';
+import Photo, { type UploadedPhoto } from './Photo.astro';
 import type { Accent } from '../data/site';
 
 export type Offset = 'bl' | 'br' | 'tr' | 'tl';
 
 interface Props {
-  src: ImageMetadata;
+  src: ImageMetadata | UploadedPhoto;
   alt: string;
   sizes: string;
   /** Aspect ratio of the crop: 1, 4/3, 3/2, 16/9 … */

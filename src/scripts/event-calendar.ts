@@ -87,6 +87,11 @@ export function renderMonth(byDay: Map<string, CalendarEvent[]>, { month, today,
   return cells.join('');
 }
 
+/** Makes web addresses in an (already escaped) description clickable. */
+function linkify(escaped: string): string {
+  return escaped.replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a href="${url}" rel="noopener" target="_blank">${url}</a>`);
+}
+
 function timeLabel(ev: CalendarEvent, day: string): string {
   if (!ev.start) return 'ganztags';
   if (ev.endDate && day !== ev.date) return day === ev.endDate && ev.end ? `bis ${ev.end}` : 'ganztags';
@@ -97,7 +102,7 @@ function card(ev: CalendarEvent, day: string, showDate: boolean): string {
   const date = showDate ? `<span class="mx-cal__card-date">${esc(shortDay.format(asDate(day)))}</span>` : '';
   const meta = [ev.location, ev.weekly ? 'jede Woche' : undefined].filter(Boolean).map((t) => esc(t!)).join(' · ');
   const description = ev.description
-    ? `<p class="mx-cal__card-text">${esc(ev.description).replace(/\n/g, '<br>')}</p>`
+    ? `<p class="mx-cal__card-text">${linkify(esc(ev.description)).replace(/\n/g, '<br>')}</p>`
     : '';
   const link = ev.url ? `<a class="mx-cal__card-link" href="${esc(ev.url)}" rel="noopener" target="_blank">Mehr dazu</a>` : '';
   return (

@@ -1,0 +1,17 @@
+---
+/**
+ * Markup that PHP fills with edited content. Write the slot like any other
+ * Astro markup, with placeholders where values go:
+ *   %%name%%   text, HTML-escaped by PHP
+ *   %%!name%%  HTML that PHP has already built
+ * scripts/postbuild.mjs moves each template to dist/_app/templates/<name>.html,
+ * so scoped styles keep working on what PHP renders. Nothing shows in dev.
+ */
+interface Props {
+  name: string;
+}
+
+const { name } = Astro.props;
+---
+
+{!import.meta.env.DEV && <template data-php-template={name}><slot /></template>}

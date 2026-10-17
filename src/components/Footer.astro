@@ -7,6 +7,8 @@ import { Image } from 'astro:assets';
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 import Graphic from './Graphic.astro';
+import Dynamic from './php/Dynamic.astro';
+import PhpTemplate from './php/PhpTemplate.astro';
 import HeartBubble from '../../public/graphics/stickers/heart-bubble.svg';
 import type { GraphicName } from '../data/graphics';
 import { site, activeSocials } from '../data/site';
@@ -47,9 +49,12 @@ const year = new Date().getFullYear();
       <div>
         <h2 class="mx-footer__title">Öffnungszeiten</h2>
         <ul class="mx-footer__hours">
-          {site.hours.map((h) => (
-            <li><b>{h.days}</b>{h.time}</li>
-          ))}
+          <Dynamic render="hours">
+            {site.hours.map((h) => (
+              <li><b>{h.days}</b>{h.time}</li>
+            ))}
+          </Dynamic>
+          <PhpTemplate name="hours-item"><li><b>%%days%%</b>%%time%%</li></PhpTemplate>
         </ul>
       </div>
 

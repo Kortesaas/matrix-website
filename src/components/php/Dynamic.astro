@@ -1,0 +1,21 @@
+---
+/**
+ * Content the team edits in the admin area. The built page calls a PHP
+ * render function (server/_app/render.php) in this place; `astro dev`, which
+ * cannot run PHP, shows the slot instead, usually the seed data.
+ */
+interface Props {
+  /** Render function in server/_app/render.php, e.g. "hours". */
+  render: string;
+  /** Optional single argument, e.g. a team group key. */
+  arg?: string;
+}
+
+const { render, arg } = Astro.props;
+if (!/^[a-z_]+$/.test(render) || (arg !== undefined && !/^[a-z0-9_-]+$/.test(arg))) {
+  throw new Error(`Invalid PHP render call: ${render}(${arg ?? ''})`);
+}
+const call = `<?php \\Matrix\\Render\\${render}(${arg === undefined ? '' : `'${arg}'`}); ?>`;
+---
+
+{import.meta.env.DEV ? <slot /> : <Fragment set:html={call} />}
