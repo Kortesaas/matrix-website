@@ -50,6 +50,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         const choices = homeAccents.filter((colour) => colour !== previous);
         const colour = choices[Math.floor(Math.random() * choices.length)];
         document.documentElement.dataset.accent = colour;
+        document.documentElement.dataset.randomAccent = '';
         try { sessionStorage.setItem('mx-home-accent', colour); } catch {}
       }
       const pageAccent = document.documentElement.dataset.accent;

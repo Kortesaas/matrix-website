@@ -1,7 +1,8 @@
 ---
 /**
  * Floating white nav bar laid over every hero. Under 860px the links and CTA
- * collapse into the ink burger, which opens a full-screen purple sheet.
+ * collapse into the ink burger, which opens a full-screen purple sheet
+ * (on the start page it takes the randomly chosen page colour).
  */
 import Logo from './Logo.astro';
 import Button from './Button.astro';
@@ -96,6 +97,10 @@ const isCurrent = (key: string) => key === current;
   const closer = sheet?.querySelector<HTMLButtonElement>('[data-menu-close]');
 
   if (sheet && opener) {
+    // The start page picks a random colour per visit; the menu follows it.
+    const root = document.documentElement;
+    if (root.hasAttribute('data-random-accent') && root.dataset.accent) sheet.dataset.accent = root.dataset.accent;
+
     const setOpen = (open: boolean) => {
       opener.setAttribute('aria-expanded', String(open));
       document.documentElement.classList.toggle('mx-menu-open', open);
@@ -247,13 +252,16 @@ const isCurrent = (key: string) => key === current;
     margin: 0;
     padding: 0;
     border: 0;
-    background: var(--purple-500);
+    background: var(--accent);
     color: var(--white);
     overflow: hidden auto;
     overscroll-behavior: contain;
     pointer-events: auto;
   }
   .mx-sheet::backdrop { background: var(--purple-500); }
+  .mx-sheet[data-accent="blue"]::backdrop { background: var(--blue-500); }
+  .mx-sheet[data-accent="coral"]::backdrop { background: var(--coral-500); }
+  .mx-sheet[data-accent="green"]::backdrop { background: var(--green-500); }
 
   .mx-sheet[open] { animation: mx-sheet-in var(--motion-slow) var(--ease-matrix); }
 
