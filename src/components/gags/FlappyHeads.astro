@@ -56,7 +56,6 @@ const heads = await Promise.all(Object.entries(sources).map(async ([name, src]) 
     let state: 'ready' | 'play' | 'over' = 'ready';
     let current = 0, y = 90, vy = 0, score = 0, best = 0, scroll = 0, last = 0, frame = 0, visible = false, shake = 0;
     let tubes: { x: number; gap: number; passed: boolean }[] = [];
-    try { best = Number(localStorage.getItem('mx-flappy-best')) || 0; } catch {}
 
     function resize() {
       const ratio = Math.min(devicePixelRatio || 1, 2);
@@ -166,10 +165,8 @@ const heads = await Promise.all(Object.entries(sources).map(async ([name, src]) 
       state = 'over';
       shake = 1;
       vy = Math.max(vy, 0);
-      if (score > best) {
-        best = score;
-        try { localStorage.setItem('mx-flappy-best', String(best)); } catch {}
-      }
+      // The record lasts for this visit only; nothing is stored.
+      best = Math.max(best, score);
     }
     function flap() {
       if (state === 'ready') { reset(); state = 'play'; vy = FLAP; }

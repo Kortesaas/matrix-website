@@ -38,8 +38,6 @@
     const CLICKABLE = 'a[href], button:not(:disabled), [role="button"], summary, label[for], select';
     const TEXT = 'input:not([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]), textarea, [contenteditable]';
     const HOTSPOT = 10;
-    const STORE = 'mx-cursor';
-    const FRESH_MS = 10000;
 
     const cursor = document.querySelector('[data-cursor]');
     const root = document.documentElement;
@@ -53,9 +51,6 @@
     let frame = 0;
     let visible = false;
     let inside = false;
-    // Right after a page load the hand is drawn at the remembered spot until
-    // the mouse moves — so there is no flash of the system arrow.
-    let restoring = false;
 
     // Keep the cursor above modal dialogs (the mobile menu) via the top layer.
     const usesTopLayer = 'showPopover' in cursor;
@@ -101,36 +96,18 @@
       }
       const clickable = !overText && (!!(target && target.closest(CLICKABLE)) || mode === 'spin');
       cursor.classList.toggle('is-link', clickable);
-      show(clickable || !!mode || (restoring && !overText));
+      show(clickable || !!mode);
     };
 
-    // Remember where the mouse was so the next page can draw the hand at once.
-    const save = () => {
-      try {
-        sessionStorage.setItem(STORE, JSON.stringify({ x, y, t: Date.now() }));
-      } catch {}
-    };
-
-    try {
-      const last = JSON.parse(sessionStorage.getItem(STORE) || 'null');
-      if (last && Date.now() - last.t < FRESH_MS) {
-        x = last.x;
-        y = last.y;
-        restoring = true;
-        update(document.elementFromPoint(x, y));
-      } else {
-        root.classList.remove('mx-has-cursor');
-      }
-    } catch {
-      root.classList.remove('mx-has-cursor');
-    }
+    // Nothing is stored between pages (no browser storage, so no consent
+    // needed); the hand reappears with the first mouse move.
+    root.classList.remove('mx-has-cursor');
 
     document.addEventListener(
       'pointermove',
       (event) => {
         if (event.pointerType === 'touch' || event.pointerType === 'pen') return show(false);
         inside = true;
-        restoring = false;
         x = event.clientX;
         y = event.clientY;
         update(event.target instanceof Element ? event.target : null);
@@ -156,10 +133,8 @@
     document.addEventListener('pointerdown', (event) => {
       if (event.pointerType !== 'mouse') return;
       cursor.classList.add('is-down');
-      save();
     });
     document.addEventListener('pointerup', () => cursor.classList.remove('is-down'));
-    window.addEventListener('pagehide', save);
     // Back/forward cache: the page comes back as it was left, minus the press.
     window.addEventListener('pageshow', () => cursor.classList.remove('is-down'));
     // Hide only when the mouse really leaves the window. (Over the browser's

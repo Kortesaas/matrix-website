@@ -1,7 +1,7 @@
 ---
 /**
  * Gruppenraum: a whiteboard to scribble ideas for the MatriX of tomorrow.
- * Drawings stay in this browser only; nothing is sent anywhere.
+ * Drawings live only on the open page; nothing is stored or sent anywhere.
  */
 const markers = [
   { color: '#131A22', name: 'Schwarz' },
@@ -30,12 +30,10 @@ const markers = [
     const eraser = root.querySelector<HTMLButtonElement>('[data-eraser]')!;
     let erasing = false;
     const W = 600, H = 400;
-    const KEY = 'mx-whiteboard';
     type Stroke = { color: string; size: number; points: [number, number][] };
     let strokes: Stroke[] = [];
     let current: Stroke | null = null;
     let color = markers[0].dataset.color!;
-    try { strokes = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { strokes = []; }
 
     function prompt() {
       // Printed header and a few starter ideas to get going.
@@ -81,7 +79,6 @@ const markers = [
       ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
       redraw();
     }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(strokes.slice(-400))); } catch {} }
     const point = (event: PointerEvent): [number, number] => {
       const rect = canvas.getBoundingClientRect();
       return [Math.round((event.clientX - rect.left) / rect.width * W), Math.round((event.clientY - rect.top) / rect.height * H)];
@@ -105,7 +102,6 @@ const markers = [
       strokes.push(current);
       current = null;
       redraw();
-      save();
     };
     canvas.addEventListener('pointerup', end);
     canvas.addEventListener('pointercancel', end);
@@ -118,7 +114,7 @@ const markers = [
     }
     markers.forEach(button => button.addEventListener('click', () => choose(button)));
     eraser.addEventListener('click', () => choose(eraser));
-    root.querySelector('[data-clear]')!.addEventListener('click', () => { strokes = []; save(); redraw(); });
+    root.querySelector('[data-clear]')!.addEventListener('click', () => { strokes = []; redraw(); });
 
     new ResizeObserver(resize).observe(canvas);
     document.fonts.load('34px Boogaloo').then(redraw).catch(() => {});
