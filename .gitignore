@@ -14,7 +14,6 @@ npm-debug.log*
 # Environment
 .env
 .env.*
-!.env.example
 
 # OS / editor
 .DS_Store
@@ -22,3 +21,9 @@ npm-debug.log*
 !.vscode/extensions.json
 .idea/
 
+
+# Admin data and uploads from local PHP testing
+matrix-data/
+
+# Upload archives of the build
+*.zip
