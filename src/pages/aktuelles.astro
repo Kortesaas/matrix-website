@@ -3,9 +3,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import EventList from '../components/EventList.astro';
+import EventCalendar from '../components/EventCalendar.astro';
 import SocialLinks from '../components/SocialLinks.astro';
 import CtaBlock from '../components/CtaBlock.astro';
-import { eventColumns } from '../data/events';
+import { buildDate, calendarEvents, calendarSubscribeUrl, eventColumns } from '../data/events';
 ---
 
 <BaseLayout
@@ -25,6 +26,16 @@ import { eventColumns } from '../data/events';
         lead="Große Events und feste Termine jede Woche. Hier siehst du, was als Nächstes ansteht."
       />
       <EventList columns={eventColumns} />
+    </div>
+  </section>
+
+  <section class="mx-section" id="kalender">
+    <div class="mx-container aktuelles-events">
+      <SectionHeading
+        title="Der Kalender"
+        lead="Tipp auf einen Tag, um zu sehen, was dort läuft. Mit den Pfeilen blätterst du durch die Monate."
+      />
+      <EventCalendar events={calendarEvents} today={buildDate} subscribeUrl={calendarSubscribeUrl} />
     </div>
   </section>
 
