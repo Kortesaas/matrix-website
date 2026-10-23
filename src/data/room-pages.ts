@@ -54,7 +54,8 @@ export const roomPages = {
     heroAlt: 'Die X-Bar mit Theke und Getränkekühlschrank',
     sections: [
       { slug: 'x-bar', title: 'Die X-Bar', photos: [r118], alt: 'Die Kreidetafel mit Getränken und Preisen an der X-Bar' },
-      { slug: 'verleih', title: 'Verleih', photos: [r170], alt: 'Fahrräder und Roller zum Ausleihen' },
+      { slug: 'verleih', title: 'Verleih', photos: [r170], alt: 'Fahrräder und Roller zum Ausleihen', text: 'Du willst raus, hast aber gerade kein eigenes Board dabei? Bei uns kannst du dir BMX-Räder, Scooter und Skateboards ausleihen. Einen passenden Helm bekommst du gleich mit dazu, damit du sicher unterwegs bist. Frag einfach das Team an der X-Bar.' },
+      { slug: 'wasserspender', title: 'Wasser marsch!', text: 'Am Wasserspender an der X-Bar zapfst du dir dein Wasser, wie du es magst: eiskalt oder zimmerwarm, still, medium oder richtig spritzig. Probier’s hier schon mal aus: Halt eine Taste gedrückt und misch dir deinen eigenen Wasser-Mix.' },
     ],
   },
   maedchenzimmer: {

@@ -2,6 +2,7 @@
 import type { ImageMetadata } from 'astro';
 import Photo from './Photo.astro';
 import Graphic from './Graphic.astro';
+import ScrollCue from './ScrollCue.astro';
 
 interface Props {
   image: ImageMetadata;
@@ -9,9 +10,13 @@ interface Props {
   title?: string;
   position?: string;
   gallery?: { image: ImageMetadata; alt: string; label: string }[];
+  /** The "Noch 'nen Raum?" card (tap to see the next room) with its pause
+   *  button. Switched off for now: the photos change on their own and stop
+   *  with "Animationen aus". Pass roomCard to bring both back. */
+  roomCard?: boolean;
 }
 
-const { image, alt, title, position, gallery = [] } = Astro.props;
+const { image, alt, title, position, gallery = [], roomCard = false } = Astro.props;
 const landing = !title;
 const slides = [{ image, alt, label: 'Chill-Lounge' }, ...gallery];
 const interactive = landing && slides.length > 1;
@@ -39,19 +44,27 @@ const interactive = landing && slides.length > 1;
   )}
   {interactive && (
     <>
-      <button class="mx-hero__next" type="button" data-next-room aria-label="Nächstes Raumfoto anzeigen">
-        <span class="mx-hero__hint" aria-hidden="true">
-          <span class="mx-hero__room"><span data-room-name>Chill-Lounge</span><span data-room-count>01 / {String(slides.length).padStart(2, '0')}</span></span>
-          <span class="mx-hero__turn">Noch ’nen Raum? <svg viewBox="0 0 32 24" width="32" height="24" fill="none"><path d="M2 15c8 3 16 1 24-6M17 5l11 3-3 11" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        </span>
-      </button>
+      {roomCard && (
+        <button class="mx-hero__next" type="button" data-next-room aria-label="Nächstes Raumfoto anzeigen">
+          <span class="mx-hero__hint" aria-hidden="true">
+            <span class="mx-hero__room"><span data-room-name>Chill-Lounge</span><span data-room-count>01 / {String(slides.length).padStart(2, '0')}</span></span>
+            <span class="mx-hero__turn">Noch ’nen Raum? <svg viewBox="0 0 32 24" width="32" height="24" fill="none"><path d="M2 15c8 3 16 1 24-6M17 5l11 3-3 11" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </span>
+        </button>
+      )}
       <p class="mx-visually-hidden" role="status" data-gallery-status></p>
-      <button class="mx-hero__pause" type="button" data-gallery-pause aria-label="Automatischen Bildwechsel pausieren" aria-pressed="false"><span data-pause-icon aria-hidden="true">Ⅱ</span></button>
+      {roomCard && (
+        <button class="mx-hero__pause" type="button" data-gallery-pause aria-label="Automatischen Bildwechsel pausieren" aria-pressed="false"><span data-pause-icon aria-hidden="true">Ⅱ</span></button>
+      )}
     </>
   )}
+  <ScrollCue />
 </section>
 
 <script>
+  // How long each room photo stays before the next one fades in.
+  const SLIDE_MS = 5000;
+
   document.querySelectorAll<HTMLElement>('[data-room-gallery]').forEach((hero) => {
     const slides = [...hero.querySelectorAll<HTMLElement>('[data-slide]')];
     const button = hero.querySelector<HTMLButtonElement>('[data-next-room]');
@@ -73,7 +86,7 @@ const interactive = landing && slides.length > 1;
     const schedule = () => {
       clearTimeout(timer);
       if (paused || reduce.matches || !inView || document.hidden || hero.matches(':focus-within')) return;
-      timer = window.setTimeout(() => { void advance(true); }, 9000);
+      timer = window.setTimeout(() => { void advance(true); }, SLIDE_MS);
     };
     const advance = async (automatic = false) => {
       if (busy) return;
@@ -140,9 +153,6 @@ const interactive = landing && slides.length > 1;
       schedule();
     }, { threshold: [0, 0.4] });
     observer.observe(hero);
-    for (const event of ['pointermove', 'pointerdown', 'keydown', 'scroll']) {
-      window.addEventListener(event, schedule, { passive: true });
-    }
     hero.addEventListener('focusin', () => clearTimeout(timer));
     hero.addEventListener('focusout', () => { window.setTimeout(schedule, 0); });
     document.addEventListener('visibilitychange', schedule);
@@ -195,12 +205,12 @@ const interactive = landing && slides.length > 1;
   .mx-hero__next:focus-visible { outline: 4px solid var(--yellow-500); outline-offset: -8px; }
   .mx-hero__hint {
     position: absolute;
-    right: calc(var(--page-margin) + 60px);
+    right: var(--page-margin);
     bottom: 30px;
     display: grid;
     gap: 6px;
-    width: 244px;
-    padding: 12px 18px 10px;
+    width: 300px;
+    padding: 12px 74px 10px 18px;
     border: 2px solid var(--ink);
     border-radius: 8px 14px 9px 12px;
     background: var(--white);
@@ -220,11 +230,21 @@ const interactive = landing && slides.length > 1;
     .mx-hero__hint:hover .mx-hero__turn svg { animation: room-arrow .7s ease-in-out infinite alternate; }
   }
   @keyframes room-arrow { from { translate: 2px 0; } to { translate: 7px -2px; } }
+  /* Sits inside the room card's right end (it can't be in the card's button),
+     so the room switcher reads as one control. */
+  .mx-hero__hint::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    right: 62px;
+    border-left: 2px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+  }
   .mx-hero__pause {
     position: absolute;
     z-index: 5;
-    right: var(--page-margin);
-    bottom: 32px;
+    right: calc(var(--page-margin) + 12px);
+    bottom: 45px;
     display: grid;
     place-items: center;
     width: 40px;
@@ -234,14 +254,18 @@ const interactive = landing && slides.length > 1;
     border-radius: 50%;
     background: var(--white);
     color: var(--ink);
-    box-shadow: 3px 3px 0 var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
     font: bold 20px/1 var(--font-sans);
+    rotate: -2deg;
+    transition: translate .15s, box-shadow .15s;
   }
+  .mx-hero__pause:hover { translate: 0 -2px; box-shadow: 3px 4px 0 var(--ink); }
+  .mx-hero__pause:active { translate: 2px 2px; box-shadow: 0 0 0 var(--ink); }
+  .mx-hero__pause:focus-visible { outline: 3px solid var(--yellow-500); outline-offset: 3px; }
   @media (max-width: 860px) { .mx-hero { height: 560px; } }
   @media (max-width: 600px) {
     .mx-hero__hint { display: none; }
-    .mx-hero__pause { bottom: 20px; width: 36px; height: 36px; }
+    .mx-hero__pause { right: var(--page-margin); bottom: 20px; width: 36px; height: 36px; rotate: 0deg; }
   }
   @media (prefers-reduced-motion: reduce) { .mx-hero__hint { transition: none; } }
-  .mx-hero--landing { height: clamp(640px, 52vw, 860px); }
 </style>

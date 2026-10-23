@@ -11,7 +11,7 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 
-type Variant = 'primary' | 'outline' | 'inverse' | 'ink';
+type Variant = 'primary' | 'outline' | 'inverse' | 'ink' | 'light';
 
 interface BaseProps {
   variant?: Variant;
@@ -23,7 +23,7 @@ type LinkProps = BaseProps & Omit<HTMLAttributes<'a'>, 'class'> & { href: string
 type ButtonProps = BaseProps & Omit<HTMLAttributes<'button'>, 'class'> & { href?: undefined };
 type Props = LinkProps | ButtonProps;
 
-const { variant = 'primary', size = 'md', class: className, ...rest } = Astro.props;
+const { variant = 'primary', size = 'md', class: className, type, ...rest } = Astro.props as Props & { type?: string };
 const classes = ['mx-btn', `mx-btn--${variant}`, size === 'sm' && 'mx-btn--sm', className];
 ---
 
@@ -33,7 +33,7 @@ const classes = ['mx-btn', `mx-btn--${variant}`, size === 'sm' && 'mx-btn--sm', 
       <slot />
     </a>
   ) : (
-    <button class:list={classes} type="button" {...(rest as HTMLAttributes<'button'>)}>
+    <button class:list={classes} type={(type as HTMLAttributes<'button'>['type']) ?? 'button'} {...(rest as HTMLAttributes<'button'>)}>
       <slot />
     </button>
   )
@@ -108,6 +108,15 @@ const classes = ['mx-btn', `mx-btn--${variant}`, size === 'sm' && 'mx-btn--sm', 
     --btn-bg: var(--ink);
     --btn-fg: var(--white);
     --btn-shadow: var(--accent);
+  }
+
+  /* Solid white for coloured sections, where a see-through button gets lost. */
+  .mx-btn--light {
+    --btn-bg: var(--white);
+    --btn-fg: var(--ink);
+    --btn-shadow: var(--ink);
+    --btn-ring: var(--ink);
+    --btn-ring-width: var(--press-ring);
   }
 
   .mx-btn--sm {

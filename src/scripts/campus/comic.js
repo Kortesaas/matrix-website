@@ -651,25 +651,31 @@ export function createComicRenderer(renderer, scene, camera) {
   );
   const normalCache = new Map(),
     drawables = [];
-  scene.traverse((o) => {
-    if (!o.isMesh) return;
+  // Every mesh gets a normal-pass twin for the contours; meshes added later
+  // (a model loaded on demand) register through track().
+  const track = (root) => root.traverse((o) => {
+    if (!o.isMesh || drawables.some((d) => d.o === o)) return;
     const original = o.material;
+    // A mesh with one material per face (the Roadrunner's painted sides)
+    // takes its settings from the first one.
+    const base = Array.isArray(original) ? original[0] : original;
     let normal = normalCache.get(original);
     if (!normal) {
       normal = new THREE.ShaderMaterial({
         uniforms: {
-          tMap: { value: original.map || null },
-          hasMap: { value: !!original.map },
-          alpha: { value: original.opacity ?? 1 },
+          tMap: { value: base.map || null },
+          hasMap: { value: !!base.map },
+          alpha: { value: base.opacity ?? 1 },
         },
-        side: original.side,
+        side: base.side,
         vertexShader: `varying vec3 n; varying vec2 uv0; void main(){uv0=uv;n=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
         fragmentShader: `uniform sampler2D tMap;uniform bool hasMap;uniform float alpha;varying vec3 n;varying vec2 uv0;void main(){float a=alpha;if(hasMap)a*=texture2D(tMap,uv0).a;if(a<.22)discard;gl_FragColor=vec4(normalize(n)*.5+.5,1.);}`,
       });
       normalCache.set(original, normal);
     }
-    drawables.push({ o, original, normal });
+    drawables.push({ o, original, base, normal });
   });
+  track(scene);
   const shader = new THREE.ShaderMaterial({
     depthTest: false,
     depthWrite: false,
@@ -707,6 +713,7 @@ export function createComicRenderer(renderer, scene, camera) {
     setInk(enabled) {
       shader.uniforms.enabled.value = enabled;
     },
+    track,
     dispose() {
       colorTarget.dispose();
       normalTarget.depthTexture?.dispose();
@@ -721,8 +728,8 @@ export function createComicRenderer(renderer, scene, camera) {
       const bg = scene.background;
       renderer.getClearColor(clear);
       for (const d of drawables) {
-        d.normal.uniforms.tMap.value = d.original.map || null;
-        d.normal.uniforms.alpha.value = d.original.opacity ?? 1;
+        d.normal.uniforms.tMap.value = d.base.map || null;
+        d.normal.uniforms.alpha.value = d.base.opacity ?? 1;
         d.o.material = d.normal;
         if (d.o.userData.noInk) d.normal.visible = false;
       }

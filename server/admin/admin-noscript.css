@@ -1,0 +1,2 @@
+/* Loaded only without JavaScript: show what admin.js would reveal. */
+.board:not(.is-packed) .board__grid > * { visibility: visible; }

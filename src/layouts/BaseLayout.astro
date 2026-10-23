@@ -1,6 +1,8 @@
 ---
 import '../styles/global.css';
 import Header from '../components/Header.astro';
+import A11yMenu from '../components/A11yMenu.astro';
+import ScrollCue from '../components/ScrollCue.astro';
 import Footer, { type Peeker } from '../components/Footer.astro';
 import Cursor from '../components/Cursor.astro';
 import CursorTheme from '../components/CursorTheme.astro';
@@ -42,6 +44,48 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <meta name="theme-color" content={accentColours[accent]} />
     <CursorTheme />
+    <script is:inline>
+      // Photo placeholder (.mx-img in global.css): listen before any image
+      // loads. Loaded photos drop the X; failed ones get a see-through pixel
+      // instead of the broken-image icon, so the X stays (alt text is kept).
+      (() => {
+        const root = document.documentElement;
+        root.classList.add('mx-js');
+        const blank = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        const photo = (target) => target instanceof HTMLImageElement && target.classList.contains('mx-img');
+        document.addEventListener('load', (event) => {
+          const img = event.target;
+          if (photo(img) && !('failed' in img.dataset)) img.classList.add('is-loaded');
+        }, true);
+        document.addEventListener('error', (event) => {
+          const img = event.target;
+          if (!photo(img) || 'failed' in img.dataset) return;
+          img.dataset.failed = '';
+          img.classList.remove('is-loaded');
+          img.closest('picture')?.querySelectorAll('source').forEach((source) => source.remove());
+          img.removeAttribute('srcset');
+          img.src = blank;
+        }, true);
+      })();
+    </script>
+    <script is:inline>
+      // Accessibility settings (A11yMenu.astro), applied before the first paint.
+      // With "Animationen aus", scripts see prefers-reduced-motion: reduce too.
+      (() => {
+        let prefs = {};
+        try { prefs = JSON.parse(localStorage.getItem('mx-a11y') || '{}') || {}; } catch {}
+        const root = document.documentElement;
+        if (prefs.text === 'large' || prefs.text === 'larger') root.classList.add(`mx-a11y-text-${prefs.text}`);
+        for (const key of ['contrast', 'font', 'motion', 'cursor']) if (prefs[key]) root.classList.add(`mx-a11y-${key}`);
+        const native = window.matchMedia.bind(window);
+        window.matchMedia = (query) => {
+          const list = native(query);
+          if (!root.classList.contains('mx-a11y-motion') || !/prefers-reduced-motion/.test(query)) return list;
+          const matches = /reduce/.test(query);
+          return new Proxy(list, { get: (target, key) => (key === 'matches' ? matches : typeof target[key] === 'function' ? target[key].bind(target) : target[key]) });
+        };
+      })();
+    </script>
     <script is:inline define:vars={{ homeAccents, accentColours, randomAccent }}>
       // Set the theme during parsing so the first paint already has its colour.
       if (randomAccent) {
@@ -73,6 +117,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <a class="mx-skip" href="#inhalt">Zum Inhalt springen</a>
+    <!-- Floats bottom right; early in the DOM so keyboard users reach it right after the skip link. -->
+    <A11yMenu />
     <Header current={current} />
     <main id="inhalt" tabindex="-1">
       <slot />
@@ -81,6 +127,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <PhotoViewer />
     <Cursor />
     <Play />
+    <ScrollCue floating />
+    <!-- Dropdowns in the site's style (public/custom-select.js), only where a page has one. -->
+    <script is:inline type="module">
+      if (document.querySelector('select')) import('/custom-select.js');
+    </script>
   </body>
 </html>
 

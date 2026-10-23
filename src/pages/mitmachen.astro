@@ -5,7 +5,10 @@ import SectionHeading from '../components/SectionHeading.astro';
 import SocialLinks from '../components/SocialLinks.astro';
 import Graphic from '../components/Graphic.astro';
 import Photo from '../components/Photo.astro';
-import CtaBlock from '../components/CtaBlock.astro';
+import ContactForm from '../components/ContactForm.astro';
+import FeatureRow from '../components/FeatureRow.astro';
+import { fsjPage } from '../data/fsj';
+import groupOutdoors from '../assets/youth/group-outdoors.png';
 import { site } from '../data/site';
 import screenPhoto from '../assets/photos/p11.jpg';
 
@@ -28,7 +31,7 @@ const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
         size="h1"
         lead="Die MatriX lebt von Ideen und Engagement! Egal ob du eine Veranstaltung organisieren willst, kreative Ideen hast oder einfach neue Leute kennenlernen möchtest, hier bist du richtig!"
       >
-        <Fragment slot="title">Komm vorbei <span class="mx-tag-word">oder</span> schreib uns!</Fragment>
+        <Fragment slot="title">Komm vorbei oder schreib uns!</Fragment>
       </SectionHeading>
 
       <div class="why">
@@ -54,29 +57,54 @@ const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
     </div>
   </section>
 
-  <section class="mx-section" id="kontakt">
+  <section class="mx-section" id="fsj">
     <div class="mx-container">
-      <SectionHeading title="Hier findest du uns überall:" />
-      <SocialLinks />
-      <address class="contact">
-        <p>
-          <span>Telefon: <a href={site.phone.href}>{site.phone.display}</a></span>
-          <span>E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a></span>
-        </p>
-        <p>
-          {site.legalName}<br />
-          {site.address.street}, {site.address.zip} {site.address.city}
-        </p>
-      </address>
+      <FeatureRow
+        kicker="Freiwilliges Soziales Jahr"
+        title={fsjPage.teaser.title}
+        text={fsjPage.teaser.text}
+        photos={[groupOutdoors]}
+        alt="Jugendliche der MatriX gemeinsam im Außenbereich"
+        offset="bl"
+        facts={fsjPage.facts.map((fact) => fact.value)}
+        link={{ href: fsjPage.href, label: fsjPage.teaser.label }}
+      />
     </div>
   </section>
 
-  <CtaBlock
-    title="Schon eine Idee im Kopf?"
-    lead="Schreib uns einfach, was du vorhast, oder komm während der Öffnungszeiten vorbei und sprich uns direkt an."
-    label="Schreib uns!"
-    href={`mailto:${site.email}`}
-  />
+  <section class="mx-section" id="kontakt">
+    <div class="mx-container">
+      <SectionHeading title="Schreib uns!" lead="Fragen, Ideen, Lob oder Kritik: Schick uns eine Nachricht, wir lesen alles und melden uns bei dir." />
+      <div class="contact">
+        <ContactForm />
+        <aside class="contact__direct" aria-labelledby="contact-direct-title">
+          <h3 class="mx-h3" id="contact-direct-title">Lieber direkt?</h3>
+          <dl class="contact__list">
+            <div>
+              <dt>E-Mail</dt>
+              <dd><a class="contact__email" href={`mailto:${site.email}`}>{site.email}</a></dd>
+            </div>
+            <div>
+              <dt>Telefon</dt>
+              <dd><a href={site.phone.href}>{site.phone.display}</a></dd>
+            </div>
+            <div>
+              <dt>Adresse</dt>
+              <dd>
+                <address>
+                  {site.legalName}<br />
+                  {site.address.street}<br />
+                  {site.address.zip} {site.address.city}
+                </address>
+              </dd>
+            </div>
+          </dl>
+          <h4 class="contact__social-title">Hier findest du uns überall</h4>
+          <SocialLinks variant="list" />
+        </aside>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <script>
@@ -208,16 +236,36 @@ const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
 
   /* ---------- Contact ---------- */
   .contact {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: var(--space-7);
+    align-items: start;
     margin-top: var(--space-8);
-    font-style: normal;
-    text-align: center;
   }
-  .contact p { margin: 0; }
-  .contact p + p { margin-top: var(--space-4); }
-  .contact span { display: inline-block; margin: 0 var(--space-4); }
-  .contact a { color: var(--accent-strong); font-weight: 600; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .contact__direct {
+    padding: var(--space-6);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-lg);
+    background: var(--accent-tint);
+    box-shadow: var(--shadow-press);
+  }
+  .contact__direct h3 { margin: 0 0 var(--space-5); }
+  .contact__list { display: grid; gap: var(--space-4); margin: 0; }
+  .contact__list dt { font-size: var(--fs-small); font-weight: 600; color: var(--ink-muted); }
+  .contact__list dd { margin: 2px 0 0; }
+  .contact__list address { font-style: normal; }
+  .contact__direct a { color: var(--accent-strong); font-weight: 600; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .contact__direct .contact__email { font: var(--fs-h4)/1.1 var(--font-display); overflow-wrap: anywhere; }
+  .contact__social-title {
+    margin: var(--space-6) 0 var(--space-3);
+    padding-top: var(--space-5);
+    border-top: 2px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+    font: var(--fs-h4)/1.1 var(--font-display);
+  }
+  .contact__direct :global(.mx-social a) { color: var(--accent-strong); }
 
   @media (max-width: 860px) {
+    .contact { grid-template-columns: 1fr; gap: var(--space-8); }
     .why { display: flex; flex-direction: column-reverse; gap: var(--space-7); margin-top: var(--space-9); }
   }
 </style>

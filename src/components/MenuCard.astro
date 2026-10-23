@@ -1,0 +1,253 @@
+---
+/**
+ * The X-Bar's Speisekarte as a card next to the intro on Theke & Küche: a
+ * little booklet with one page per group (Essen, Süßes, Getränke …) that
+ * flips with the tabs, the arrows or a swipe, an optional PDF link, and a
+ * "coming soon" note while there is no menu yet (see src/data/menu.ts).
+ * Without JavaScript all pages show one below the other.
+ */
+import Button from './Button.astro';
+import { menu } from '../data/menu';
+
+const { groups, pdf } = menu;
+const empty = groups.length === 0;
+const book = groups.length > 1;
+---
+
+<section class="mx-menu" id="speisekarte" aria-labelledby="speisekarte-title" data-menu-book={book || undefined}>
+  <span class="mx-menu__badge">Speisekarte</span>
+  <h2 class="mx-menu__title" id="speisekarte-title">Was gibt’s heute?</h2>
+  {empty ? (
+    <p class="mx-menu__soon">Unsere Speisekarte hängt bald auch hier. Bis dahin: Komm einfach an der Theke vorbei, da steht alles auf der Tafel.</p>
+  ) : (
+    <>
+      {book && (
+        <div class="mx-menu__tabs" role="tablist" aria-label="Seiten der Speisekarte" hidden>
+          {groups.map((group, i) => (
+            <button class="mx-menu__tab" type="button" role="tab" id={`menu-tab-${i}`} aria-controls={`menu-page-${i}`} aria-selected={i === 0 ? "true" : "false"} tabindex={i === 0 ? 0 : -1} data-menu-tab>{group.title}</button>
+          ))}
+        </div>
+      )}
+      <div class="mx-menu__pages">
+        {groups.map((group, i) => (
+          <div class:list={['mx-menu__page', i === 0 && 'is-current']} id={`menu-page-${i}`} role={book ? 'tabpanel' : undefined} aria-labelledby={book ? `menu-tab-${i}` : undefined} data-menu-page>
+            <h3 class="mx-menu__group-title">{group.title}</h3>
+            <ul class="mx-menu__items">
+              {group.items.map((item) => (
+                <li>
+                  <span class="mx-menu__name">{item.name}</span>
+                  <span class="mx-menu__dots" aria-hidden="true"></span>
+                  <span class="mx-menu__price">{item.price}</span>
+                  {item.note && <span class="mx-menu__note">{item.note}</span>}
+                </li>
+              ))}
+            </ul>
+            {group.note && <p class="mx-menu__group-note">{group.note}</p>}
+          </div>
+        ))}
+      </div>
+      {book && (
+        <div class="mx-menu__foot" hidden>
+          <button class="mx-menu__turn" type="button" data-menu-prev aria-label="Vorherige Seite"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span class="mx-menu__count" data-menu-count>1 / {groups.length}</span>
+          <button class="mx-menu__turn" type="button" data-menu-next aria-label="Nächste Seite"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      )}
+    </>
+  )}
+  {pdf && <Button href={pdf} size="sm" variant="outline" target="_blank" rel="noopener">Speisekarte als PDF</Button>}
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-menu-book]').forEach((book) => {
+    const tabs = [...book.querySelectorAll<HTMLButtonElement>('[data-menu-tab]')];
+    const pages = [...book.querySelectorAll<HTMLElement>('[data-menu-page]')];
+    const prev = book.querySelector<HTMLButtonElement>('[data-menu-prev]')!;
+    const next = book.querySelector<HTMLButtonElement>('[data-menu-next]')!;
+    const count = book.querySelector<HTMLElement>('[data-menu-count]')!;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let current = 0;
+
+    book.classList.add('is-book');
+    book.querySelectorAll<HTMLElement>('.mx-menu__tabs, .mx-menu__foot').forEach((el) => { el.hidden = false; });
+
+    const update = () => {
+      tabs.forEach((tab, i) => {
+        tab.setAttribute('aria-selected', String(i === current));
+        tab.tabIndex = i === current ? 0 : -1;
+      });
+      pages.forEach((page, i) => {
+        page.classList.toggle('is-current', i === current);
+        page.inert = i !== current;
+      });
+      prev.disabled = current === 0;
+      next.disabled = current === pages.length - 1;
+      count.textContent = `${current + 1} / ${pages.length}`;
+    };
+
+    // Forward: the old page turns away to the left and shows the new one
+    // underneath. Back: the new page turns in from the left on top.
+    const show = (i: number) => {
+      if (i === current || i < 0 || i >= pages.length) return;
+      const outgoing = pages[current];
+      const incoming = pages[i];
+      const forward = i > current;
+      current = i;
+      update();
+      if (reduce.matches) return;
+      const turning = forward ? outgoing : incoming;
+      const flat = { transform: 'rotateY(0deg)', filter: 'brightness(1)' };
+      const away = { transform: 'rotateY(-100deg)', filter: 'brightness(.8)' };
+      turning.classList.add('is-turning');
+      outgoing.classList.add('is-leaving');
+      turning.animate(forward ? [flat, away] : [away, flat], { duration: 480, easing: 'cubic-bezier(.4, .1, .3, 1)' })
+        .finished.catch(() => {}).finally(() => {
+          turning.classList.remove('is-turning');
+          outgoing.classList.remove('is-leaving');
+        });
+    };
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => show(i));
+      tab.addEventListener('keydown', (event) => {
+        const to = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: tabs.length - 1 }[event.key];
+        if (to === undefined) return;
+        event.preventDefault();
+        show(Math.max(0, Math.min(tabs.length - 1, to)));
+        tabs[current].focus();
+      });
+    });
+    prev.addEventListener('click', () => show(current - 1));
+    next.addEventListener('click', () => show(current + 1));
+
+    // Swipe left/right on the pages to turn them.
+    const area = book.querySelector<HTMLElement>('.mx-menu__pages')!;
+    let startX = 0;
+    let startY = 0;
+    area.addEventListener('pointerdown', (event) => { startX = event.clientX; startY = event.clientY; });
+    area.addEventListener('pointerup', (event) => {
+      const dx = event.clientX - startX;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(event.clientY - startY)) return;
+      show(current + (dx < 0 ? 1 : -1));
+    });
+
+    update();
+  });
+</script>
+
+<style>
+  .mx-menu {
+    position: relative;
+    padding: var(--space-7) var(--space-6) var(--space-6);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    box-shadow: var(--shadow-press);
+    rotate: 1.2deg;
+  }
+  .mx-menu__badge {
+    position: absolute;
+    top: -18px;
+    left: var(--space-5);
+    padding: 5px 12px 3px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1;
+    rotate: -3deg;
+  }
+  .mx-menu__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-h4);
+    font-weight: 400;
+    line-height: 1.1;
+  }
+  .mx-menu__soon {
+    margin: var(--space-3) 0 0;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--ink-muted);
+  }
+  .mx-menu__pages { margin-top: var(--space-5); }
+  .mx-menu__page + .mx-menu__page { margin-top: var(--space-5); }
+  .mx-menu__group-title {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--accent-strong);
+  }
+  .mx-menu__items { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+  .mx-menu__items li {
+    display: grid;
+    grid-template-columns: auto minmax(12px, 1fr) auto;
+    align-items: baseline;
+    column-gap: var(--space-2);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+  .mx-menu__dots { border-bottom: 2px dotted color-mix(in srgb, var(--ink) 30%, transparent); }
+  .mx-menu__price { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mx-menu__note { grid-column: 1 / -1; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+  .mx-menu__group-note { margin: var(--space-3) 0 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+
+  /* Booklet (with JavaScript): the pages lie on top of each other, so the
+     card is as tall as its longest page and doesn't jump while flipping. */
+  .mx-menu__tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+  .mx-menu__tabs[hidden], .mx-menu__foot[hidden] { display: none; }
+  .mx-menu__tab {
+    padding: 6px 14px 5px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-pill);
+    background: var(--white);
+    color: var(--ink);
+    font: 400 17px/1 var(--font-display);
+    cursor: pointer;
+    transition: background .15s, translate .15s, box-shadow .15s;
+  }
+  .mx-menu__tab:hover { translate: 0 -2px; box-shadow: 2px 3px 0 var(--ink); }
+  .mx-menu__tab[aria-selected="true"] { background: var(--accent); box-shadow: 2px 2px 0 var(--ink); }
+  .mx-menu__tab:focus-visible, .mx-menu__turn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .is-book .mx-menu__pages {
+    display: grid;
+    margin-top: var(--space-4);
+    perspective: 1600px;
+    touch-action: pan-y;
+  }
+  .is-book .mx-menu__page {
+    grid-area: 1 / 1;
+    margin: 0;
+    padding: var(--space-4) var(--space-2) var(--space-2) var(--space-4);
+    border-left: 2px dashed color-mix(in srgb, var(--ink) 20%, transparent);
+    background: var(--white);
+    transform-origin: left center;
+    backface-visibility: hidden;
+  }
+  .is-book .mx-menu__page:not(.is-current, .is-leaving) { visibility: hidden; }
+  .is-book .mx-menu__page.is-turning { z-index: 2; box-shadow: 6px 0 14px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .is-book .mx-menu__page .mx-menu__group-title { font-size: 24px; }
+  .mx-menu__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
+  .mx-menu__count { font-size: var(--fs-small); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .mx-menu__turn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    cursor: pointer;
+    transition: translate .15s, box-shadow .15s, opacity .15s;
+  }
+  .mx-menu__turn:hover:not(:disabled) { translate: 0 -2px; box-shadow: 3px 4px 0 var(--ink); }
+  .mx-menu__turn:active:not(:disabled) { translate: 2px 2px; box-shadow: 0 0 0 var(--ink); }
+  .mx-menu__turn:disabled { opacity: .3; cursor: default; box-shadow: none; }
+  .mx-menu > :global(.mx-btn) { margin-top: var(--space-5); }
+</style>

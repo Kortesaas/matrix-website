@@ -34,10 +34,13 @@ export const campusPlanRooms = {
   maedchenzimmer: room('Mädchenzimmer', [1475, 730, 1835, 908], [1660, 820], 4.1, 0.035),
   tonstudio: room('Tonstudio', [1380, 45, 1740, 255], [1550, 150], 4.1, -0.025),
   bandraum: room('Bandraum', [1755, 45, 1950, 255], [1855, 150], 4.1, 0.025),
+  // Where the toilets marker sits in the model (east of the Saal); only a spot
+  // for the map, not the real room. Adjust bounds/anchor in floor-plan pixels.
+  toiletten: room('Toiletten', [915, 230, 1255, 535], [1090, 385], 4.1, 0.03),
 };
 
 export const campusServiceZones = [
-  { title: 'Toiletten', bounds: [610, 633, 855, 905] },
+  { title: 'Nebenraum', bounds: [610, 633, 855, 905] },
   { title: 'Küche', bounds: [855, 633, 1035, 905] },
   { title: 'Büros', bounds: [1380, 1000, 1955, 1200] },
   { title: 'Flur', bounds: [1255, 140, 1360, 1000] },

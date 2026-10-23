@@ -27,3 +27,6 @@ matrix-data/
 
 # Upload archives of the build
 *.zip
+
+# Generated CI pack for designers (npm run brand-pack)
+exports/

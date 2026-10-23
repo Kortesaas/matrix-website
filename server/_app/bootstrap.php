@@ -231,6 +231,29 @@ function flyers(): array
     return read_json('flyers.json')['items'] ?? demo_pinwall()['events'] ?? [];
 }
 
+/** Event ids in the order the team arranged them on the Pinnwand. */
+function flyer_order(): array
+{
+    return read_json('flyers.json')['order'] ?? [];
+}
+
+/**
+ * Board order: events not arranged yet come first (ending soonest first,
+ * so new posters are seen), then the arranged ones in the team's order.
+ * The Monatsprogramm is not part of it; it always hangs top left.
+ */
+function order_flyers(array $flyers): array
+{
+    $position = array_flip(flyer_order());
+    usort($flyers, function ($a, $b) use ($position) {
+        $pa = $position[$a['id']] ?? -1;
+        $pb = $position[$b['id']] ?? -1;
+        if ($pa === -1 && $pb === -1) return strcmp($a['until'] ?: '9999', $b['until'] ?: '9999');
+        return $pa <=> $pb;
+    });
+    return $flyers;
+}
+
 /** Monatsprogramm posters, one per month ("2026-10"). */
 function programs(): array
 {

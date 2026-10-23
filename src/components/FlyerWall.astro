@@ -12,10 +12,41 @@ import Dynamic from './php/Dynamic.astro';
 import PhpTemplate from './php/PhpTemplate.astro';
 import SectionHeading from './SectionHeading.astro';
 
+// `astro dev` has no PHP: there the board shows with its empty-state notes.
+const devMonth = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric', timeZone: 'Europe/Berlin' }).format(new Date());
+
 const zoomIcon = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5M10.5 7.5v6M7.5 10.5h6" /></svg>';
 ---
 
-<Dynamic render="flyers" />
+<Dynamic render="flyers">
+  <section class="mx-section mx-pinwall-section">
+    <div class="mx-container">
+      <SectionHeading title="Bei uns ist immer was los!" lead="Große Events und feste Termine jede Woche. Hier siehst du, was als Nächstes ansteht." />
+      <div class="mx-pinwall">
+        <ul class="mx-pinwall__board" data-pinwall aria-label="Monatsprogramm und Events">
+          <li class="mx-poster mx-poster--program mx-poster--missing">
+            <div class="mx-poster__slot">
+              <div class="mx-poster__paper">
+                <span class="mx-poster__pin" aria-hidden="true"></span>
+                <span class="mx-poster__badge">Monatsprogramm</span>
+                <h3 class="mx-poster__title">{devMonth}</h3>
+                <p class="mx-poster__text">Vorschau ohne PHP (astro dev): Monatsprogramm und Plakate kommen aus dem Verwaltungsbereich und erscheinen mit „npm run serve“.</p>
+              </div>
+            </div>
+          </li>
+          <li class="mx-poster mx-poster--note mx-poster--empty">
+            <span class="mx-poster__pin" aria-hidden="true"></span>
+            <div class="mx-poster__paper">
+              <h3 class="mx-poster__title">Hier hängen die Events</h3>
+              <p class="mx-poster__text">Im Verwaltungsbereich unter „Pinnwand“ angelegt, in der dort gewählten Reihenfolge.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <p class="mx-pinwall__more">Alle weiteren Termine findest du im <a class="mx-poster__link" href="#kalender">MatriX Kalender</a></p>
+    </div>
+  </section>
+</Dynamic>
 
 <script>
   // Masonry for the Pinnwand: every item spans as many grid rows as it is
@@ -50,6 +81,7 @@ const zoomIcon = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /
       <div class="mx-pinwall">
         <ul class="mx-pinwall__board" data-photo-gallery data-pinwall aria-label="Monatsprogramm und Events">%%!program%%%%!items%%</ul>
       </div>
+      <p class="mx-pinwall__more">Alle weiteren Termine findest du im <a class="mx-poster__link" href="#kalender">MatriX Kalender</a></p>
     </div>
   </section>
 </PhpTemplate>
@@ -58,7 +90,7 @@ const zoomIcon = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /
   <li class="mx-poster mx-poster--program">
     <span class="mx-poster__pin" aria-hidden="true"></span>
     <button class="mx-poster__open" type="button" data-photo-open data-photo-zoom data-photo-src="%%full%%" data-photo-alt="Monatsprogramm %%month%%" aria-label="Monatsprogramm %%month%% groß ansehen">
-      <img src="%%src%%" srcset="%%srcset%%" sizes="(max-width: 860px) 90vw, 520px" alt="Monatsprogramm %%month%% der MatriX" width="%%width%%" height="%%height%%" loading="lazy" decoding="async" />
+      <img class="mx-img" src="%%src%%" srcset="%%srcset%%" sizes="(max-width: 860px) 90vw, 520px" alt="Monatsprogramm %%month%% der MatriX" width="%%width%%" height="%%height%%" loading="lazy" decoding="async" />
       <span class="mx-poster__zoom" aria-hidden="true" set:html={zoomIcon} />
     </button>
     <div class="mx-poster__note">
@@ -86,7 +118,7 @@ const zoomIcon = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /
   <li class="mx-poster">
     <span class="mx-poster__pin" aria-hidden="true"></span>
     <button class="mx-poster__open" type="button" data-photo-open data-photo-zoom data-photo-src="%%full%%" data-photo-alt="%%title%%" aria-label="Plakat groß ansehen: %%title%%">
-      <img src="%%src%%" srcset="%%srcset%%" sizes="(max-width: 600px) 86vw, (max-width: 860px) 44vw, 360px" alt="%%alt%%" width="%%width%%" height="%%height%%" loading="lazy" decoding="async" />
+      <img class="mx-img" src="%%src%%" srcset="%%srcset%%" sizes="(max-width: 600px) 86vw, (max-width: 860px) 44vw, 360px" alt="%%alt%%" width="%%width%%" height="%%height%%" loading="lazy" decoding="async" />
       <span class="mx-poster__zoom" aria-hidden="true" set:html={zoomIcon} />
     </button>
     <div class="mx-poster__note">
@@ -167,6 +199,15 @@ const zoomIcon = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /
   .mx-pinwall__board > * { margin-bottom: var(--row-gap); }
   .mx-pinwall__board > .mx-poster--program { grid-column: 1; grid-row-start: 1; }
   .mx-pinwall__board:not(.is-packed) { grid-auto-rows: auto; }
+
+  /* Pointer to the calendar under the board. */
+  .mx-pinwall__more {
+    margin: var(--space-6) 0 0;
+    text-align: center;
+    font-size: var(--fs-lead);
+    line-height: 1.4;
+  }
+  .mx-pinwall__more .mx-poster__link { margin-top: 0; font-size: inherit; }
 
 
   /* ---------- Poster ---------- */

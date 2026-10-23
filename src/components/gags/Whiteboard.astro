@@ -1,8 +1,12 @@
 ---
 /**
  * Gruppenraum: a whiteboard to scribble ideas for the MatriX of tomorrow.
- * Drawings live only on the open page; nothing is stored or sent anywhere.
+ * Drawings stay on the open page until the visitor sends one: after a
+ * confirmation it goes to the team (server/api/idea.php) and shows up in the
+ * admin area under "Ideen".
  */
+import Button from '../Button.astro';
+
 const markers = [
   { color: '#131A22', name: 'Schwarz' },
   { color: '#2F8AD6', name: 'Blau' },
@@ -13,13 +17,42 @@ const markers = [
 
 <figure class="gag-wb" data-whiteboard>
   <div>
-    <canvas data-canvas aria-label="Whiteboard zum Zeichnen. Mit Maus, Finger oder Stift malen."></canvas>
+    <canvas data-canvas role="img" aria-label="Whiteboard zum Zeichnen. Mit Maus, Finger oder Stift malen."></canvas>
   </div>
   <div class="gag-wb__tray" role="toolbar" aria-label="Stifte">
     {markers.map((marker, i) => <button type="button" class="gag-wb__pen" data-color={marker.color} aria-pressed={i === 0 ? 'true' : 'false'} aria-label={`Stift ${marker.name}`} style={`--marker: ${marker.color}`}></button>)}
     <button type="button" class="gag-wb__eraser" data-eraser aria-pressed="false" aria-label="Radierer"></button>
     <button type="button" class="gag-wb__clear" data-clear>Alles wegwischen</button>
   </div>
+  <figcaption class="gag-wb__send">
+    <Button size="sm" data-send-open>Idee an die MatriX schicken</Button>
+    <span class="gag-wb__hint" data-send-hint>Mal erst etwas aufs Whiteboard.</span>
+  </figcaption>
+
+  <dialog class="gag-wb__dialog" data-send-dialog aria-labelledby="wb-send-title">
+    <form method="dialog" data-send-form>
+      <div data-send-ask>
+        <h3 class="mx-h4" id="wb-send-title">Idee an die MatriX schicken?</h3>
+        <img class="gag-wb__preview" data-send-preview alt="Vorschau deiner Zeichnung" width="900" height="600" />
+        <p class="gag-wb__note">Das MatriX-Team bekommt deine Zeichnung zu sehen. Bitte schreib oder mal keine Namen, Adressen oder Telefonnummern drauf.</p>
+        <label class="gag-wb__label" for="wb-send-text">Magst du noch was dazuschreiben? <span>(freiwillig)</span></label>
+        <textarea id="wb-send-text" name="note" rows="2" maxlength="300" data-send-text></textarea>
+        <label class="gag-wb__trap" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+        <p class="gag-wb__error" data-send-error role="alert" hidden></p>
+        <div class="gag-wb__actions">
+          <Button type="submit" value="send" data-send-submit>Ja, abschicken</Button>
+          <Button variant="outline" value="cancel" data-send-cancel>Abbrechen</Button>
+        </div>
+      </div>
+      <div data-send-done hidden>
+        <h3 class="mx-h4" tabindex="-1" data-send-thanks>Danke für deine Idee!</h3>
+        <p class="gag-wb__note">Sie ist beim MatriX-Team angekommen. Vielleicht findest du sie ja bald im Programm wieder.</p>
+        <div class="gag-wb__actions">
+          <Button value="close" data-send-cancel>Schließen</Button>
+        </div>
+      </div>
+    </form>
+  </dialog>
 </figure>
 
 <script>
@@ -35,42 +68,43 @@ const markers = [
     let current: Stroke | null = null;
     let color = markers[0].dataset.color!;
 
-    function prompt() {
+    function prompt(c: CanvasRenderingContext2D) {
       // Printed header and a few starter ideas to get going.
-      ctx.fillStyle = '#2F8AD6';
-      ctx.font = '38px Boogaloo, "Arial Narrow", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('Ideen für die MatriX von morgen', 26, 50);
-      
-      ctx.fillStyle = '#131A22';
-      ctx.font = '26px Boogaloo, "Arial Narrow", sans-serif';
-      ctx.fillText('– Kino-Abend im Saal?', 30, 108);
-      ctx.fillText('– Graffiti-Workshop', 30, 142);
+      c.fillStyle = '#2F8AD6';
+      c.font = '38px Boogaloo, "Arial Narrow", sans-serif';
+      c.textAlign = 'left';
+      c.fillText('Ideen für die MatriX von morgen', 26, 50);
+
+      c.fillStyle = '#131A22';
+      c.font = '26px Boogaloo, "Arial Narrow", sans-serif';
+      c.fillText('– Kino-Abend im Saal?', 30, 108);
+      c.fillText('– Graffiti-Workshop', 30, 142);
     }
-    function line(stroke: Stroke) {
+    function line(stroke: Stroke, c = ctx) {
       const pts = stroke.points;
       if (!pts.length) return;
-      ctx.strokeStyle = stroke.color;
-      ctx.fillStyle = stroke.color;
-      ctx.lineWidth = stroke.size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      if (pts.length === 1) { ctx.arc(pts[0][0], pts[0][1], stroke.size / 2, 0, Math.PI * 2); ctx.fill(); return; }
-      ctx.moveTo(pts[0][0], pts[0][1]);
+      c.strokeStyle = stroke.color;
+      c.fillStyle = stroke.color;
+      c.lineWidth = stroke.size;
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      c.beginPath();
+      if (pts.length === 1) { c.arc(pts[0][0], pts[0][1], stroke.size / 2, 0, Math.PI * 2); c.fill(); return; }
+      c.moveTo(pts[0][0], pts[0][1]);
       for (let i = 1; i < pts.length - 1; i++) {
         const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
-        ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+        c.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
       }
-      ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
-      ctx.stroke();
+      c.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      c.stroke();
     }
     function redraw() {
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, W, H);
-      prompt();
-      strokes.forEach(line);
+      prompt(ctx);
+      strokes.forEach((stroke) => line(stroke));
       if (current) line(current);
+      sync();
     }
     function resize() {
       const ratio = Math.min(devicePixelRatio || 1, 2);
@@ -90,6 +124,7 @@ const markers = [
       canvas.setPointerCapture(event.pointerId);
       // The eraser paints white with a wide tip.
       current = erasing ? { color: '#fff', size: 30, points: [point(event)] } : { color, size: 4, points: [point(event)] };
+      fetchToken();
       redraw();
     });
     canvas.addEventListener('pointermove', (event) => {
@@ -116,6 +151,92 @@ const markers = [
     eraser.addEventListener('click', () => choose(eraser));
     root.querySelector('[data-clear]')!.addEventListener('click', () => { strokes = []; redraw(); });
 
+    // ---------- Sending an idea ----------
+    const API = '/api/idea.php';
+    const openButton = root.querySelector<HTMLButtonElement>('[data-send-open]')!;
+    const hint = root.querySelector<HTMLElement>('[data-send-hint]')!;
+    const dialog = root.querySelector<HTMLDialogElement>('[data-send-dialog]')!;
+    const form = root.querySelector<HTMLFormElement>('[data-send-form]')!;
+    const ask = root.querySelector<HTMLElement>('[data-send-ask]')!;
+    const done = root.querySelector<HTMLElement>('[data-send-done]')!;
+    const preview = root.querySelector<HTMLImageElement>('[data-send-preview]')!;
+    const text = root.querySelector<HTMLTextAreaElement>('[data-send-text]')!;
+    const error = root.querySelector<HTMLElement>('[data-send-error]')!;
+    const submit = root.querySelector<HTMLButtonElement>('[data-send-submit]')!;
+    let token: Promise<string> | null = null;
+    let image: Blob | null = null;
+
+    // The form token has to be a few seconds old when sending, so it is
+    // fetched as soon as someone starts drawing.
+    function fetchToken() {
+      token ??= fetch(API, { cache: 'no-store' }).then((r) => r.json()).then((d) => String(d.token)).catch(() => { token = null; return ''; });
+      return token;
+    }
+    const drawn = () => strokes.some((stroke) => stroke.color !== '#fff');
+    function sync() {
+      const ready = drawn();
+      openButton.disabled = !ready;
+      hint.hidden = ready;
+    }
+
+    // Just the drawing, without the printed starter ideas, at a fixed size.
+    function exportDrawing(): Promise<Blob | null> {
+      const out = document.createElement('canvas');
+      out.width = 900;
+      out.height = 600;
+      const c = out.getContext('2d')!;
+      c.fillStyle = '#fff';
+      c.fillRect(0, 0, 900, 600);
+      c.scale(1.5, 1.5);
+      strokes.forEach((stroke) => line(stroke, c));
+      return new Promise((resolve) => out.toBlob(resolve, 'image/png'));
+    }
+
+    openButton.addEventListener('click', async () => {
+      image = await exportDrawing();
+      if (!image) return;
+      URL.revokeObjectURL(preview.src);
+      preview.src = URL.createObjectURL(image);
+      ask.hidden = false;
+      done.hidden = true;
+      error.hidden = true;
+      submit.disabled = false;
+      dialog.showModal();
+      fetchToken();
+    });
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-send-cancel]')) {
+      button.addEventListener('click', () => dialog.close());
+    }
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', () => openButton.focus({ preventScroll: true }));
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!image) return;
+      submit.disabled = true;
+      error.hidden = true;
+      const body = new FormData(form);
+      body.set('token', await fetchToken());
+      body.set('image', image, 'idee.png');
+      try {
+        const response = await fetch(API, { method: 'POST', body });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok) throw new Error(result.message || 'Das hat leider nicht geklappt. Versuch es später noch einmal.');
+        ask.hidden = true;
+        done.hidden = false;
+        text.value = '';
+        token = null;
+        root.querySelector<HTMLElement>('[data-send-thanks]')!.focus();
+      } catch (problem) {
+        error.textContent = problem instanceof Error && problem.message !== 'Failed to fetch' ? problem.message : 'Das hat leider nicht geklappt. Versuch es später noch einmal.';
+        error.hidden = false;
+        submit.disabled = false;
+        // A stale or too young token: get a fresh one for the next try.
+        token = null;
+        fetchToken();
+      }
+    });
+
     new ResizeObserver(resize).observe(canvas);
     document.fonts.load('34px Boogaloo').then(redraw).catch(() => {});
   });
@@ -132,4 +253,34 @@ const markers = [
   .gag-wb__eraser[aria-pressed='true'] { translate: 0 -4px; box-shadow: 0 4px 0 -1px var(--ink); }
   .gag-wb[data-erasing] canvas { cursor: cell; }
   .gag-wb__clear { margin-left: auto; padding: 0; border: 0; background: none; font: 13px var(--font-sans); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+  .gag-wb__send { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 20px; }
+  .gag-wb__send :global(.mx-btn:disabled) { opacity: 0.45; cursor: not-allowed; }
+  .gag-wb__hint { font-size: var(--fs-small); color: var(--ink-muted); }
+  .gag-wb__hint[hidden] { display: none; }
+
+  .gag-wb__dialog {
+    width: min(520px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: var(--space-6);
+    border: 2.5px solid var(--ink);
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: var(--shadow-press);
+    overflow: auto;
+  }
+  .gag-wb__dialog::backdrop { background: rgba(19, 26, 34, 0.55); }
+  .gag-wb__dialog .mx-h4 { margin: 0 0 var(--space-4); }
+  .gag-wb__dialog .mx-h4:focus { outline: none; }
+  .gag-wb__preview { display: block; width: 100%; height: auto; border: 2px solid var(--ink); border-radius: 6px; }
+  .gag-wb__note { margin: var(--space-4) 0 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+  .gag-wb__label { display: block; margin-top: var(--space-4); font-weight: 600; font-size: var(--fs-small); }
+  .gag-wb__label span { font-weight: 400; color: var(--ink-muted); }
+  .gag-wb__dialog textarea { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; border: 2px solid var(--ink); border-radius: var(--radius-sm); font: inherit; font-size: var(--fs-body); resize: vertical; }
+  .gag-wb__dialog textarea:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 2px; }
+  .gag-wb__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .gag-wb__error { margin: var(--space-4) 0 0; padding: 10px 12px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--coral-500) 18%, var(--white)); font-size: var(--fs-small); }
+  .gag-wb__error[hidden], [data-send-ask][hidden], [data-send-done][hidden] { display: none; }
+  .gag-wb__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: var(--space-5); }
 </style>

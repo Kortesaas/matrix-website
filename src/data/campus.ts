@@ -8,6 +8,9 @@ import werkstatt from '../assets/photos/p3.jpg';
 import maedchenzimmer from '../assets/photos/r29.jpg';
 import gruppenraum from '../assets/photos/r46.jpg';
 import tonstudio from '../assets/photos/r55.jpg';
+import verleih from '../assets/photos/r170.jpg';
+import roadrunnerPhoto from '../assets/photos/roadrunner.jpg';
+import { roadrunner } from './campus-roadrunner.js';
 
 /** Where a marker sits in the 3D model. */
 export type CampusAnchor =
@@ -17,18 +20,20 @@ export type CampusAnchor =
   | { scene: [number, number, number] };
 
 export interface CampusRoom {
-  /** Shares its id with the floor-plan polygon and highlight. */
-  id: keyof typeof campusPlanRooms | 'basketball';
+  /** Shares its id with the floor-plan polygon and highlight (spots without a room have none). */
+  id: keyof typeof campusPlanRooms | 'basketball' | 'verleih' | 'roadrunner';
   title: string;
   /** One-sentence description for the compact map preview. */
   summary: string;
   text: string;
-  /** Room photo; without one the card shows the court illustration. */
+  /** Room photo. The court shows its illustration; other spots without a photo get a text-only card. */
   image?: ImageMetadata;
   alt?: string;
   anchor: CampusAnchor;
   /** Outdoor spots don't open the house. */
   outdoor?: boolean;
+  /** The Roadrunner bus: its marker follows the bus and only shows while it is parked. */
+  vehicle?: boolean;
   link?: { label: string; href: string };
 }
 
@@ -110,6 +115,24 @@ export const campusRooms: CampusRoom[] = [
     link: { label: 'Zum Mädchenzimmer', href: '/maedchenzimmer/' },
   },
   {
+    id: 'verleih',
+    title: 'Verleih',
+    summary: 'BMX, Scooter und Skateboards leihen, Helm inklusive.',
+    text: 'Kein eigenes Board dabei? Bei uns kannst du dir BMX-Räder, Scooter und Skateboards ausleihen, den passenden Helm gibt’s gleich mit dazu.',
+    image: verleih,
+    alt: 'Fahrräder und Roller zum Ausleihen',
+    // In the foyer by the main entrance, where you head out with the gear.
+    anchor: { plan: [960, 1050] },
+    link: { label: 'Zum Verleih', href: '/theke-kueche/#verleih' },
+  },
+  {
+    id: 'toiletten',
+    title: 'Toiletten',
+    summary: 'Toiletten für alle, auch ein behindertengerechtes WC.',
+    text: 'Hier findest du die Toiletten, darunter auch ein behindertengerechtes WC.',
+    anchor: campusPlanRooms.toiletten.anchor,
+  },
+  {
     id: 'basketball',
     title: 'Basketball',
     summary: 'Komm raus und wirf ein paar Körbe mit uns.',
@@ -117,4 +140,20 @@ export const campusRooms: CampusRoom[] = [
     anchor: { scene: [-39.5, 0.2, 3] },
     outdoor: true,
   },
+  {
+    id: 'roadrunner',
+    title: 'Roadrunner',
+    summary: 'Unser Streetwork-Bus: Wir kommen zu euch.',
+    text: 'Das ist der Roadrunner, unser Streetwork-Bus. Mit ihm sind wir draußen unterwegs, dort, wo ihr euch trefft: mit offenem Ohr, Infos und Hilfe, wenn ihr sie braucht.',
+    image: roadrunnerPhoto,
+    alt: 'Der Roadrunner: ein bunt besprühter Kleinbus mit dem Schriftzug „Road Runner“',
+    // Placed by the scene on the bus itself (the parking spot as a start).
+    anchor: { scene: [roadrunner.park.at[0], 2.6, roadrunner.park.at[1]] },
+    outdoor: true,
+    vehicle: true,
+    link: { label: 'Mehr zu Streetwork', href: '/angebot/#streetwork' },
+  },
 ];
+
+/** The main entrance on the front facade: a small "Eingang" sign points at it. */
+export const campusEntrance: CampusAnchor = { plan: [1262, 1150], height: 0.1 };

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../_app/admin.php';
 require __DIR__ . '/../_app/render.php';
 require __DIR__ . '/../_app/security.php';
+require __DIR__ . '/../_app/ideas.php';
 
 use function Matrix\{e, notice, flyers, team, settings, in_window};
 use function Matrix\Admin\{require_user, page_start, page_end, when};
@@ -37,6 +38,11 @@ page_start('Hallo ' . explode(' ', $user['name'])[0] . '!', $user);
     <span class="tile__label">Team</span>
     <span class="tile__value"><?= $people ?> Personen</span>
     <span class="tile__meta">Namen, Rollen und Fotos</span>
+  </a>
+  <a class="tile" href="ideas.php">
+    <span class="tile__label">Ideen</span>
+    <span class="tile__value"><?= ($newIdeas = \Matrix\Ideas\unread()) ? "$newIdeas neu" : 'Nichts Neues' ?></span>
+    <span class="tile__meta">Vom Whiteboard im Gruppenraum</span>
   </a>
   <?php if ($user['role'] === 'admin'): ?>
   <a class="tile" href="calendar.php">

@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import FeatureRow from '../components/FeatureRow.astro';
+import TeamCard from '../components/TeamCard.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import Dynamic from '../components/php/Dynamic.astro';
+import PhpTemplate from '../components/php/PhpTemplate.astro';
+import { fsjPage } from '../data/fsj';
+import { teamGroups } from '../data/team';
+import { site } from '../data/site';
+
+const { what, facts, tasks, volunteers, apply } = fsjPage;
+// Seed volunteers for `astro dev`; the built page shows the admin's list.
+const seedVolunteers = (teamGroups.find((g) => g.key === 'fsj')?.members ?? []).filter((m) => !('open' in m));
+const slot = { name: '%%name%%', role: '%%role%%' };
+---
+
+<BaseLayout
+  title="FSJ"
+  description="Freiwilliges Soziales Jahr in der MatriX Königsbrunn: ein Jahr Jugendarbeit, Events und Projekte. Lerne unsere FSJler kennen und bewirb dich."
+  accent="coral"
+  current="mitmachen"
+  peeker="flame"
+>
+  <PageHero deco="team-hero-deco" sticker="egg-hi">FSJ</PageHero>
+
+  <section class="mx-section">
+    <div class="mx-container">
+      <SectionHeading title="Ein Jahr MatriX: dein FSJ bei uns." size="h1" lead={fsjPage.intro} />
+
+      <ul class="fsj-facts" aria-label="Das FSJ auf einen Blick">
+        {facts.map((fact) => (
+          <li><span class="fsj-facts__label">{fact.label}</span><span class="fsj-facts__value">{fact.value}</span></li>
+        ))}
+      </ul>
+
+      <FeatureRow id="was-ist-ein-fsj" title={what.title} text={what.text} photos={[what.image]} alt={what.alt} offset="br" />
+
+      <div class="fsj-tasks">
+        <h2 class="mx-h3">Was du bei uns machst</h2>
+        <ul>
+          {tasks.map((task) => <li>{task}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-section mx-section--accent" id="fsjler">
+    <div class="mx-container">
+      <SectionHeading title={volunteers.title} lead={volunteers.lead} />
+      <div class="fsj-people" data-photo-gallery>
+        <Dynamic render="team_members" arg="fsj">
+          {seedVolunteers.map((member) => <TeamCard member={member} />)}
+        </Dynamic>
+      </div>
+      <p class="fsj-people__more"><a class="mx-link" href="/team/">Das ganze Team kennenlernen</a></p>
+    </div>
+  </section>
+
+  <PhpTemplate name="team-card-photo">
+    <TeamCard member={{ ...slot, portrait: { src: '%%src%%', srcset: '%%srcset%%' } }} firstName="%%first%%" />
+  </PhpTemplate>
+  <PhpTemplate name="team-card-placeholder">
+    <TeamCard member={slot} firstName="%%first%%" />
+  </PhpTemplate>
+
+  <CtaBlock
+    title={apply.title}
+    lead={apply.lead}
+    label="Jetzt bewerben"
+    href={`mailto:${site.email}?subject=${encodeURIComponent(apply.subject)}`}
+  />
+</BaseLayout>
+
+<style>
+  .fsj-facts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-5);
+    margin: 0 0 var(--space-9);
+    padding: 0;
+    list-style: none;
+  }
+  .fsj-facts li {
+    display: grid;
+    gap: 4px;
+    padding: var(--space-5);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    box-shadow: var(--shadow-press);
+  }
+  .fsj-facts li:nth-child(odd) { rotate: -0.8deg; }
+  .fsj-facts li:nth-child(even) { rotate: 0.8deg; }
+  .fsj-facts__label { font-size: var(--fs-small); color: var(--ink-muted); }
+  .fsj-facts__value { font-family: var(--font-display); font-size: var(--fs-h4); line-height: 1.1; color: var(--accent-strong); }
+
+  .fsj-tasks { max-width: 760px; margin: var(--space-9) auto 0; }
+  .fsj-tasks ul { display: grid; gap: var(--space-3); margin: var(--space-5) 0 0; padding: 0; list-style: none; }
+  .fsj-tasks li { position: relative; padding-left: 36px; font-size: var(--fs-lead); line-height: 1.45; }
+  .fsj-tasks li::before { content: "✕"; position: absolute; left: 0; top: 0; font-family: var(--font-display); color: var(--accent-strong); }
+
+  /* Usually one or two volunteers: centred, at the team page's card size. */
+  .fsj-people {
+    --cols: 3;
+    --gap: var(--space-7);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-8) var(--gap);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .fsj-people > :global(*) { flex: 0 1 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); min-width: 0; }
+  .fsj-people__more { margin: var(--space-7) 0 0; text-align: center; }
+  .fsj-people__more .mx-link { color: var(--ink); }
+
+  @media (max-width: 1024px) {
+    .fsj-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fsj-people { --cols: 2; }
+  }
+  @media (max-width: 600px) {
+    .fsj-facts { gap: var(--space-3); }
+    .fsj-facts li { padding: var(--space-4); }
+    .fsj-people { --gap: var(--space-5); row-gap: var(--space-7); }
+  }
+</style>

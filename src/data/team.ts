@@ -18,8 +18,8 @@ export interface TeamMember {
   portrait?: ImageMetadata | UploadedPhoto;
 }
 
-/** The "Bewirb dich jetzt!" card at the end of the FSJ group. */
-export const fsjOpening = { open: true, title: 'Bewirb dich jetzt!', text: 'Jeden September starten neue FSJler', href: '/mitmachen/#kontakt' } as const;
+/** The "Bewirb dich jetzt!" card at the end of the FSJ group: leads to the FSJ page. */
+export const fsjOpening = { open: true, title: 'Bewirb dich jetzt!', text: 'Jeden September starten neue FSJler', href: '/fsj/' } as const;
 
 export interface OpenPosition {
   open: true;
@@ -46,7 +46,7 @@ export const teamGroups: TeamGroup[] = [
       { name: 'Steve Klier', portrait: steve, role: 'Medienpädagoge' },
       { name: 'Angi Klecker', portrait: angi, role: 'Theaterpädagogin' },
       { name: 'Thomas Walk', portrait: thomas, role: 'Eventmanager' },
-      { name: 'Leonie Spieß', portrait: leonie, role: 'Pädagogische Mitarbeiterin' },
+      { name: 'Leonie Spieß', portrait: leonie, role: 'Sozialarbeiterin & Barista' },
       { name: 'Richy Bieger', portrait: richy, role: 'Streetworker' },
     ],
   },

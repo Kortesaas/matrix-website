@@ -8,18 +8,6 @@ import { dayToIso, isoToDay, parseIcs, SITE_TIME_ZONE, type CalendarEvent } from
 
 export type { CalendarEvent };
 
-export interface EventItem {
-  /** Short date ("12.02.") or weekday ("Mi"), shown in the fixed date column. */
-  date: string;
-  name: string;
-  sub?: string;
-}
-
-export interface EventColumn {
-  title: string;
-  items: EventItem[];
-}
-
 /** Today in Königsbrunn, YYYY-MM-DD. */
 export const todayInKoenigsbrunn = () => new Intl.DateTimeFormat('en-CA', { timeZone: SITE_TIME_ZONE }).format(new Date());
 
@@ -27,33 +15,6 @@ export const todayInKoenigsbrunn = () => new Intl.DateTimeFormat('en-CA', { time
 export function parseFeed(ics: string, today = todayInKoenigsbrunn()): CalendarEvent[] {
   const day = isoToDay(today);
   return parseIcs(ics, { from: dayToIso(day - 62), to: dayToIso(day + 400) });
-}
-
-// ---------- The two lists ("Events" and "Jede Woche") ----------
-
-const shortDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`;
-const shortWeekday = (iso: string) =>
-  new Intl.DateTimeFormat('de-DE', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`)).replace('.', '');
-const timeRange = (ev: CalendarEvent) => (ev.start ? `${ev.start}${ev.end ? ` bis ${ev.end}` : ''} Uhr` : undefined);
-const sub = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(', ') || undefined;
-
-/** The next four events, and one line per weekly series (Monday first). */
-export function eventColumns(all: CalendarEvent[], today = todayInKoenigsbrunn()): EventColumn[] {
-  const events = all
-    .filter((ev) => !ev.weekly && (ev.endDate ?? ev.date) >= today)
-    .slice(0, 4)
-    .map((ev) => ({ date: shortDate(ev.date), name: ev.title, sub: sub(ev.location, timeRange(ev)) }));
-
-  const seen = new Set<string>();
-  const regulars = all
-    .filter((ev) => ev.weekly && ev.date >= today && !seen.has(ev.series!) && seen.add(ev.series!))
-    .sort((a, b) => ((isoToDay(a.date) + 3) % 7) - ((isoToDay(b.date) + 3) % 7) || (a.start ?? '').localeCompare(b.start ?? ''))
-    .map((ev) => ({ date: shortWeekday(ev.date), name: ev.title, sub: ev.location }));
-
-  return [
-    { title: 'Events', items: events },
-    { title: 'Jede Woche', items: regulars },
-  ];
 }
 
 // ---------- Demo dates for `astro dev`, which has no PHP ----------

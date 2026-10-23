@@ -126,7 +126,7 @@ export function renderAgenda(byDay: Map<string, CalendarEvent[]>, { month, today
     const title = `<h3 class="mx-cal__agenda-title">${esc(longDay.format(asDate(selected)))}</h3>`;
     const back = '<button type="button" class="mx-cal__back" data-cal="month">Ganzer Monat</button>';
     const body = list.length
-      ? `<ul class="mx-cal__cards">${list.map((ev) => card(ev, selected, false)).join('')}</ul>`
+      ? `<ul class="mx-cal__cards" tabindex="0" aria-label="Termine">${list.map((ev) => card(ev, selected, false)).join('')}</ul>`
       : '<p class="mx-cal__empty">Für diesen Tag ist nichts eingetragen.</p>';
     return title + body + back;
   }
@@ -144,7 +144,7 @@ export function renderAgenda(byDay: Map<string, CalendarEvent[]>, { month, today
   }
   const title = `<h3 class="mx-cal__agenda-title">${prefix < today.slice(0, 7) ? 'Vorbei' : `Im ${esc(monthName.format(asDate(month)))}`}</h3>`;
   const body = items.length
-    ? `<ul class="mx-cal__cards">${items.join('')}</ul>`
+    ? `<ul class="mx-cal__cards" tabindex="0" aria-label="Termine">${items.join('')}</ul>`
     : `<p class="mx-cal__empty">${prefix < today.slice(0, 7) ? 'Dieser Monat liegt hinter uns.' : 'Noch keine Events eingetragen. Die festen Termine jede Woche findest du im Kalender.'}</p>`;
   return title + body;
 }

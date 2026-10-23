@@ -1,0 +1,250 @@
+---
+/**
+ * "Barrierefreiheit": a round button floating bottom right with a small panel with display settings that
+ * complement the site's own accessibility (semantic markup, focus rings,
+ * prefers-reduced-motion / prefers-contrast). Settings are classes on <html>:
+ *   mx-a11y-text-large / -larger  bigger body text (type tokens)
+ *   mx-a11y-contrast              darker accent text, underlined links, no fades
+ *   mx-a11y-font                  plain sans-serif instead of the display face
+ *   mx-a11y-motion                no animations (JS sees prefers-reduced-motion)
+ *   mx-a11y-cursor                the system cursor instead of the MatriX hand
+ * They are kept in localStorage only once a visitor changes one; that is
+ * storage the visitor explicitly asks for, so no consent banner is needed
+ * (§ 25 Abs. 2 Nr. 2 TDDDG). BaseLayout applies them before the first paint.
+ */
+const toggles = [
+  { key: 'contrast', label: 'Mehr Kontrast', hint: 'Dunklere Schrift, unterstrichene Links' },
+  { key: 'font', label: 'Einfache Schrift', hint: 'Ohne die verspielte Überschriften-Schrift' },
+  { key: 'motion', label: 'Animationen aus', hint: 'Nichts wackelt, blinkt oder läuft von selbst' },
+  { key: 'cursor', label: 'Normaler Mauszeiger', hint: 'Statt der MatriX-Hand' },
+];
+---
+
+<div class="mx-a11y" data-a11y>
+  <button class="mx-a11y__toggle" type="button" aria-expanded="false" aria-controls="mx-a11y-panel" data-a11y-toggle>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.2" r="2.2" /><path d="M4 8.2c2.6.8 5.3 1.2 8 1.2s5.4-.4 8-1.2M12 9.4V14m0 0-3.2 7M12 14l3.2 7" /></svg>
+    <span class="mx-visually-hidden">Barrierefreiheit</span>
+  </button>
+  <div class="mx-a11y__panel" id="mx-a11y-panel" role="group" aria-labelledby="mx-a11y-title" hidden data-a11y-panel>
+    <h2 class="mx-a11y__title" id="mx-a11y-title">Barrierefreiheit</h2>
+    <fieldset class="mx-a11y__size">
+      <legend>Schriftgröße</legend>
+      <div class="mx-a11y__sizes">
+        <button type="button" data-a11y-text="" aria-pressed="true"><span aria-hidden="true">A</span><span class="mx-visually-hidden">Normal</span></button>
+        <button type="button" data-a11y-text="large" aria-pressed="false"><span aria-hidden="true">A+</span><span class="mx-visually-hidden">Groß</span></button>
+        <button type="button" data-a11y-text="larger" aria-pressed="false"><span aria-hidden="true">A++</span><span class="mx-visually-hidden">Sehr groß</span></button>
+      </div>
+    </fieldset>
+    <ul class="mx-a11y__list">
+      {toggles.map((toggle) => (
+        <li>
+          <button type="button" role="switch" aria-checked="false" data-a11y-switch={toggle.key} aria-describedby={`mx-a11y-${toggle.key}-hint`}>
+            <span class="mx-a11y__label">{toggle.label}</span>
+            <span class="mx-a11y__switch" aria-hidden="true"></span>
+          </button>
+          <span class="mx-a11y__hint" id={`mx-a11y-${toggle.key}-hint`}>{toggle.hint}</span>
+        </li>
+      ))}
+    </ul>
+    <div class="mx-a11y__foot">
+      <button type="button" class="mx-a11y__reset" data-a11y-reset>Zurücksetzen</button>
+      <span>Tipp: Mit <kbd>Strg</kbd> bzw. <kbd>⌘</kbd> und <kbd>+</kbd> vergrößerst du die ganze Seite.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const KEY = 'mx-a11y';
+  const root = document.documentElement;
+  const SWITCHES = ['contrast', 'font', 'motion', 'cursor'] as const;
+  type Prefs = { text?: string } & Partial<Record<(typeof SWITCHES)[number], boolean>>;
+
+  const read = (): Prefs => {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}') ?? {}; } catch { return {}; }
+  };
+  const save = (prefs: Prefs) => {
+    try {
+      if (Object.values(prefs).some(Boolean)) localStorage.setItem(KEY, JSON.stringify(prefs));
+      else localStorage.removeItem(KEY);
+    } catch { /* private mode: settings last for this page only */ }
+  };
+  const apply = (prefs: Prefs) => {
+    root.classList.toggle('mx-a11y-text-large', prefs.text === 'large');
+    root.classList.toggle('mx-a11y-text-larger', prefs.text === 'larger');
+    for (const key of SWITCHES) root.classList.toggle(`mx-a11y-${key}`, !!prefs[key]);
+    if (prefs.cursor) root.classList.remove('mx-has-cursor');
+  };
+
+  for (const menu of document.querySelectorAll<HTMLElement>('[data-a11y]')) {
+    const toggle = menu.querySelector<HTMLButtonElement>('[data-a11y-toggle]')!;
+    const panel = menu.querySelector<HTMLElement>('[data-a11y-panel]')!;
+    const sizes = [...menu.querySelectorAll<HTMLButtonElement>('[data-a11y-text]')];
+    const switches = [...menu.querySelectorAll<HTMLButtonElement>('[data-a11y-switch]')];
+    let prefs = read();
+
+    const sync = () => {
+      for (const b of sizes) b.setAttribute('aria-pressed', String((prefs.text ?? '') === b.dataset.a11yText));
+      for (const b of switches) b.setAttribute('aria-checked', String(!!prefs[b.dataset.a11ySwitch as (typeof SWITCHES)[number]]));
+    };
+    const change = (next: Prefs) => {
+      prefs = next;
+      apply(prefs);
+      save(prefs);
+      sync();
+    };
+    sync();
+
+    const open = (next: boolean) => {
+      panel.hidden = !next;
+      toggle.setAttribute('aria-expanded', String(next));
+    };
+    toggle.addEventListener('click', () => {
+      const next = toggle.getAttribute('aria-expanded') !== 'true';
+      open(next);
+      if (next) (sizes.find((b) => b.getAttribute('aria-pressed') === 'true') ?? sizes[0]).focus();
+    });
+    for (const b of sizes) b.addEventListener('click', () => change({ ...prefs, text: b.dataset.a11yText || undefined }));
+    for (const b of switches) {
+      b.addEventListener('click', () => {
+        const key = b.dataset.a11ySwitch as (typeof SWITCHES)[number];
+        change({ ...prefs, [key]: !prefs[key] });
+      });
+    }
+    menu.querySelector('[data-a11y-reset]')!.addEventListener('click', () => change({}));
+
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) {
+        open(false);
+        toggle.focus();
+      }
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (!panel.hidden && !menu.contains(event.target as Node)) open(false);
+    });
+    menu.addEventListener('focusout', (event) => {
+      if (!panel.hidden && event.relatedTarget && !menu.contains(event.relatedTarget as Node)) open(false);
+    });
+  }
+</script>
+
+<style>
+  .mx-a11y {
+    position: fixed;
+    z-index: 25;
+    right: var(--page-margin);
+    bottom: var(--space-5);
+    display: flex;
+  }
+  .mx-a11y__toggle {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: var(--shadow-press), var(--shadow-float);
+    transition: background var(--motion-fast) var(--ease-matrix), color var(--motion-fast) var(--ease-matrix), translate var(--motion-fast) var(--ease-matrix), box-shadow var(--motion-fast) var(--ease-matrix);
+  }
+  .mx-a11y__toggle svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .mx-a11y__toggle svg circle { fill: currentColor; stroke: none; }
+  /* Stays white on hover; dark while the panel is open (not the page colour). */
+  .mx-a11y__toggle[aria-expanded="true"] { background: var(--ink); color: var(--white); }
+  .mx-a11y__toggle:hover { translate: 0 var(--press-lift-hover); box-shadow: 0 var(--press-drop-hover) 0 var(--ink), var(--shadow-float); }
+  .mx-a11y__toggle:active { translate: 0 var(--press-sink-active); box-shadow: 0 var(--press-drop-active) 0 var(--ink); }
+
+  /* Opens upwards from the button. */
+  .mx-a11y__panel {
+    position: absolute;
+    z-index: 1;
+    bottom: calc(100% + var(--space-4));
+    right: 0;
+    width: min(340px, calc(100vw - 2 * var(--page-margin)));
+    max-height: calc(100dvh - var(--nav-height) - 56px - 4 * var(--space-5));
+    overflow: auto;
+    padding: var(--space-5);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: var(--shadow-press), var(--shadow-float);
+    text-align: left;
+  }
+  .mx-a11y__panel[hidden] { display: none; }
+  .mx-a11y__title { margin: 0 0 var(--space-4); font: var(--fs-h4)/1.1 var(--font-display); }
+
+  .mx-a11y__size { margin: 0 0 var(--space-4); padding: 0; border: 0; }
+  .mx-a11y__size legend { margin-bottom: var(--space-2); padding: 0; font-weight: 600; font-size: var(--fs-small); }
+  .mx-a11y__sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .mx-a11y__sizes button {
+    min-height: 44px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    font: 20px/1 var(--font-sans);
+    font-weight: 700;
+  }
+  .mx-a11y__sizes button:nth-child(2) { font-size: 23px; }
+  .mx-a11y__sizes button:nth-child(3) { font-size: 26px; }
+  .mx-a11y__sizes button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+
+  .mx-a11y__list { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+  .mx-a11y__list button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: 600 var(--fs-body)/1.2 var(--font-sans);
+    text-align: left;
+  }
+  .mx-a11y__switch {
+    position: relative;
+    flex: none;
+    width: 48px;
+    height: 28px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-pill);
+    background: var(--white);
+    transition: background var(--motion-fast) var(--ease-matrix);
+  }
+  .mx-a11y__switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--ink);
+    transition: translate var(--motion-fast) var(--ease-matrix);
+  }
+  .mx-a11y__list button[aria-checked="true"] .mx-a11y__switch { background: var(--accent); }
+  .mx-a11y__list button[aria-checked="true"] .mx-a11y__switch::after { translate: 20px 0; }
+  .mx-a11y__hint { display: block; margin-top: -6px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+
+  .mx-a11y__foot { display: grid; gap: var(--space-2); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 2px dashed var(--line); font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+  .mx-a11y__reset { justify-self: start; padding: 0; border: 0; background: none; color: var(--ink); font: 600 var(--fs-small) var(--font-sans); text-decoration: underline; text-underline-offset: 3px; }
+  .mx-a11y kbd { padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+
+  /* No mouse, no cursor to change. */
+  @media (hover: none) {
+    .mx-a11y__list li:has([data-a11y-switch="cursor"]) { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .mx-a11y { bottom: var(--space-4); }
+    .mx-a11y__toggle { width: 52px; height: 52px; }
+  }
+  @media print {
+    .mx-a11y { display: none; }
+  }
+</style>

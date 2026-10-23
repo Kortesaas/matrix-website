@@ -1,0 +1,121 @@
+---
+/**
+ * Small bobbing arrow at the bottom of a hero: tells visitors there is more
+ * below the fold. Tapping it scrolls to where the hero ends; it fades out
+ * as soon as the page is scrolled.
+ *
+ * `floating` (once per page, in BaseLayout): the same arrow fixed at the
+ * bottom of the window. It shows up when someone hasn't scrolled for a few
+ * seconds further down a page that still has more below (moving the mouse,
+ * clicking or typing don't count), and goes away on the next scroll.
+ */
+interface Props {
+  floating?: boolean;
+}
+
+const { floating = false } = Astro.props;
+---
+
+<button
+  class:list={['mx-scroll-cue', floating && 'mx-scroll-cue--floating is-gone']}
+  type="button"
+  aria-label={floating ? 'Weiter nach unten scrollen' : 'Nach unten scrollen'}
+  data-scroll-cue={floating ? 'floating' : ''}
+>
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M12 4v15M5 12.5l7 7 7-7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+</button>
+
+<script>
+  const IDLE_MS = 6000;
+  const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+  const cues = [...document.querySelectorAll<HTMLButtonElement>('[data-scroll-cue=""]')];
+  const floating = document.querySelector<HTMLButtonElement>('[data-scroll-cue="floating"]');
+  if (cues.length) {
+    const onScroll = () => cues.forEach((cue) => cue.classList.toggle('is-gone', window.scrollY > 40));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    for (const cue of cues) {
+      cue.addEventListener('click', () => {
+        // Scroll to the hero's end rather than to the next element: on some
+        // pages that is a <script> or <template>, which can't be scrolled to.
+        const hero = cue.closest('section') ?? cue.parentElement;
+        if (!hero) return;
+        window.scrollTo({
+          top: hero.getBoundingClientRect().bottom + window.scrollY,
+          behavior: smooth(),
+        });
+      });
+    }
+  }
+
+  if (floating) {
+    let timer = 0;
+    // Worth a hint: scrolled past the hero (its own arrow covers the top),
+    // a good bit left below, and nothing open on top of the page.
+    const worth = () =>
+      window.scrollY > 40 &&
+      document.documentElement.scrollHeight - (window.scrollY + window.innerHeight) > 240 &&
+      !document.querySelector('dialog[open], [data-menu-open][aria-expanded="true"]') &&
+      !document.hidden;
+    const hide = () => floating.classList.add('is-gone');
+    // Only scrolling restarts the wait; reading, hovering or clicking around
+    // without scrolling still counts as stuck.
+    const wait = () => {
+      clearTimeout(timer);
+      hide();
+      timer = window.setTimeout(() => worth() && floating.classList.remove('is-gone'), IDLE_MS);
+    };
+    window.addEventListener('scroll', wait, { passive: true });
+    document.addEventListener('visibilitychange', wait);
+    floating.addEventListener('click', () => {
+      hide();
+      window.scrollBy({ top: window.innerHeight * 0.8, behavior: smooth() });
+    });
+    wait();
+  }
+</script>
+
+<style>
+  .mx-scroll-cue {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    bottom: var(--space-5);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+    padding: 0;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 0 3px 0 var(--ink);
+    animation: mx-scroll-cue-bob 1.8s var(--ease-matrix) infinite;
+    transition: opacity var(--motion-slow), visibility var(--motion-slow);
+  }
+  .mx-scroll-cue:hover { animation-play-state: paused; }
+  .mx-scroll-cue:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+  .mx-scroll-cue.is-gone { opacity: 0; visibility: hidden; }
+
+  /* Fixed at the bottom of the window, above the content; it slides in. */
+  .mx-scroll-cue--floating {
+    position: fixed;
+    z-index: 60;
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 3px 0 var(--ink), var(--shadow-float);
+    transition: opacity var(--motion-slow), visibility var(--motion-slow), translate var(--motion-slow) var(--ease-matrix);
+  }
+  .mx-scroll-cue--floating:not(.is-gone) { animation-delay: var(--motion-slow); }
+  .mx-scroll-cue--floating.is-gone { translate: 0 16px; animation: none; }
+
+  @keyframes mx-scroll-cue-bob {
+    0%, 60%, 100% { translate: 0 0; }
+    30% { translate: 0 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mx-scroll-cue { animation: none; transition: none; }
+  }
+</style>

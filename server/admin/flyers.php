@@ -5,7 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/../_app/admin.php';
 require __DIR__ . '/../_app/images.php';
 
-use function Matrix\{e, flyers, programs, current_program, month_label, update_json, in_window, random_id};
+use function Matrix\{e, flyers, flyer_order, order_flyers, programs, current_program, month_label, update_json, in_window, random_id};
 use function Matrix\Admin\{require_user, page_start, page_end, redirect, is_post, post, errors, flash, when};
 use function Matrix\Auth\{check_csrf, csrf_field, log_change};
 
@@ -97,6 +97,38 @@ if (is_post()) {
             flash('success', 'Das Event ist gelöscht.');
         }
         redirect('flyers.php');
+    }
+
+    // Order on the board: the ids as arranged in the preview. The arrow
+    // buttons also work without JavaScript ("move" = "id:-1" / "id:1").
+    if ($action === 'reorder') {
+        $known = array_column(flyers(), 'id');
+        $order = array_values(array_intersect(array_filter((array) ($_POST['order'] ?? []), 'is_string'), $known));
+        [$moveId, $step] = array_pad(explode(':', post('move')), 2, '0');
+        $index = array_search($moveId, $order, true);
+        $target = $index === false ? false : $index + (int) $step;
+        if ($index !== false && $target >= 0 && $target < count($order)) {
+            [$order[$index], $order[$target]] = [$order[$target], $order[$index]];
+        }
+        update_json('flyers.json', ['items' => flyers()], function ($data) use ($order) {
+            $data['order'] = $order;
+            return $data;
+        });
+        if (post('move') === '') {
+            log_change($user, 'Pinnwand neu angeordnet', count($order) . ' Plakate');
+            flash('success', 'Die neue Reihenfolge hängt jetzt so auf der Website.');
+        }
+        redirect('flyers.php#anordnen');
+    }
+
+    if ($action === 'reorder_reset') {
+        update_json('flyers.json', ['items' => flyers()], function ($data) {
+            unset($data['order']);
+            return $data;
+        });
+        log_change($user, 'Pinnwand-Reihenfolge zurückgesetzt', 'nach Datum');
+        flash('success', 'Die Plakate hängen wieder nach Datum sortiert.');
+        redirect('flyers.php#anordnen');
     }
 
     if ($action === 'save') {
@@ -235,6 +267,70 @@ $nextMonth = (new DateTimeImmutable('first day of next month'))->format('Y-m');
       <?php if (!programs()): ?><li class="muted">Noch kein Monatsprogramm. Bis dahin zeigt die Pinnwand einen Platzhalter.</li><?php endif; ?>
     </ul>
   </div>
+</section>
+
+<?php
+// ---------- Preview & order ----------
+$arranged = order_flyers(array_values(array_filter($all, fn ($f) => status($f)[0] !== 'expired')));
+?>
+<section class="card board-editor" id="anordnen" data-board>
+  <div class="card__head">
+    <h2>Vorschau &amp; Reihenfolge</h2>
+    <div class="board-view" role="group" aria-label="Vorschau als">
+      <button type="button" class="chip" data-board-view="desktop" aria-pressed="true">Computer</button>
+      <button type="button" class="chip" data-board-view="phone" aria-pressed="false">Handy</button>
+    </div>
+  </div>
+  <p class="muted small">So hängt die Pinnwand auf der Website. Zieh die Plakate an ihren Platz (am Handy am Griff <span aria-hidden="true">⠿</span>) oder nutz die Pfeile, dann „Reihenfolge speichern“. Das Monatsprogramm hängt immer als Erstes oben links. Blasse Plakate sind noch nicht sichtbar; du kannst sie schon einsortieren.</p>
+  <?php if (!$arranged): ?>
+    <p class="muted">Gerade hängt kein Event an der Pinnwand.</p>
+  <?php else: ?>
+  <form method="post" data-board-form>
+    <?= csrf_field() ?><input type="hidden" name="action" value="reorder">
+    <div class="board" data-view="desktop">
+      <ol class="board__grid" data-board-grid aria-label="Pinnwand, Plakate in Reihenfolge">
+        <li class="board__item board__item--program">
+          <span class="board__num" aria-hidden="true">1</span>
+          <?php if ($shown): ?>
+            <img src="<?= e($shown['image']['src']) ?>" alt="" width="<?= e((string) ($shown['image']['width'] ?? '')) ?>" height="<?= e((string) ($shown['image']['height'] ?? '')) ?>">
+          <?php else: ?>
+            <span class="board__paper board__paper--missing">Monatsprogramm fehlt</span>
+          <?php endif; ?>
+          <span class="board__label"><b>Monatsprogramm</b> bleibt immer oben links</span>
+        </li>
+        <?php foreach ($arranged as $i => $flyer): [$state, $label] = status($flyer); ?>
+          <li class="board__item<?= $state === 'planned' ? ' is-planned' : '' ?>" data-board-item>
+            <input type="hidden" name="order[]" value="<?= e($flyer['id']) ?>">
+            <span class="board__num" aria-hidden="true"><?= $i + 2 ?></span>
+            <?php if (!empty($flyer['image']['src'])): ?>
+              <img src="<?= e($flyer['image']['src']) ?>" alt="" draggable="false" width="<?= e((string) ($flyer['image']['width'] ?? '')) ?>" height="<?= e((string) ($flyer['image']['height'] ?? '')) ?>">
+            <?php else: ?>
+              <span class="board__paper"><b><?= e($flyer['title']) ?></b><?= e($flyer['when'] ?? '') ?></span>
+            <?php endif; ?>
+            <span class="board__label"><b><?= e($flyer['title']) ?></b><?= $state === 'planned' ? ' · ' . e($label) : '' ?></span>
+            <span class="board__tools">
+              <button type="submit" class="icon-btn" name="move" value="<?= e($flyer['id']) ?>:-1" data-board-move="-1" aria-label="<?= e($flyer['title']) ?> nach vorne"<?= $i === 0 ? ' disabled' : '' ?>>←</button>
+              <span class="board__grip" data-board-grip aria-hidden="true">⠿</span>
+              <button type="submit" class="icon-btn" name="move" value="<?= e($flyer['id']) ?>:1" data-board-move="1" aria-label="<?= e($flyer['title']) ?> nach hinten"<?= $i === count($arranged) - 1 ? ' disabled' : '' ?>>→</button>
+            </span>
+          </li>
+        <?php endforeach; ?>
+      </ol>
+    </div>
+    <div class="actions board-actions">
+      <button class="btn" type="submit">Reihenfolge speichern</button>
+      <?php if (flyer_order()): ?>
+        <button class="btn btn--ghost" type="submit" form="board-reset">Wieder nach Datum sortieren</button>
+      <?php endif; ?>
+      <span class="muted small" data-board-status role="status"></span>
+    </div>
+  </form>
+  <?php if (flyer_order()): ?>
+    <form method="post" id="board-reset" hidden data-confirm="Die eigene Reihenfolge verwerfen und die Plakate wieder nach Datum sortieren?" data-confirm-action="Ja, nach Datum">
+      <?= csrf_field() ?><input type="hidden" name="action" value="reorder_reset">
+    </form>
+  <?php endif; ?>
+  <?php endif; ?>
 </section>
 
 <div class="card__head"><h2>Events</h2><a class="btn" href="flyers.php?new=1">Event hinzufügen</a></div>

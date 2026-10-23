@@ -86,6 +86,8 @@
     };
 
     const update = (target) => {
+      // "Normaler Mauszeiger" in the accessibility menu (A11yMenu.astro).
+      if (root.classList.contains('mx-a11y-cursor')) return show(false);
       const overText = !!(target && target.closest(TEXT));
       // Easter eggs: playable stickers give the hand their own state (Play.astro).
       const play = !overText && target && target.closest('[data-play]');

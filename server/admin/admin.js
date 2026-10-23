@@ -152,3 +152,117 @@ if (noticeForm && preview) {
   });
   update();
 }
+
+// Pinnwand preview: masonry like on the website, drag (or arrows) to reorder.
+const board = document.querySelector('[data-board] .board');
+if (board) {
+  const grid = board.querySelector('[data-board-grid]');
+  const form = board.closest('form');
+  const status = form.querySelector('[data-board-status]');
+  const items = () => [...grid.querySelectorAll('[data-board-item]')];
+  let dirty = false;
+
+  // Every item spans as many 4px rows as it is tall, so posters fill the
+  // shortest column (the same rule as the board on the website).
+  let frame = 0;
+  const pack = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      board.classList.add('is-packed');
+      for (const item of grid.children) {
+        const { marginBottom } = getComputedStyle(item);
+        item.style.gridRowEnd = `span ${Math.ceil((item.offsetHeight + (parseFloat(marginBottom) || 0)) / 4)}`;
+      }
+    });
+  };
+  const observer = new ResizeObserver(pack);
+  for (const item of grid.children) observer.observe(item);
+  pack();
+
+  const changed = () => {
+    items().forEach((item, i, all) => {
+      item.querySelector('.board__num').textContent = String(i + 2);
+      item.querySelector('[data-board-move="-1"]').disabled = i === 0;
+      item.querySelector('[data-board-move="1"]').disabled = i === all.length - 1;
+    });
+    dirty = true;
+    status.textContent = 'Noch nicht gespeichert.';
+    pack();
+  };
+  window.addEventListener('beforeunload', (event) => {
+    if (dirty) event.preventDefault();
+  });
+  form.addEventListener('submit', () => { dirty = false; });
+
+  // Computer / Handy view.
+  document.querySelectorAll('[data-board-view]').forEach((button, _, all) => {
+    button.addEventListener('click', () => {
+      board.dataset.view = button.dataset.boardView;
+      for (const other of all) other.setAttribute('aria-pressed', String(other === button));
+      pack();
+    });
+  });
+
+  // Arrows: move in place (without JavaScript they submit and move on the server).
+  grid.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-board-move]');
+    if (!button) return;
+    event.preventDefault();
+    const item = button.closest('[data-board-item]');
+    const list = items();
+    const target = list[list.indexOf(item) + Number(button.dataset.boardMove)];
+    if (!target) return;
+    if (button.dataset.boardMove === '-1') target.before(item);
+    else target.after(item);
+    item.classList.add('is-moved');
+    changed();
+    (button.disabled ? item.querySelector('[data-board-move]:not(:disabled)') : button)?.focus();
+  });
+
+  // Drag: the whole poster with a mouse, the grip with a finger or pen.
+  let drag = null;
+  grid.addEventListener('pointerdown', (event) => {
+    const item = event.target.closest('[data-board-item]');
+    if (!item || event.button !== 0 || event.target.closest('button')) return;
+    if (event.pointerType !== 'mouse' && !event.target.closest('[data-board-grip]')) return;
+    event.preventDefault();
+    const rect = item.getBoundingClientRect();
+    drag = { item, id: event.pointerId, x: event.clientX, y: event.clientY, dx: event.clientX - rect.left, dy: event.clientY - rect.top, moved: false };
+    item.setPointerCapture(event.pointerId);
+  });
+  grid.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const { item } = drag;
+    if (!drag.moved) {
+      if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 6) return;
+      drag.moved = true;
+      item.classList.add('is-dragging');
+    }
+    // Swap places with the poster under the pointer.
+    item.style.visibility = 'hidden';
+    const below = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-board-item]');
+    item.style.visibility = '';
+    // Once swapped, a poster has to be left before it can swap back (no flicker).
+    if (below !== drag.last) drag.last = null;
+    if (below && below !== item && !drag.last) {
+      drag.last = below;
+      const list = items();
+      if (list.indexOf(below) < list.indexOf(item)) below.before(item);
+      else below.after(item);
+      changed();
+    }
+    // Keep the poster under the pointer, wherever the masonry put its slot.
+    item.style.translate = '';
+    const base = item.getBoundingClientRect();
+    item.style.translate = `${event.clientX - drag.dx - base.left}px ${event.clientY - drag.dy - base.top}px`;
+  });
+  const drop = (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    drag.item.classList.remove('is-dragging');
+    drag.item.style.translate = '';
+    if (drag.moved) drag.item.classList.add('is-moved');
+    drag = null;
+  };
+  grid.addEventListener('pointerup', drop);
+  grid.addEventListener('pointercancel', drop);
+}

@@ -45,6 +45,7 @@ server/         PHP, wird beim Build nach dist/ kopiert
   _app/         gemeinsamer Code: Speicher, Konten, Bilder, Kalender, Render-Funktionen (gesperrt)
   admin/        Verwaltungsbereich /admin/
   api/          calendar.php: Termine aus Google Calendar, auf dem Server zwischengespeichert
+                contact.php: Kontaktformular; idea.php: Ideen vom Whiteboard
   media.php     liefert hochgeladene Bilder aus dem Datenordner aus
 scripts/
   postbuild.mjs macht aus dist/ die PHP-Website (siehe unten)
@@ -72,6 +73,7 @@ Das Aussehen steht weiterhin nur in den Astro-Komponenten. Stellen mit gepflegte
 - **Fotos austauschen:** neue Datei nach `src/assets/photos/` legen und den Import in der passenden Datei in `src/data/` (bzw. der Seite) anpassen. Zuschnitt und Rahmen ergeben sich aus der Komponente.
 - **Seitenfarbe:** jede Seite setzt genau eine Akzentfarbe (`accent` im `BaseLayout`). Die Startseite wählt mit `randomAccent` bei jedem Laden eine zufällige Farbe aus `homeAccents` in `src/data/site.ts`: Lila, Blau, Koralle und Grün, wie auf den Unterseiten. Sie vermeidet die vorherige Farbe, sofern Sitzungsspeicher verfügbar ist. Cursor-Ärmel, Textauswahl und 3D-Modell übernehmen die Seitenfarbe; der Handschuh bleibt weiß. Die farbigen Cursor-PNGs werden beim Build aus den vorhandenen Handgrafiken und den CSS-Farbwerten erzeugt.
 - **3D-Räume (Startseite):** Raumnamen, Texte, Fotos und Links stehen in `src/data/campus.ts`.
+- **Roadrunner (Streetwork-Bus im 3D-Modell):** alles in `src/data/campus-roadrunner.js` (Aussehen, Größe, Route, Tempo, Halte, Parkplatz, Handy, „Animationen aus“). Noch ausgeschaltet (`enabled: false`); mit `/?roadrunner` in der Adresse lässt er sich trotzdem ansehen. Die Logik steckt in `src/scripts/campus/roadrunner.js`: Der Bus fährt nur, solange das Modell sichtbar ist, und zwischen den Halten zeichnet die Szene wie bisher nur bei Bedarf neu.
 - **3D-Grundriss:** `src/data/campus-plan.js` enthält die mit „Lageplan beschriftet.png“ abgeglichenen Raumflächen, Marker-Anker und vereinfachten Innenwände. Modellböden und Hervorhebungen verwenden dieselben Polygone. Gebäudehöhen und Möblierung bleiben schematisch; die Innenansicht zeigt niedrige Raumgrenzen statt kleinteiliger WC- und Techniktrennwände.
 
 ### Kalender
@@ -81,6 +83,30 @@ Google Calendar ist die Quelle für alle Termine („Events“, „Jede Woche“
 - **Einrichten:** In Google Calendar unter *Einstellungen › Kalender wählen › Kalender integrieren* die **geheime Adresse im iCal-Format** kopieren und in der Verwaltung unter **Kalender** eintragen. Der Kalender muss dafür nicht öffentlich sein; die Adresse bleibt auf dem Server.
 - **So läuft es:** Die Seite fragt `/api/calendar.php`. Das holt den Kalender auf unserem Server, hält ihn zehn Minuten vor und liefert ihn aus; ist Google nicht erreichbar, gilt die letzte Kopie. Der Browser liest ihn mit `src/data/calendar/ics.ts`. Besucherinnen und Besucher laden nichts von Google, es braucht also keinen Cookie-Hinweis.
 - **Übernommen werden** Wiederholungen, verschobene oder abgesagte Einzeltermine und mehrtägige Termine, Ort und Beschreibung (Links darin werden klickbar). Als privat markierte Termine bleiben verborgen. Wöchentliche Serien landen unter „Jede Woche“, alles andere unter „Events“.
+
+### Kontaktformular
+
+Das Formular auf **Mitmachen › Kontakt** schickt über `/api/contact.php` eine E-Mail an `info@diematrix.de`. Gespeichert wird auf dem Server nichts außer kurzlebigen, gehashten Zählern gegen Spam (Token mit Mindestalter, Honeypot-Feld, Limits pro Person und Tag). Zusätzlich prüft **Google reCAPTCHA v3**, sobald Schlüssel eingetragen sind; ohne Schlüssel läuft das Formular nur mit dem eigenen Spam-Schutz.
+
+Einstellungen kommen aus **Umgebungsvariablen** (beim Hoster z. B. per `SetEnv` in der Server-Konfiguration) oder, wenn das nicht geht, aus der Datei `contact-config.php` im Datenordner (`matrix-data/`), die ein Array mit denselben Namen zurückgibt:
+
+```php
+<?php return [
+  'RECAPTCHA_SITE_KEY' => '…',
+  'RECAPTCHA_SECRET_KEY' => '…',
+];
+```
+
+| Variable | Pflicht | Bedeutung |
+|---|---|---|
+| `RECAPTCHA_SITE_KEY` | für reCAPTCHA | öffentlicher Schlüssel (reCAPTCHA **v3**, Domain eintragen) |
+| `RECAPTCHA_SECRET_KEY` | für reCAPTCHA | geheimer Schlüssel, bleibt auf dem Server |
+| `RECAPTCHA_MIN_SCORE` | nein | 0.0–1.0, Standard 0.5 |
+| `CONTACT_TO` | nein | Empfänger, Standard `info@diematrix.de` |
+| `MAIL_FROM` | empfohlen | Absender auf der eigenen Domain, z. B. `website@diematrix.de` (Standard `website@<Domain>`) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | nein | per SMTP senden statt mit PHPs `mail()`; Port 465 = SSL, sonst STARTTLS |
+
+Schlüssel gibt es unter https://www.google.com/recaptcha/admin (Typ „reCAPTCHA v3“, Domain `diematrix.de`). reCAPTCHA wird erst geladen, wenn jemand ins Formular klickt; die Datenschutzerklärung (Impressum › Kontaktformular, Google reCAPTCHA) beschreibt das. **Nach dem Einrichten einmal eine Testnachricht schicken**: Kommt sie nicht an, `MAIL_FROM` auf eine Adresse der eigenen Domain setzen oder SMTP eintragen. Lokal (`npm run serve`) landen Nachrichten als Textdatei in `matrix-data/outbox/` statt im Postfach.
 
 ### Design-System
 

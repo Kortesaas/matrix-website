@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Matrix\Render;
 
-use function Matrix\{e, hours as hours_data, team as team_data, notice as notice_data, flyers as flyers_data, settings, in_window, current_program, month_label};
+use function Matrix\{e, hours as hours_data, team as team_data, notice as notice_data, flyers as flyers_data, order_flyers, settings, in_window, current_program, month_label};
 
 function template(string $name): string
 {
@@ -41,6 +41,13 @@ function hours(): void
 
 function team(string $group): void
 {
+    team_members($group);
+    if ($group === 'fsj' && !empty(team_data()['fsjOpening'])) echo template('team-card-open');
+}
+
+/** Just the people of a group, without the "Bewirb dich" card (FSJ page). */
+function team_members(string $group): void
+{
     $team = team_data();
     foreach ($team['members'] as $member) {
         if (($member['group'] ?? '') !== $group || empty($member['visible'])) continue;
@@ -55,7 +62,6 @@ function team(string $group): void
             echo fill('team-card-placeholder', $values);
         }
     }
-    if ($group === 'fsj' && !empty($team['fsjOpening'])) echo template('team-card-open');
 }
 
 function notice(): void
@@ -108,12 +114,10 @@ function poster_values(array $image): array
     ];
 }
 
-/** Flyers shown today, ending soonest first. */
+/** Flyers shown today, in the order arranged in the admin area. */
 function visible_flyers(): array
 {
-    $visible = array_filter(flyers_data(), fn ($f) => in_window($f['from'] ?? '', $f['until'] ?? ''));
-    usort($visible, fn ($a, $b) => strcmp($a['until'] ?: '9999', $b['until'] ?: '9999'));
-    return $visible;
+    return order_flyers(array_filter(flyers_data(), fn ($f) => in_window($f['from'] ?? '', $f['until'] ?? '')));
 }
 
 function calendar_subscribe(): void

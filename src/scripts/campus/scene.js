@@ -9,6 +9,8 @@ import { createPalette, toonify, createComicLandscape, createComicRenderer, comi
 import { createRoomHighlights } from "./highlights.js";
 import { placeRoomCard } from "./card-placement.js";
 import { planX, planZ } from '../../data/campus-plan.js';
+import { roadrunner as roadrunnerConfig } from '../../data/campus-roadrunner.js';
+import { createRoadrunner, roadrunnerWanted } from "./roadrunner.js";
 
 /**
  * @param {HTMLElement} root the Campus3D element
@@ -74,6 +76,14 @@ export function mountCampus(root) {
 
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  // The Roadrunner bus (src/data/campus-roadrunner.js). Added before the
+  // comic renderer so it gets the same ink contours as everything else.
+  const roadrunner = roadrunnerWanted(roadrunnerConfig)
+    ? createRoadrunner(roadrunnerConfig, { palette, phone: phone.matches, reducedMotion })
+    : null;
+  if (roadrunner) scene.add(roadrunner.group);
+  let roadrunnerWake = 0;
   const pointerCamera = createPointerCamera(camera, { enabled: !reducedMotion && canHover });
 
   const fadeGroups = [building.outside, building.inside, building.roof].map((group, index) => {
@@ -88,6 +98,10 @@ export function mountCampus(root) {
     return { group, materials, meshes };
   });
   const comic = createComicRenderer(renderer, scene, camera);
+  roadrunner?.load((object) => {
+    comic.track(object);
+    kick();
+  }).catch((error) => console.warn("Roadrunner:", error));
 
   // ---------- Render on demand ----------
   // The scene only redraws while something moves (camera easing, the house
@@ -190,6 +204,7 @@ export function mountCampus(root) {
       stem,
       card: root.querySelector(`[data-card="${id}"]`),
       outdoor: button.dataset.outdoor === "true",
+      vehicle: button.dataset.vehicle === "true",
       plan: anchor.plan,
       height: anchor.height ?? 4.1,
       scene: anchor.scene ? new THREE.Vector3(...anchor.scene) : null,
@@ -197,7 +212,22 @@ export function mountCampus(root) {
       y: 0,
     };
   });
+  // The Roadrunner's marker only exists when the bus does.
+  for (const m of markers.filter((m) => m.vehicle)) {
+    const mobileButton = root.querySelector(`[data-mobile-room="${m.id}"]`);
+    if (roadrunner) {
+      if (mobileButton) mobileButton.hidden = false;
+      continue;
+    }
+    m.button.remove();
+    m.stem.remove();
+    m.card?.remove();
+    mobileButton?.remove();
+    markers.splice(markers.indexOf(m), 1);
+  }
   const byId = new Map(markers.map((m) => [m.id, m]));
+  const entrance = root.querySelector("[data-campus-entrance]");
+  const entranceAnchor = entrance ? JSON.parse(entrance.dataset.anchor || "{}") : null;
   let active = null;
   let pinnedCard = false;
   let closeTimer = 0;
@@ -235,6 +265,7 @@ export function mountCampus(root) {
       return;
     }
     if (active?.card) active.card.hidden = true;
+    holdBus(m);
     active = m;
     pinnedCard = pin;
     for (const other of markers) syncExpanded(other, other === m);
@@ -247,8 +278,16 @@ export function mountCampus(root) {
     refreshDesired();
   }
 
+  // The bus waits at its stop while its card is open.
+  function holdBus(next) {
+    if (!roadrunner || (active?.vehicle ?? false) === (next?.vehicle ?? false)) return;
+    if (next?.vehicle) roadrunner.hold(true);
+    else if (roadrunner.hold(false)) kick();
+  }
+
   function close() {
     cancelClose();
+    holdBus(null);
     if (active?.card) active.card.hidden = true;
     active = null;
     pinnedCard = false;
@@ -281,7 +320,9 @@ export function mountCampus(root) {
       top,
       bottom,
     });
-    card.style.maxHeight = `${placement.maxHeight}px`;
+    // Only cap the height when the card has to be cut; a cap that merely
+    // rounds below the content would show a needless scrollbar.
+    card.style.maxHeight = placement.maxHeight < card.scrollHeight ? `${placement.maxHeight}px` : "";
     card.style.left = `${placement.left - bounds.left}px`;
     card.style.top = `${placement.top - bounds.top}px`;
   }
@@ -410,15 +451,30 @@ export function mountCampus(root) {
     const placed = active && !phone.matches ? [active] : [];
     const w = host.clientWidth;
     const h = host.clientHeight;
+    if (entrance && entranceAnchor?.plan) {
+      // Sits on the door at ground level, so it stays put when the house
+      // opens. Markers keep clear of the sign.
+      anchorPoint.set(planX(entranceAnchor.plan[0]), entranceAnchor.height ?? 0, planZ(entranceAnchor.plan[1]));
+      projected.copy(anchorPoint).project(camera);
+      const ex = (projected.x * 0.5 + 0.5) * w;
+      const ey = (-projected.y * 0.5 + 0.5) * h;
+      entrance.hidden = projected.z > 1 || ex < 40 || ex > w - 40 || ey < 20 || ey > h - 20;
+      entrance.style.transform = `translate(${ex}px, ${ey}px)`;
+      if (!entrance.hidden && !phone.matches) placed.push({ x: ex, y: ey });
+    }
     for (const m of markers) {
-      if (m.scene) anchorPoint.copy(m.scene);
+      if (m.vehicle) roadrunner.markerPoint(anchorPoint);
+      else if (m.scene) anchorPoint.copy(m.scene);
       else anchorPoint.set(planX(m.plan[0]), THREE.MathUtils.lerp(m.height, 0.65, peek), planZ(m.plan[1]));
       projected.copy(anchorPoint).project(camera);
       const ax = (projected.x * 0.5 + 0.5) * w;
       const ay = (-projected.y * 0.5 + 0.5) * h;
       let dx = 0;
       let dy = 0;
-      if (active === m && !phone.matches) {
+      if (m.vehicle && !phone.matches) {
+        // On a stem above the roof, so the bus stays visible below its "+".
+        dy = -40;
+      } else if (active === m && !phone.matches) {
         // The open marker stays put so its card doesn't run away.
         dx = m.x - ax;
         dy = m.y - ay;
@@ -431,7 +487,9 @@ export function mountCampus(root) {
       }
       m.x = ax + dx;
       m.y = ay + dy;
-      const offscreen = projected.z > 1 || m.x < 22 || m.x > w - 22 || m.y < 22 || m.y > h - 22;
+      // The bus's "+" only shows once it has stopped (or while its card is open).
+      const driving = m.vehicle && !roadrunner.parked() && active !== m;
+      const offscreen = driving || projected.z > 1 || m.x < 22 || m.x > w - 22 || m.y < 22 || m.y > h - 22;
       m.button.hidden = offscreen;
       m.button.style.transform = `translate(${m.x}px, ${m.y}px)`;
       const showStem = !offscreen && (dx || dy);
@@ -554,12 +612,18 @@ export function mountCampus(root) {
 
     const moving = pointerCamera.update(dt);
     landscape.updateCamera(camera);
+    // 0: the bus is driving and needs the next frame; otherwise it waits
+    // (e.g. parked at a stop) and wakes the scene up when it pulls out.
+    const bus = roadrunner ? roadrunner.update(dt) : Infinity;
+    roadrunner?.updateCamera(camera);
+    clearTimeout(roadrunnerWake);
+    if (bus > 0 && bus !== Infinity) roadrunnerWake = window.setTimeout(kick, bus * 1000);
     const fading = highlights.update(peek, dt);
     comic.render();
     placeMarkers();
     positionCard();
 
-    if (moving || fading || peek !== (desired ? 1 : 0)) raf = requestAnimationFrame(frame);
+    if (moving || fading || bus === 0 || peek !== (desired ? 1 : 0)) raf = requestAnimationFrame(frame);
     else last = 0;
   }
 
@@ -582,6 +646,7 @@ export function mountCampus(root) {
     destroy() {
       cancelAnimationFrame(raf);
       settleTimers.forEach(clearTimeout);
+      clearTimeout(roadrunnerWake);
       clearTimeout(hoverTimer);
       cancelClose();
       resizeObserver.disconnect();

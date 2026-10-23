@@ -1,10 +1,16 @@
 ---
 import Icon from './Icon.astro';
 import { activeSocials } from '../data/site';
+interface Props {
+  /** "grid": big icons in a row (default). "list": small icons next to the handles. */
+  variant?: 'grid' | 'list';
+}
+
+const { variant = 'grid' } = Astro.props;
 const links = activeSocials.filter((s) => s.handle);
 ---
 
-<ul class="mx-social">
+<ul class:list={['mx-social', variant === 'list' && 'mx-social--list']}>
   {links.map((s) => (
     <li>
       <a href={s.url} rel="noopener" target="_blank" data-social-link={s.icon}>
@@ -25,6 +31,35 @@ const links = activeSocials.filter((s) => s.handle);
       ], { duration: 300, easing: 'ease-out' });
     });
   });
+
+  // TikTok dances while hovered. Started and stopped here rather than in CSS,
+  // so it begins at rest and eases back instead of snapping when it ends.
+  const groove: Keyframe[] = [
+    { rotate: '0deg', translate: '0 0', easing: 'ease-out' },
+    { rotate: '-7deg', translate: '-2px 1px', offset: 0.2, easing: 'ease-in-out' },
+    { rotate: '6deg', translate: '2px -3px', offset: 0.6, easing: 'ease-in-out' },
+    { rotate: '0deg', translate: '0 0' },
+  ];
+  document.querySelectorAll<HTMLElement>('[data-social-link="tiktok"]').forEach((link) => {
+    const svg = link.querySelector('svg');
+    if (!svg) return;
+    let dance: Animation | null = null;
+    const start = () => {
+      if (reduce.matches || dance) return;
+      dance = svg.animate(groove, { duration: 1300, iterations: Infinity });
+    };
+    const stop = () => {
+      if (!dance || link.matches(':hover, :focus-visible')) return;
+      const { rotate, translate } = getComputedStyle(svg);
+      dance.cancel();
+      dance = null;
+      svg.animate([{ rotate, translate }, { rotate: '0deg', translate: '0 0' }], { duration: 220, easing: 'ease-out' });
+    };
+    link.addEventListener('pointerenter', start);
+    link.addEventListener('focus', () => link.matches(':focus-visible') && start());
+    link.addEventListener('pointerleave', () => requestAnimationFrame(stop));
+    link.addEventListener('blur', () => requestAnimationFrame(stop));
+  });
 </script>
 
 <style>
@@ -41,10 +76,16 @@ const links = activeSocials.filter((s) => s.handle);
     [data-social-link="facebook"]:is(:hover, :focus-visible) :global(svg) { animation: social-wave .6s ease-in-out; }
     [data-social-link="instagram"]:is(:hover, :focus-visible) :global(svg) { rotate: -8deg; scale: 1.08; }
     [data-social-link="youtube"]:is(:hover, :focus-visible) :global(svg) { translate: 4px 0; scale: 1.08; }
-    [data-social-link="tiktok"]:is(:hover, :focus-visible) :global(svg) { animation: social-groove .65s ease-in-out infinite alternate; }
   }
   @keyframes social-wave { 0%, 100% { rotate: 0deg; } 25% { rotate: -10deg; translate: 0 -3px; } 60% { rotate: 8deg; } 80% { rotate: -4deg; } }
-  @keyframes social-groove { from { rotate: -7deg; translate: -2px 1px; } to { rotate: 6deg; translate: 2px -3px; } }
   @media (max-width: 600px) { .mx-social { gap: var(--space-6); } .mx-social__icon { width: 76px; height: 76px; border-radius: 18px; } .mx-social__icon :global(svg) { width: 56px; height: 56px; } }
   @media (prefers-reduced-motion: reduce) { .mx-social__icon { transition: none; } }
+
+  /* List: one link per line, small icon left of the handle. */
+  .mx-social--list { display: grid; justify-content: stretch; gap: var(--space-2); }
+  .mx-social--list a { grid-template-columns: auto minmax(0, 1fr); align-items: center; justify-items: start; gap: var(--space-3); }
+  .mx-social--list .mx-social__icon { width: 44px; height: 44px; border-radius: 12px; }
+  .mx-social--list .mx-social__icon :global(svg) { width: 28px; height: 28px; }
+  .mx-social--list .mx-social__handle { font-size: 20px; overflow-wrap: anywhere; }
+  .mx-social--list a:is(:hover, :focus-visible) .mx-social__icon { box-shadow: 3px 3px 0 currentColor; translate: 0 -2px; }
 </style>

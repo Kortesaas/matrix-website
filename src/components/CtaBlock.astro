@@ -1,12 +1,12 @@
 ---
-/** Closing invitation before the footer: question, one lead sentence, one primary button. */
+/** Closing invitation before the footer: question, one lead sentence, optionally one primary button. */
 import Button from './Button.astro';
 
 interface Props {
   title: string;
   lead: string;
-  label: string;
-  href: string;
+  label?: string;
+  href?: string;
 }
 
 const { title, lead, label, href } = Astro.props;
@@ -17,7 +17,7 @@ const { title, lead, label, href } = Astro.props;
     <div class="mx-cta">
       <h2 class="mx-h2">{title}</h2>
       <p class="mx-lead">{lead}</p>
-      <Button href={href}>{label}</Button>
+      {label && href && <Button href={href}>{label}</Button>}
     </div>
   </div>
 </section>
@@ -30,5 +30,6 @@ const { title, lead, label, href } = Astro.props;
     text-align: center;
   }
   .mx-cta .mx-lead { margin: var(--space-4) 0 var(--space-6); }
+  .mx-cta .mx-lead:last-child { margin-bottom: 0; }
 
 </style>

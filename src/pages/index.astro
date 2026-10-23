@@ -5,7 +5,8 @@ import Campus3D from '../components/Campus3D.astro';
 import ChipList from '../components/ChipList.astro';
 import Button from '../components/Button.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import EventList from '../components/EventList.astro';
+import EventCalendar from '../components/EventCalendar.astro';
+import { todayInKoenigsbrunn } from '../data/events';
 import PhotoFrame from '../components/PhotoFrame.astro';
 import Graphic from '../components/Graphic.astro';
 import HomeNotice from '../components/HomeNotice.astro';
@@ -81,11 +82,11 @@ const chips = [
     <div class="mx-container home-events">
       <SectionHeading
         title="Was geht zur Zeit?"
-        lead="Bei uns ist immer was los, egal ob große Events oder unsere Day-to-Day-Aktivitäten."
+        lead="Bei uns ist immer was los, egal ob große Events oder unsere Day-to-Day-Aktivitäten. Tipp auf einen Tag oder blättere mit den Pfeilen in die nächsten Monate."
       />
-      <EventList />
+      <EventCalendar today={todayInKoenigsbrunn()} />
       <div class="home-events__more">
-        <Button href="/aktuelles/" variant="inverse">Alle Events anzeigen</Button>
+        <Button href="/aktuelles/" variant="light">Alle unsere Events</Button>
       </div>
     </div>
   </section>
@@ -175,6 +176,8 @@ const chips = [
 
   /* ---------- Events ---------- */
   .home-events { max-width: 1160px; }
+  /* The section already wears the accent: the agenda steps onto a light tint. */
+  .home-events :global(.mx-cal__agenda) { background: var(--accent-tint); }
   .home-events__more {
     position: relative;
     display: flex;

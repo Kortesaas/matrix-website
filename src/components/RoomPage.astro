@@ -71,7 +71,7 @@ const hasAside = Astro.slots.has('aside');
 
   @media (max-width: 860px) {
     .room-intro__grid { grid-template-columns: 1fr; gap: 32px; }
-    .room-intro__grid > :global(:last-child) { max-width: 320px; justify-self: center; }
+    .room-intro__grid > :global(:last-child) { width: 100%; max-width: 420px; justify-self: center; }
   }
   @media (max-width: 600px) {
     .room-intro .mx-h1 { font-size: 44px; }

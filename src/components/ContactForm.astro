@@ -1,0 +1,328 @@
+---
+/**
+ * Contact form (Mitmachen → Kontakt), sent by /api/contact.php to the team's
+ * inbox. Google reCAPTCHA v3 is loaded only once someone starts filling in
+ * the form, and only when the server has keys for it (the GET answer brings
+ * the public site key); the secret key never reaches the page. Without PHP
+ * (astro dev) sending fails with the e-mail address as a way out.
+ */
+import Button from './Button.astro';
+
+const topics = [
+  ['frage', 'Allgemeine Frage'],
+  ['angebote', 'Angebote & Events'],
+  ['mitmachen', 'Mitmachen & FSJ'],
+  ['idee', 'Idee oder Vorschlag'],
+  ['feedback', 'Lob & Kritik'],
+  ['sonstiges', 'Etwas anderes'],
+];
+---
+
+<div class="mx-contact" data-contact>
+  <form class="mx-contact__form" data-contact-form novalidate aria-labelledby="mx-contact-title">
+    <h3 class="mx-h3 mx-contact__title" id="mx-contact-title">Deine Nachricht an uns</h3>
+    <p class="mx-contact__intro">Felder mit <span aria-hidden="true">*</span><span class="mx-visually-hidden">Stern</span> brauchen wir auf jeden Fall.</p>
+
+    <div class="mx-contact__alert" data-contact-alert role="alert" tabindex="-1" hidden></div>
+
+    <div class="mx-contact__row">
+      <div class="mx-contact__field">
+        <label for="mx-contact-name">Dein Name <span aria-hidden="true">*</span></label>
+        <input id="mx-contact-name" name="name" type="text" autocomplete="name" maxlength="100" required aria-describedby="mx-contact-name-error" />
+        <p class="mx-contact__error" id="mx-contact-name-error" data-error-for="name"></p>
+      </div>
+      <div class="mx-contact__field">
+        <label for="mx-contact-email">Deine E-Mail-Adresse</label>
+        <input id="mx-contact-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" aria-describedby="mx-contact-email-hint mx-contact-email-error" />
+        <p class="mx-contact__hint" id="mx-contact-email-hint">Freiwillig, aber ohne E-Mail-Adresse können wir dir nicht antworten.</p>
+        <p class="mx-contact__error" id="mx-contact-email-error" data-error-for="email"></p>
+      </div>
+    </div>
+
+    <div class="mx-contact__field">
+      <label for="mx-contact-topic">Worum geht’s? <span aria-hidden="true">*</span></label>
+      <select id="mx-contact-topic" name="topic" required aria-describedby="mx-contact-topic-error">
+        <option value="">Bitte auswählen</option>
+        {topics.map(([value, label]) => <option value={value}>{label}</option>)}
+      </select>
+      <p class="mx-contact__error" id="mx-contact-topic-error" data-error-for="topic"></p>
+    </div>
+
+    <div class="mx-contact__field">
+      <label for="mx-contact-message">Deine Nachricht <span aria-hidden="true">*</span></label>
+      <textarea id="mx-contact-message" name="message" rows="6" minlength="10" maxlength="4000" required aria-describedby="mx-contact-message-count mx-contact-message-error"></textarea>
+      <p class="mx-contact__hint mx-contact__count" id="mx-contact-message-count" data-contact-count>0 / 4000 Zeichen</p>
+      <p class="mx-contact__error" id="mx-contact-message-error" data-error-for="message"></p>
+    </div>
+
+    <label class="mx-contact__trap" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+
+    <div class="mx-contact__actions">
+      <Button type="submit" data-contact-submit>
+        <span data-contact-label>Nachricht senden</span>
+      </Button>
+      <span class="mx-contact__busy" data-contact-busy aria-live="polite"></span>
+    </div>
+
+    <p class="mx-contact__legal">
+      Wir nutzen deine Angaben nur, um deine Nachricht zu beantworten. Mehr dazu in der <a class="mx-link" href="/impressum/#datenschutz-kontakt">Datenschutzerklärung</a>.
+      <span data-contact-recaptcha hidden>Zum Schutz vor Spam ist dieses Formular durch Google reCAPTCHA geschützt. Es gelten die <a class="mx-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener">Datenschutzerklärung</a> und die <a class="mx-link" href="https://policies.google.com/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a> von Google.</span>
+    </p>
+  </form>
+
+  <div class="mx-contact__done" data-contact-done hidden>
+    <p class="mx-contact__done-mark" aria-hidden="true">✓</p>
+    <h3 class="mx-h3" tabindex="-1" data-contact-done-title>Danke, deine Nachricht ist angekommen!</h3>
+    <p data-contact-done-text></p>
+    <Button variant="outline" data-contact-again>Noch eine Nachricht schreiben</Button>
+  </div>
+</div>
+
+<script>
+  import { site } from '../data/site';
+
+  type Answer = { ok?: boolean; message?: string; fields?: Record<string, string>; token?: string; siteKey?: string };
+  type Grecaptcha = { ready: (fn: () => void) => void; execute: (key: string, opts: { action: string }) => Promise<string> };
+  const ENDPOINT = '/api/contact.php';
+  const FIELDS = ['name', 'email', 'topic', 'message'] as const;
+  const fallback = `Schreib uns sonst direkt an ${site.email}.`;
+
+  document.querySelectorAll<HTMLElement>('[data-contact]').forEach((root) => {
+    const form = root.querySelector<HTMLFormElement>('[data-contact-form]')!;
+    const alert = root.querySelector<HTMLElement>('[data-contact-alert]')!;
+    const submit = root.querySelector<HTMLButtonElement>('[data-contact-submit]')!;
+    const label = root.querySelector<HTMLElement>('[data-contact-label]')!;
+    const busy = root.querySelector<HTMLElement>('[data-contact-busy]')!;
+    const count = root.querySelector<HTMLElement>('[data-contact-count]')!;
+    const recaptchaNote = root.querySelector<HTMLElement>('[data-contact-recaptcha]')!;
+    const done = root.querySelector<HTMLElement>('[data-contact-done]')!;
+    const doneTitle = root.querySelector<HTMLElement>('[data-contact-done-title]')!;
+    const doneText = root.querySelector<HTMLElement>('[data-contact-done-text]')!;
+    const message = form.elements.namedItem('message') as HTMLTextAreaElement;
+    let setup: Promise<{ token: string; siteKey: string } | null> | null = null;
+    let sending = false;
+
+    // Token (and reCAPTCHA, if configured) on first interaction, not on page load.
+    const prepare = () => {
+      setup ??= fetch(ENDPOINT, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+        .then((r) => (r.ok ? (r.json() as Promise<Answer>) : null))
+        .then((a) => {
+          if (!a?.token) return null;
+          const siteKey = a.siteKey ?? '';
+          if (siteKey) {
+            recaptchaNote.hidden = false;
+            const script = document.createElement('script');
+            script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(siteKey)}`;
+            script.async = true;
+            document.head.append(script);
+          }
+          return { token: a.token, siteKey };
+        })
+        .catch(() => null);
+      return setup;
+    };
+    form.addEventListener('focusin', prepare, { once: true });
+
+    const captcha = async (siteKey: string) => {
+      if (!siteKey) return '';
+      for (let i = 0; i < 50 && !(window as unknown as { grecaptcha?: Grecaptcha }).grecaptcha; i++) await new Promise((r) => setTimeout(r, 100));
+      const g = (window as unknown as { grecaptcha?: Grecaptcha }).grecaptcha;
+      if (!g) throw new Error('recaptcha');
+      await new Promise<void>((r) => g.ready(r));
+      return g.execute(siteKey, { action: 'contact' });
+    };
+
+    const updateCount = () => {
+      count.textContent = `${message.value.length} / ${message.maxLength} Zeichen`;
+    };
+    message.addEventListener('input', updateCount);
+
+    const fieldEl = (name: string) => form.elements.namedItem(name) as HTMLInputElement | null;
+    const setError = (name: string, text: string) => {
+      const el = fieldEl(name);
+      const out = root.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+      if (!el || !out) return;
+      out.textContent = text;
+      if (text) el.setAttribute('aria-invalid', 'true');
+      else el.removeAttribute('aria-invalid');
+    };
+    const showAlert = (text: string, kind: 'error' | 'info' = 'error') => {
+      alert.textContent = text;
+      alert.dataset.kind = kind;
+      alert.hidden = !text;
+    };
+
+    /** Client-side check, same rules as the server. */
+    const check = () => {
+      const errors: Record<string, string> = {};
+      const value = (name: string) => (fieldEl(name)?.value ?? '').trim();
+      if (!value('name')) errors.name = 'Wie heißt du?';
+      const email = value('email');
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = 'Diese E-Mail-Adresse sieht nicht richtig aus.';
+      if (!value('topic')) errors.topic = 'Worum geht es?';
+      const text = value('message');
+      if (text.length < 10) errors.message = text ? 'Schreib uns bitte ein paar Worte mehr.' : 'Was möchtest du uns sagen?';
+      return errors;
+    };
+    const showErrors = (errors: Record<string, string>) => {
+      for (const name of FIELDS) setError(name, errors[name] ?? '');
+      const first = FIELDS.find((name) => errors[name]);
+      if (first) fieldEl(first)?.focus();
+    };
+    // Clear a field's error as soon as it is fixed.
+    for (const name of FIELDS) {
+      fieldEl(name)?.addEventListener('input', () => {
+        if (fieldEl(name)?.getAttribute('aria-invalid') && !check()[name]) setError(name, '');
+      });
+    }
+
+    const setSending = (on: boolean) => {
+      sending = on;
+      submit.disabled = on;
+      form.setAttribute('aria-busy', String(on));
+      label.textContent = on ? 'Wird gesendet …' : 'Nachricht senden';
+      busy.textContent = on ? 'Deine Nachricht wird gesendet.' : '';
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (sending) return;
+      showAlert('');
+      const errors = check();
+      if (Object.keys(errors).length) {
+        showErrors(errors);
+        return;
+      }
+      showErrors({});
+      setSending(true);
+      try {
+        const ready = await prepare();
+        if (!ready) throw new Error('setup');
+        const body = new FormData(form);
+        body.set('token', ready.token);
+        try {
+          body.set('captcha', await captcha(ready.siteKey));
+        } catch {
+          throw new Error('Die Spam-Prüfung (reCAPTCHA) konnte nicht geladen werden. Vielleicht blockiert ein Werbeblocker sie. ' + fallback);
+        }
+        const response = await fetch(ENDPOINT, { method: 'POST', body, headers: { Accept: 'application/json' } });
+        const answer = (await response.json().catch(() => ({}))) as Answer;
+        if (!response.ok || !answer.ok) {
+          if (answer.fields) showErrors(answer.fields);
+          // A used or too old token gets replaced for the next try.
+          setup = null;
+          throw new Error(answer.message || `Deine Nachricht konnte gerade nicht verschickt werden. ${fallback}`);
+        }
+        const email = (fieldEl('email')?.value ?? '').trim();
+        doneText.textContent = email
+          ? `Wir melden uns so bald wie möglich bei dir unter ${email}.`
+          : 'Du hast keine E-Mail-Adresse angegeben, deshalb können wir dir nicht direkt antworten. Komm gern vorbei oder ruf uns an.';
+        form.reset();
+        updateCount();
+        setup = null;
+        form.hidden = true;
+        done.hidden = false;
+        doneTitle.focus();
+      } catch (error) {
+        const text = error instanceof Error && error.message.length > 20 ? error.message : `Gerade klappt das Senden nicht. ${fallback}`;
+        showAlert(text);
+        alert.focus();
+      } finally {
+        setSending(false);
+      }
+    });
+
+    root.querySelector('[data-contact-again]')!.addEventListener('click', () => {
+      done.hidden = true;
+      form.hidden = false;
+      form.addEventListener('focusin', prepare, { once: true });
+      fieldEl('name')?.focus();
+    });
+  });
+</script>
+
+<style>
+  .mx-contact__form,
+  .mx-contact__done {
+    padding: var(--space-6);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    box-shadow: var(--shadow-press);
+  }
+  .mx-contact__form[hidden],
+  .mx-contact__done[hidden],
+  .mx-contact__alert[hidden],
+  [data-contact-recaptcha][hidden] { display: none; }
+  .mx-contact__title { margin: 0; }
+  .mx-contact__intro { margin: var(--space-2) 0 var(--space-5); font-size: var(--fs-small); color: var(--ink-muted); }
+
+  .mx-contact__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-5); }
+  .mx-contact__field { display: grid; align-content: start; gap: 6px; margin-bottom: var(--space-4); }
+  .mx-contact__field label { font-weight: 600; }
+  .mx-contact__field label span { color: var(--accent-strong); }
+  .mx-contact__field :is(input, select, textarea) {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 14px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--fs-body);
+  }
+  .mx-contact__field textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
+  .mx-contact__field :is(input, select, textarea):focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 2px; }
+  .mx-contact__field [aria-invalid="true"] { border-color: var(--coral-600); box-shadow: inset 0 0 0 1px var(--coral-600); }
+  .mx-contact__hint { margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+  .mx-contact__count { text-align: right; }
+  .mx-contact__error { margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); font-weight: 600; color: var(--coral-600); }
+  .mx-contact__error:empty { display: none; }
+  html.mx-a11y-contrast .mx-contact__error { color: color-mix(in oklab, var(--coral-600) 55%, var(--ink)); }
+
+  .mx-contact__alert {
+    margin: 0 0 var(--space-5);
+    padding: 12px 14px;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--coral-500) 22%, var(--white));
+    font-weight: 600;
+  }
+  .mx-contact__alert:focus { outline: 3px solid var(--accent-strong); outline-offset: 2px; }
+
+  .mx-contact__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .mx-contact__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); margin-top: var(--space-2); }
+  .mx-contact__actions :global(.mx-btn[disabled]) { cursor: progress; opacity: 0.75; }
+  .mx-contact__legal { margin: var(--space-5) 0 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--ink-muted); }
+  .mx-contact__legal span { display: block; margin-top: var(--space-2); }
+
+  .mx-contact__done { text-align: center; }
+  .mx-contact__done h3 { margin: 0 0 var(--space-3); }
+  .mx-contact__done h3:focus { outline: none; }
+  .mx-contact__done p { margin: 0 auto var(--space-5); max-width: 46ch; }
+  .mx-contact__done-mark {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-4) !important;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--accent);
+    font: 34px/1 var(--font-display);
+  }
+
+  @media (max-width: 600px) {
+    .mx-contact__form,
+    .mx-contact__done { padding: var(--space-5) var(--space-4); }
+    .mx-contact__row { grid-template-columns: 1fr; }
+    .mx-contact__actions :global(.mx-btn) { width: 100%; justify-content: center; }
+  }
+</style>
+
+<style is:global>
+  /* The reCAPTCHA notice sits in the form, so Google's floating badge can go
+     (allowed when the notice is shown); it would cover the a11y button. */
+  .grecaptcha-badge { visibility: hidden !important; }
+</style>

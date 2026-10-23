@@ -1,5 +1,11 @@
 ---
-/** One offer: square photo on an offset block in the card's own colour, display title, meta line. */
+/**
+ * One offer: square photo on an offset block in the card's own colour and the
+ * display title. The short description sits on a paper note that slides up
+ * over the photo on hover/focus (mouse); on touch screens it is simply shown
+ * under the title. Only offers with a room to go to are links; the others
+ * get no pointer, lift or "zum Raum" hint.
+ */
 import PhotoFrame, { type Offset } from './PhotoFrame.astro';
 import type { Offer } from '../data/offers';
 
@@ -9,66 +15,119 @@ interface Props {
 }
 
 const { offer, offset = 'bl' } = Astro.props;
-const Tag = offer.href ? 'a' : 'div';
+const Tag = offer.href ? 'a' : 'article';
 ---
 
 <Tag
   class:list={['mx-offer', offer.href && 'mx-offer--link']}
   id={offer.slug}
   href={offer.href}
+  tabindex={offer.href ? undefined : 0}
+  aria-labelledby={`${offer.slug}-title`}
+  aria-describedby={`${offer.slug}-text`}
   style={`--frame: var(--${offer.frame}-500); --frame-strong: var(--${offer.frame}-600)`}
 >
   <PhotoFrame
     src={offer.image}
-    interactive={!offer.href}
+    interactive={false}
     alt=""
     ratio="1"
     offset={offset}
     sizes="(max-width: 600px) 45vw, (max-width: 1024px) 45vw, 400px"
   />
-  <div class="mx-offer__title">{offer.title}</div>
-  {offer.meta && <div class="mx-offer__meta">{offer.meta}</div>}
+  <h3 class="mx-offer__title" id={`${offer.slug}-title`}>{offer.title}</h3>
+  <p class="mx-offer__note" id={`${offer.slug}-text`}>
+    {offer.text}
+    {offer.href && <span class="mx-offer__go" aria-hidden="true">Mehr dazu →</span>}
+  </p>
 </Tag>
 
 <style>
   .mx-offer {
+    position: relative;
     display: block;
     text-decoration: none;
     color: inherit;
     scroll-margin-top: var(--space-11);
+    /* The note is placed against the square photo: 100cqw is its height. */
+    container-type: inline-size;
   }
+  .mx-offer:focus-visible { outline: 3px solid var(--focus); outline-offset: 8px; }
 
   .mx-offer :global(.mx-photo) {
     transition: transform var(--motion-slow) var(--ease-matrix);
   }
 
-  .mx-offer--link:hover :global(.mx-photo) {
-    transform: rotate(var(--tilt-hover)) translateY(var(--lift-hover));
-  }
-
   .mx-offer__title {
-    margin-top: var(--space-5);
+    margin: var(--space-5) 0 0;
     text-align: center;
     color: var(--frame-strong, var(--accent-strong));
     font-family: var(--font-display);
     font-size: 30px;
+    font-weight: 400;
     line-height: 1.05;
   }
 
-  .mx-offer__meta {
-    margin-top: 4px;
+  .mx-offer__note {
+    margin: var(--space-2) 0 0;
+    font-size: var(--fs-small);
+    line-height: var(--lh-small);
+    color: var(--ink);
     text-align: center;
-    font-size: 15px;
-    line-height: 22px;
-    color: var(--ink-muted);
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  .mx-offer__go {
+    display: block;
+    margin-top: var(--space-2);
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1;
+    color: var(--frame-strong, var(--accent-strong));
+  }
+
+  /* Mouse: the note is pinned over the lower part of the photo and appears
+     on hover or keyboard focus. Link cards also lift their photo. */
+  @media (hover: hover) and (pointer: fine) {
+    .mx-offer__note {
+      position: absolute;
+      z-index: 2;
+      left: 7%;
+      right: 7%;
+      top: 100cqw;
+      margin: 0;
+      padding: var(--space-4) var(--space-4) var(--space-3);
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      box-shadow: 0 4px 0 var(--ink);
+      text-align: left;
+      font-size: 15px;
+      line-height: 21px;
+      opacity: 0;
+      translate: 0 calc(-100% + 8px);
+      rotate: -1.2deg;
+      pointer-events: none;
+      transition: opacity var(--motion-normal) var(--ease-matrix), translate var(--motion-normal) var(--ease-matrix);
+    }
+    .mx-offer:nth-child(even) .mx-offer__note { rotate: 1.2deg; }
+    .mx-offer:is(:hover, :focus-visible) .mx-offer__note {
+      opacity: 1;
+      translate: 0 calc(-100% - var(--space-4));
+    }
+    .mx-offer--link:is(:hover, :focus-visible) :global(.mx-photo) {
+      transform: rotate(var(--tilt-hover)) translateY(var(--lift-hover));
+    }
   }
 
   @media (max-width: 600px) {
     .mx-offer__title { font-size: 22px; margin-top: var(--space-4); }
-    .mx-offer__meta { font-size: 13px; line-height: 18px; }
+    .mx-offer__note { font-size: 13px; line-height: 18px; }
+    .mx-offer__go { font-size: 16px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mx-offer :global(.mx-photo) { transition: none; }
+    .mx-offer :global(.mx-photo),
+    .mx-offer__note { transition: none; }
   }
 </style>

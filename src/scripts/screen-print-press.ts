@@ -137,6 +137,7 @@ export async function initScreenPrint(root: HTMLElement) {
   const logo = root.dataset.logoPath!;
   const logoBox = root.dataset.logoBox!.split(' ').map(Number);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const coarse = matchMedia('(pointer: coarse)');
 
   // The wordmark on the print uses the display face.
   await document.fonts.load('190px Boogaloo').catch(() => {});
@@ -324,7 +325,7 @@ export async function initScreenPrint(root: HTMLElement) {
   function update() {
     root.dataset.state = state;
     instruction.textContent = {
-      open: 'Klick auf die Presse: Sieb runter.',
+      open: coarse.matches ? 'Tipp auf die Presse: Sieb runter.' : 'Klick auf die Presse: Sieb runter.',
       ready: 'Rakel ziehen.',
       inked: 'Sieb hoch.',
       done: 'Frisch gedruckt! Noch mal?',
@@ -383,8 +384,14 @@ export async function initScreenPrint(root: HTMLElement) {
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
     raycaster.setFromCamera(pointer, camera);
-    if ((state === 'open' || state === 'inked') && raycaster.intersectObject(handle, true).length) return 'handle';
-    if (state === 'ready' && raycaster.intersectObject(squeegee, true).length) return 'squeegee';
+    const part = state === 'open' || state === 'inked' ? 'handle' : state === 'ready' ? 'squeegee' : null;
+    if (!part) return null;
+    if (raycaster.intersectObject(part === 'handle' ? handle : squeegee, true).length) return part;
+    // Fingers are less precise than the lever is thick: near enough counts.
+    if (event.pointerType !== 'mouse') {
+      const target = toScreen(part === 'handle' ? handlePoint(lower) : squeegee.getWorldPosition(new THREE.Vector3()));
+      if (Math.hypot(event.clientX - rect.left - target.x, event.clientY - rect.top - target.y) < 40) return part;
+    }
     return null;
   }
   let drag: { id: number; part: 'handle' | 'squeegee'; x: number; y: number; start: number; a: THREE.Vector2; b: THREE.Vector2; moved: boolean } | null = null;
@@ -445,6 +452,11 @@ export async function initScreenPrint(root: HTMLElement) {
   };
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
+  // The stage lets the page scroll vertically (touch-action: pan-y), which
+  // would take over a finger pulling the lever down. Touch events follow
+  // pointerdown, so once a drag has started the page stays where it is.
+  canvas.addEventListener('touchstart', (event) => { if (drag) event.preventDefault(); }, { passive: false });
+  canvas.addEventListener('touchmove', (event) => { if (drag) event.preventDefault(); }, { passive: false });
 
   // Subtle parallax that follows the pointer over the stage.
   const parallax = new THREE.Vector2();

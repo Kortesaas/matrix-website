@@ -7,6 +7,7 @@
  * character sticker takes over, overlapping the hero's bottom edge.
  */
 import Graphic from './Graphic.astro';
+import ScrollCue from './ScrollCue.astro';
 import type { GraphicName } from '../data/graphics';
 import AngebotArtwork from '../../public/graphics/heroes/angebot-hero-deco.svg';
 import RaeumeArtwork from '../../public/graphics/heroes/raeume-hero-deco.svg';
@@ -43,6 +44,7 @@ const Artwork = artworks[deco];
   {sticker === 'sun-omg' ? (
     <SunArtwork class={`mx-hero__sticker mx-hero__sticker--${stickerSide}`} role="group" aria-label="Interaktive Sonne" />
   ) : sticker && <Graphic name={sticker} class={`mx-hero__sticker mx-hero__sticker--${stickerSide}`} />}
+  <ScrollCue />
 </section>
 
 <style>
