@@ -110,7 +110,7 @@ function page_start(string $title, ?array $user = null): void
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/boogaloo-latin-400.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="admin.css?v=15">
+  <link rel="stylesheet" href="admin.css?v=16">
   <noscript><link rel="stylesheet" href="admin-noscript.css"></noscript>
   <script src="admin.js?v=5" defer></script>
   <script src="/custom-select.js?v=1" type="module"></script>
@@ -130,7 +130,7 @@ function page_start(string $title, ?array $user = null): void
       <div class="nav__end">
       <a class="nav__site" href="/" target="_blank" rel="noopener">Website ansehen <span aria-hidden="true">↗</span></a>
       <details class="usermenu">
-        <summary><span class="usermenu__avatar" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></span><span class="usermenu__name"><?= e($user['name']) ?></span></summary>
+        <summary><?php avatar($user, 'usermenu__avatar'); ?><span class="usermenu__name"><?= e($user['name']) ?></span></summary>
         <div class="usermenu__panel">
           <a href="account.php"<?= $self === 'account.php' ? ' aria-current="page"' : '' ?>>Mein Konto</a>
           <form method="post" action="logout.php"><?= csrf_field() ?><button type="submit">Abmelden</button></form>
@@ -167,6 +167,79 @@ function page_end(bool $auth = false): void
   </dialog>
 </body>
 </html>
+<?php
+}
+
+/** A person's profile picture, or the first letter of their name without one. */
+function avatar(array $user, string $class): void
+{
+    if (!empty($user['avatar']['src'])) {
+        echo '<img class="' . e($class) . '" src="' . e($user['avatar']['src']) . '" alt="" width="64" height="64">';
+    } else {
+        echo '<span class="' . e($class) . '" aria-hidden="true">' . e(mb_strtoupper(mb_substr($user['name'], 0, 1))) . '</span>';
+    }
+}
+
+/**
+ * One page of a long list. The page number comes from ?$param (1 when it's
+ * missing or out of range), so several lists on one page page separately.
+ */
+function paginate(array $items, int $per, string $param = 'seite'): array
+{
+    $items = array_values($items);
+    $pages = max(1, (int) ceil(count($items) / $per));
+    $page = min($pages, max(1, (int) ($_GET[$param] ?? 1)));
+    return [
+        'items' => array_slice($items, ($page - 1) * $per, $per),
+        'page' => $page,
+        'pages' => $pages,
+        'total' => count($items),
+        'param' => $param,
+    ];
+}
+
+/** Address of another page of the list, keeping the rest of the query. */
+function page_url(array $list, int $page, string $anchor = ''): string
+{
+    $query = $_GET;
+    if ($page > 1) $query[$list['param']] = $page;
+    else unset($query[$list['param']]);
+    return basename($_SERVER['SCRIPT_NAME']) . ($query ? '?' . http_build_query($query) : '') . $anchor;
+}
+
+/**
+ * Page links under a list from paginate(), only when there is more than one
+ * page: "← Neuere 1 … 4 5 6 … 9 Ältere →" and "Seite 5 von 9 · 70 $noun".
+ */
+function pager(array $list, string $label, string $noun, string $anchor = '', string $back = '← Neuere', string $forward = 'Ältere →'): void
+{
+    ['page' => $page, 'pages' => $pages] = $list;
+    if ($pages < 2) return;
+    ?>
+  <nav class="pager" aria-label="<?= e($label) ?>">
+    <?php if ($page > 1): ?>
+      <a class="pager__step" href="<?= e(page_url($list, $page - 1, $anchor)) ?>" rel="prev"><?= e($back) ?></a>
+    <?php else: ?>
+      <span class="pager__step" aria-hidden="true"><?= e($back) ?></span>
+    <?php endif; ?>
+    <span class="pager__pages">
+      <?php for ($i = 1; $i <= $pages; $i++): ?>
+        <?php if ($i === $page): ?>
+          <span class="pager__page" aria-current="page"><?= $i ?></span>
+        <?php elseif ($i === 1 || $i === $pages || abs($i - $page) <= 1): ?>
+          <a class="pager__page" href="<?= e(page_url($list, $i, $anchor)) ?>" aria-label="Seite <?= $i ?>"><?= $i ?></a>
+        <?php elseif (abs($i - $page) === 2): ?>
+          <span class="pager__gap" aria-hidden="true">…</span>
+        <?php endif; ?>
+      <?php endfor; ?>
+    </span>
+    <?php if ($page < $pages): ?>
+      <a class="pager__step" href="<?= e(page_url($list, $page + 1, $anchor)) ?>" rel="next"><?= e($forward) ?></a>
+    <?php else: ?>
+      <span class="pager__step" aria-hidden="true"><?= e($forward) ?></span>
+    <?php endif; ?>
+  </nav>
+  <p class="muted small pager__info">Seite <?= $page ?> von <?= $pages ?> · <?= $list['total'] ?> <?= e($noun) ?></p>
 <?php
 }
 

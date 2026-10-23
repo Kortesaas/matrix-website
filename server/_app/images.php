@@ -16,11 +16,12 @@ const MAX_PIXELS = 40_000_000;
 
 /**
  * @param array $file one entry of $_FILES
- * @param string $folder "team" or "flyer"
+ * @param string $folder "team", "flyer" or "avatar"
  * @param int[] $widths target widths; smaller originals keep their size
+ * @param bool $square cut the middle square out first (profile pictures)
  * @return array|string image info for the content files, or an error message
  */
-function store(array $file, string $folder, array $widths): array|string
+function store(array $file, string $folder, array $widths, bool $square = false): array|string
 {
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
         return match ($file['error'] ?? null) {
@@ -47,6 +48,10 @@ function store(array $file, string $folder, array $widths): array|string
     };
     if (!$image) return 'Das Bild konnte nicht gelesen werden.';
     if ($info[2] === IMAGETYPE_JPEG) $image = orient($image, $file['tmp_name']);
+    if ($square) {
+        $side = min(imagesx($image), imagesy($image));
+        $image = imagecrop($image, ['x' => intdiv(imagesx($image) - $side, 2), 'y' => intdiv(imagesy($image) - $side, 2), 'width' => $side, 'height' => $side]) ?: $image;
+    }
 
     if (!preg_match('/^[a-z]+$/', $folder)) return 'Ungültiger Ordner.';
     $dir = data_path("uploads/$folder");

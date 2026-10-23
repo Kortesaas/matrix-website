@@ -1,11 +1,12 @@
 <?php
-/** Your own name and password. */
+/** Your own name, profile picture and password. */
 declare(strict_types=1);
 
 require __DIR__ . '/../_app/admin.php';
+require __DIR__ . '/../_app/images.php';
 
 use function Matrix\e;
-use function Matrix\Admin\{require_user, page_start, page_end, redirect, is_post, post, errors, flash};
+use function Matrix\Admin\{require_user, page_start, page_end, redirect, is_post, post, errors, flash, upload_field};
 use function Matrix\Auth\{check_csrf, csrf_field, update_user, password_problem, log_change};
 use const Matrix\Auth\ROLES;
 
@@ -24,9 +25,21 @@ if (is_post()) {
         elseif ($new !== (string) ($_POST['password2'] ?? '')) $errors[] = 'Die beiden neuen Passwörter sind nicht gleich.';
         elseif ($new === $current) $errors[] = 'Bitte ein neues Passwort wählen.';
     }
+    // Profile picture: a new upload replaces the old one.
+    $avatar = $user['avatar'] ?? null;
+    $upload = $_FILES['avatar'] ?? null;
+    if (!$errors && $upload && ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        $stored = Matrix\Images\store($upload, 'avatar', [128, 256], true);
+        if (is_string($stored)) $errors[] = $stored;
+        else $avatar = $stored;
+    } elseif (isset($_POST['remove_avatar'])) {
+        $avatar = null;
+    }
     if (!$errors) {
-        update_user($user['id'], function ($u) use ($name, $new) {
+        if (($avatar['src'] ?? null) !== ($user['avatar']['src'] ?? null)) Matrix\Images\delete($user['avatar'] ?? null);
+        update_user($user['id'], function ($u) use ($name, $new, $avatar) {
             $u['name'] = mb_substr($name, 0, 80);
+            $u['avatar'] = $avatar;
             if ($new !== '') {
                 $u['password'] = password_hash($new, PASSWORD_DEFAULT);
                 $u['must_change'] = false;
@@ -45,17 +58,27 @@ if (is_post()) {
 page_start('Mein Konto', $user);
 ?>
 <?php errors($errors); ?>
-<form method="post" class="card form narrow">
+<form method="post" enctype="multipart/form-data" class="card form">
   <?= csrf_field() ?>
-  <p class="muted small">Benutzername: <b><?= e($user['username']) ?></b> · Rolle: <?= e(ROLES[$user['role']]) ?></p>
-  <label>Name <input name="name" required maxlength="80" autocomplete="name" value="<?= e($user['name']) ?>"><small>So erscheinst du im Verlauf.</small></label>
-  <fieldset>
-    <legend><?= !empty($user['must_change']) ? 'Eigenes Passwort festlegen' : 'Passwort ändern' ?></legend>
-    <input type="text" name="username" value="<?= e($user['username']) ?>" autocomplete="username" hidden>
-    <label>Aktuelles Passwort <input name="current" type="password" autocomplete="current-password" <?= !empty($user['must_change']) ? 'required' : '' ?>></label>
-    <label>Neues Passwort <input name="password" type="password" minlength="10" autocomplete="new-password" <?= !empty($user['must_change']) ? 'required' : '' ?>><small>mindestens 10 Zeichen</small></label>
-    <label>Neues Passwort wiederholen <input name="password2" type="password" minlength="10" autocomplete="new-password"></label>
-  </fieldset>
+  <div class="account">
+    <div class="account__col">
+      <p class="muted small">Benutzername: <b><?= e($user['username']) ?></b> · Rolle: <?= e(ROLES[$user['role']]) ?></p>
+      <label>Name <input name="name" required maxlength="80" autocomplete="name" value="<?= e($user['name']) ?>"><small>So erscheinst du im Verlauf.</small></label>
+      <fieldset>
+        <legend><?= !empty($user['must_change']) ? 'Eigenes Passwort festlegen' : 'Passwort ändern' ?></legend>
+        <input type="text" name="username" value="<?= e($user['username']) ?>" autocomplete="username" hidden>
+        <label>Aktuelles Passwort <input name="current" type="password" autocomplete="current-password" <?= !empty($user['must_change']) ? 'required' : '' ?>></label>
+        <label>Neues Passwort <input name="password" type="password" minlength="10" autocomplete="new-password" <?= !empty($user['must_change']) ? 'required' : '' ?>><small>mindestens 10 Zeichen</small></label>
+        <label>Neues Passwort wiederholen <input name="password2" type="password" minlength="10" autocomplete="new-password"></label>
+      </fieldset>
+    </div>
+    <div class="account__col">
+      <?php upload_field('avatar', 'Profilbild', 'Wird rund zugeschnitten (die Mitte des Bildes). JPG, PNG oder WebP, höchstens 15 MB. Ohne Bild steht dein Anfangsbuchstabe da.', false, $user['avatar']['src'] ?? null, true); ?>
+      <?php if (!empty($user['avatar']['src'])): ?>
+        <label class="check"><input type="checkbox" name="remove_avatar"> Profilbild entfernen</label>
+      <?php endif; ?>
+    </div>
+  </div>
   <button class="btn" type="submit">Speichern</button>
 </form>
 <?php page_end();

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../_app/admin.php';
+require __DIR__ . '/../_app/images.php';
 
 use function Matrix\e;
 use function Matrix\Admin\{require_user, page_start, page_end, redirect, is_post, post, errors, flash, when};
@@ -62,6 +63,7 @@ if (is_post()) {
             elseif ($lastAdmin) $errors[] = 'Es muss mindestens ein aktives Admin-Konto geben.';
             else {
                 delete_user($target['id']);
+                Matrix\Images\delete($target['avatar'] ?? null);
                 log_change($user, 'Konto gelöscht', $target['name']);
                 flash('success', 'Konto gelöscht. Einträge im Verlauf bleiben erhalten.');
                 redirect('users.php');
@@ -77,7 +79,7 @@ page_start('Konten', $user);
 <ul class="list">
   <?php foreach (users() as $u): ?>
     <li class="list__item<?= empty($u['active']) ? ' list__item--expired' : '' ?>">
-      <span class="list__thumb list__thumb--empty" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($u['name'], 0, 1))) ?></span>
+      <?php \Matrix\Admin\avatar($u, empty($u['avatar']['src']) ? 'list__thumb list__thumb--empty list__thumb--round' : 'list__thumb list__thumb--round'); ?>
       <div class="list__main">
         <b><?= e($u['name']) ?><?= $u['id'] === $user['id'] ? ' (du)' : '' ?></b>
         <span class="muted small"><?= e($u['username']) ?> · <?= e(ROLES[$u['role']]) ?><?= empty($u['active']) ? ' · gesperrt' : '' ?><?= !empty($u['must_change']) ? ' · Startpasswort' : '' ?> · zuletzt angemeldet: <?= e(when($u['last_login'] ?? null) ?: 'nie') ?></span>

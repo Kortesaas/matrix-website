@@ -6,7 +6,7 @@ require __DIR__ . '/../_app/admin.php';
 require __DIR__ . '/../_app/images.php';
 
 use function Matrix\{e, flyers, flyer_order, order_flyers, programs, current_program, month_label, update_json, in_window, random_id};
-use function Matrix\Admin\{require_user, page_start, page_end, redirect, is_post, post, errors, flash, when};
+use function Matrix\Admin\{require_user, page_start, page_end, redirect, is_post, post, errors, flash, when, paginate, pager};
 use function Matrix\Auth\{check_csrf, csrf_field, log_change};
 
 $user = require_user();
@@ -237,7 +237,7 @@ $nextMonth = (new DateTimeImmutable('first day of next month'))->format('Y-m');
 <p class="lead">Die Pinnwand auf „Aktuelles“: links immer das Monatsprogramm, daneben die Plakate zu Events.</p>
 <?php errors($errors); ?>
 
-<section class="card">
+<section class="card" id="programme">
   <h2>Monatsprogramm</h2>
   <p class="muted small">Pro Monat ein Bild. Gezeigt wird das Programm des aktuellen Monats; fehlt es, das des nächsten Monats. Du kannst es also schon vorher hochladen.</p>
   <div class="split split--form">
@@ -247,8 +247,9 @@ $nextMonth = (new DateTimeImmutable('first day of next month'))->format('Y-m');
       <?php Matrix\Admin\upload_field('image', 'Bild', 'JPG, PNG oder WebP, höchstens 15 MB. Gibt es für den Monat schon eins, wird es ersetzt.', true); ?>
       <button class="btn" type="submit">Hochladen</button>
     </form>
+    <div>
     <ul class="list list--flat">
-      <?php foreach (programs() as $program): ?>
+      <?php $programList = paginate(programs(), 6, 'programme'); foreach ($programList['items'] as $program): ?>
         <li class="list__item<?= $program['month'] < date('Y-m') ? ' list__item--expired' : '' ?>">
           <img class="list__thumb list__thumb--tall" src="<?= e($program['image']['src']) ?>" alt="">
           <div class="list__main">
@@ -266,6 +267,8 @@ $nextMonth = (new DateTimeImmutable('first day of next month'))->format('Y-m');
       <?php endforeach; ?>
       <?php if (!programs()): ?><li class="muted">Noch kein Monatsprogramm. Bis dahin zeigt die Pinnwand einen Platzhalter.</li><?php endif; ?>
     </ul>
+    <?php pager($programList, 'Seiten der Monatsprogramme', 'Monatsprogramme', '#programme'); ?>
+    </div>
   </div>
 </section>
 
@@ -342,10 +345,7 @@ usort($current, fn ($a, $b) => strcmp($a['until'], $b['until']));
 usort($past, fn ($a, $b) => strcmp($b['until'], $a['until']));
 
 // Past events page by page, newest first.
-const PAST_PER_PAGE = 8;
-$pastPages = max(1, (int) ceil(count($past) / PAST_PER_PAGE));
-$pastPage = min($pastPages, max(1, (int) ($_GET['seite'] ?? 1)));
-$pastShown = array_slice($past, ($pastPage - 1) * PAST_PER_PAGE, PAST_PER_PAGE);
+$pastList = paginate($past, 8);
 
 function event_row(array $flyer, bool $past): void
 {
@@ -390,34 +390,9 @@ function event_row(array $flyer, bool $past): void
     <summary><h2>Vergangene Events</h2><span class="past__count"><?= count($past) ?></span></summary>
     <p class="muted small">Events landen hier automatisch, sobald ihr „Sichtbar bis“ vorbei ist. Mit „Wieder verwenden“ hängt ihr sie mit neuen Daten wieder an die Pinnwand, Bild und Texte bleiben erhalten.</p>
     <ul class="list">
-      <?php foreach ($pastShown as $flyer) event_row($flyer, true); ?>
+      <?php foreach ($pastList['items'] as $flyer) event_row($flyer, true); ?>
     </ul>
-    <?php if ($pastPages > 1): ?>
-      <nav class="pager" aria-label="Seiten der vergangenen Events">
-        <?php if ($pastPage > 1): ?>
-          <a class="pager__step" href="flyers.php?seite=<?= $pastPage - 1 ?>#vergangen" rel="prev">← Neuere</a>
-        <?php else: ?>
-          <span class="pager__step" aria-hidden="true">← Neuere</span>
-        <?php endif; ?>
-        <span class="pager__pages">
-          <?php for ($i = 1; $i <= $pastPages; $i++): ?>
-            <?php if ($i === $pastPage): ?>
-              <span class="pager__page" aria-current="page"><?= $i ?></span>
-            <?php elseif ($i === 1 || $i === $pastPages || abs($i - $pastPage) <= 1): ?>
-              <a class="pager__page" href="flyers.php?seite=<?= $i ?>#vergangen" aria-label="Seite <?= $i ?>"><?= $i ?></a>
-            <?php elseif (abs($i - $pastPage) === 2): ?>
-              <span class="pager__gap" aria-hidden="true">…</span>
-            <?php endif; ?>
-          <?php endfor; ?>
-        </span>
-        <?php if ($pastPage < $pastPages): ?>
-          <a class="pager__step" href="flyers.php?seite=<?= $pastPage + 1 ?>#vergangen" rel="next">Ältere →</a>
-        <?php else: ?>
-          <span class="pager__step" aria-hidden="true">Ältere →</span>
-        <?php endif; ?>
-      </nav>
-      <p class="muted small pager__info">Seite <?= $pastPage ?> von <?= $pastPages ?> · <?= count($past) ?> vergangene Events</p>
-    <?php endif; ?>
+    <?php pager($pastList, 'Seiten der vergangenen Events', 'vergangene Events', '#vergangen'); ?>
   </details>
 <?php endif;
 page_end();

@@ -65,8 +65,12 @@ h2 { margin-bottom: 14px; font-size: 28px; }
 .usermenu summary::after { content: ""; width: 7px; height: 7px; margin: -4px 2px 0 2px; border: solid currentColor; border-width: 0 2px 2px 0; rotate: 45deg; transition: rotate .15s ease, margin .15s ease; }
 .usermenu[open] summary::after { rotate: -135deg; margin-top: 4px; }
 .usermenu summary:hover { background: rgba(255, 255, 255, 0.1); }
-.usermenu__avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--yellow-500); color: var(--ink); font: 20px/1 var(--display); }
-.usermenu__panel { position: absolute; right: 0; top: calc(100% + 10px); display: grid; min-width: 220px; padding: 8px; border: 2px solid var(--ink); border-radius: var(--radius-md); background: var(--white); box-shadow: 0 4px 0 var(--ink); }
+.usermenu__avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--yellow-500); color: var(--ink); font: 20px/1 var(--display); object-fit: cover; }
+.account { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 380px); gap: 32px; align-items: start; }
+.account__col { display: grid; gap: 16px; }
+.account__col > p { margin: 0; }
+@media (max-width: 760px) { .account { grid-template-columns: 1fr; } }
+.usermenu__panel { position: absolute; right: 0; top: calc(100% + 20px); display: grid; min-width: 220px; padding: 8px; border: 2px solid var(--ink); border-radius: var(--radius-md); background: var(--white); box-shadow: 0 4px 0 var(--ink); }
 .usermenu__panel a, .usermenu__panel button { display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); cursor: pointer; font: 600 15px/1.2 var(--sans); text-align: left; text-decoration: none; }
 .usermenu__panel a:hover, .usermenu__panel button:hover, .usermenu__panel a[aria-current="page"] { background: var(--purple-50); }
 .usermenu__panel form { margin: 4px 0 0; padding-top: 4px; border-top: 2px dashed var(--line); }
@@ -335,6 +339,7 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-s
 .past__count { display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--white); font: 18px/1 var(--display); }
 .past .list__item { box-shadow: 0 3px 0 rgba(19, 26, 34, 0.35); }
 .past .list__item--expired { opacity: 1; }
+.list__thumb--round { border-radius: 50%; }
 .past .list__thumb { filter: grayscale(0.6); }
 
 .pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
@@ -427,3 +432,8 @@ span.pager__step { color: var(--line); }
   .board__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 18px; padding: 28px 12px 0; }
   .board__item--program { grid-column: 1 / -1; max-width: 70%; justify-self: center; }
 }
+/* The profile picture shows round, so the preview does too. */
+#upload-avatar ~ .upload__preview { border-radius: 50%; }
+.who { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.who__avatar { display: grid; flex: none; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--yellow-500); color: var(--ink); font: 17px/1 var(--display); object-fit: cover; }
+.form label.check { display: flex; align-items: center; gap: 10px; }
