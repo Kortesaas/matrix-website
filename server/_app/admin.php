@@ -37,6 +37,7 @@ const NAV = [
     'notice.php' => ['Hinweis-Banner', null],
     'flyers.php' => ['Pinnwand', null],
     'team.php' => ['Team', null],
+    'menu.php' => ['Speisekarte', null],
     'ideas.php' => ['Ideen', null],
     'hours.php' => ['Öffnungszeiten', null],
     'calendar.php' => ['Kalender', 'admin'],
@@ -109,9 +110,9 @@ function page_start(string $title, ?array $user = null): void
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/fonts/figtree-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/boogaloo-latin-400.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="admin.css?v=14">
+  <link rel="stylesheet" href="admin.css?v=15">
   <noscript><link rel="stylesheet" href="admin-noscript.css"></noscript>
-  <script src="admin.js?v=4" defer></script>
+  <script src="admin.js?v=5" defer></script>
   <script src="/custom-select.js?v=1" type="module"></script>
 </head>
 <body class="<?= $user ? 'is-app' : 'is-auth' ?>">

@@ -1,9 +1,10 @@
 /**
- * Speisekarte of the X-Bar (shown on Theke & Küche). Fill in `groups` with
- * the dishes and drinks (each group is one page of the little booklet),
- * and/or put the menu as a PDF into public/ and set
- * `pdf` (e.g. '/speisekarte.pdf'). While both are empty the card says the
- * menu is coming soon.
+ * Speisekarte of the X-Bar (shown on Theke & Küche): groups of dishes and
+ * drinks, each one page of the little booklet. The team edits it in the
+ * admin area (Speisekarte); `groups` here is only the starting content until
+ * the first save there. Put the menu as a PDF into public/ and set `pdf`
+ * (e.g. '/speisekarte.pdf') for a download link. While there are no groups
+ * the card says the menu is coming soon.
  */
 export interface MenuItem {
   name: string;

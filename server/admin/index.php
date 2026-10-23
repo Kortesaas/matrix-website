@@ -6,7 +6,7 @@ require __DIR__ . '/../_app/render.php';
 require __DIR__ . '/../_app/security.php';
 require __DIR__ . '/../_app/ideas.php';
 
-use function Matrix\{e, notice, flyers, team, settings, in_window};
+use function Matrix\{e, notice, flyers, team, menu, settings, in_window};
 use function Matrix\Admin\{require_user, page_start, page_end, when};
 use function Matrix\Auth\change_log;
 use function Matrix\Render\visible_flyers;
@@ -38,6 +38,11 @@ page_start('Hallo ' . explode(' ', $user['name'])[0] . '!', $user);
     <span class="tile__label">Team</span>
     <span class="tile__value"><?= $people ?> Personen</span>
     <span class="tile__meta">Namen, Rollen und Fotos</span>
+  </a>
+  <a class="tile" href="menu.php">
+    <span class="tile__label">Speisekarte</span>
+    <span class="tile__value"><?= array_sum(array_map(fn ($g) => count($g['items'] ?? []), menu())) ?> Einträge</span>
+    <span class="tile__meta">Essen, Getränke und Preise</span>
   </a>
   <a class="tile" href="ideas.php">
     <span class="tile__label">Ideen</span>

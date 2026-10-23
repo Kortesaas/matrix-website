@@ -1,6 +1,6 @@
 /**
- * Starting content for the admin area: today's opening hours and team,
- * portraits included (as built WebP files). PHP reads this until somebody
+ * Starting content for the admin area: today's opening hours, team
+ * (portraits included, as built WebP files) and Speisekarte. PHP reads this until somebody
  * saves their own version in the admin area.
  */
 import type { APIRoute } from 'astro';
@@ -8,6 +8,7 @@ import type { ImageMetadata } from 'astro';
 import { getImage } from 'astro:assets';
 import { site } from '../data/site';
 import { teamGroups } from '../data/team';
+import { menu } from '../data/menu';
 
 async function photo(image: ImageMetadata) {
   const widths = [400, 800].filter((w) => w <= image.width);
@@ -35,6 +36,7 @@ export const GET: APIRoute = async () => {
     hours: site.hours,
     team: { members: team, fsjOpening: teamGroups.some((g) => g.members.some((m) => 'open' in m)) },
     teamGroups: teamGroups.map((g) => ({ key: g.key, title: g.title })),
+    menu: menu.groups,
   };
   return new Response(JSON.stringify(seed, null, 2), { headers: { 'Content-Type': 'application/json' } });
 };

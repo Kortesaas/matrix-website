@@ -187,6 +187,12 @@ function hours(): array
     return read_json('hours.json')['rows'] ?? seed()['hours'] ?? [];
 }
 
+/** The Speisekarte: groups (one booklet page each) with items and prices. */
+function menu(): array
+{
+    return read_json('menu.json')['groups'] ?? seed()['menu'] ?? [];
+}
+
 function team_groups(): array
 {
     return seed()['teamGroups'] ?? [['key' => 'hauptamtliche', 'title' => 'Die Hauptamtlichen'], ['key' => 'fsj', 'title' => 'Die FSJler']];

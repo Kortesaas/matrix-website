@@ -3,65 +3,104 @@
  * The X-Bar's Speisekarte as a card next to the intro on Theke & Küche: a
  * little booklet with one page per group (Essen, Süßes, Getränke …) that
  * flips with the tabs, the arrows or a swipe, an optional PDF link, and a
- * "coming soon" note while there is no menu yet (see src/data/menu.ts).
+ * "coming soon" note while there is no menu yet. The team edits the menu in
+ * the admin area; PHP fills the templates below (Matrix\Render\menu), and
+ * `astro dev` shows the starting content from src/data/menu.ts.
  * Without JavaScript all pages show one below the other.
  */
 import Button from './Button.astro';
+import Dynamic from './php/Dynamic.astro';
+import PhpTemplate from './php/PhpTemplate.astro';
 import { menu } from '../data/menu';
 
 const { groups, pdf } = menu;
-const empty = groups.length === 0;
 const book = groups.length > 1;
+const soon = 'Unsere Speisekarte hängt bald auch hier. Bis dahin: Komm einfach an der Theke vorbei, da steht alles auf der Tafel.';
+const prevIcon = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// Attributes PHP fills in, typed loosely so the placeholders pass the check.
+const filled = (attrs: Record<string, string>) => attrs;
+const nextIcon = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 ---
 
-<section class="mx-menu" id="speisekarte" aria-labelledby="speisekarte-title" data-menu-book={book || undefined}>
+<section class="mx-menu" id="speisekarte" aria-labelledby="speisekarte-title" data-menu>
   <span class="mx-menu__badge">Speisekarte</span>
   <h2 class="mx-menu__title" id="speisekarte-title">Was gibt’s heute?</h2>
-  {empty ? (
-    <p class="mx-menu__soon">Unsere Speisekarte hängt bald auch hier. Bis dahin: Komm einfach an der Theke vorbei, da steht alles auf der Tafel.</p>
-  ) : (
-    <>
-      {book && (
-        <div class="mx-menu__tabs" role="tablist" aria-label="Seiten der Speisekarte" hidden>
+  <Dynamic render="menu">
+    {groups.length === 0 ? (
+      <p class="mx-menu__soon">{soon}</p>
+    ) : (
+      <>
+        {book && (
+          <div class="mx-menu__tabs" role="tablist" aria-label="Seiten der Speisekarte" hidden>
+            {groups.map((group, i) => (
+              <button class="mx-menu__tab" type="button" role="tab" id={`menu-tab-${i}`} aria-controls={`menu-page-${i}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-menu-tab>{group.title}</button>
+            ))}
+          </div>
+        )}
+        <div class="mx-menu__pages">
           {groups.map((group, i) => (
-            <button class="mx-menu__tab" type="button" role="tab" id={`menu-tab-${i}`} aria-controls={`menu-page-${i}`} aria-selected={i === 0 ? "true" : "false"} tabindex={i === 0 ? 0 : -1} data-menu-tab>{group.title}</button>
+            <div class:list={['mx-menu__page', i === 0 && 'is-current']} id={`menu-page-${i}`} role={book ? 'tabpanel' : undefined} aria-labelledby={book ? `menu-tab-${i}` : undefined} data-menu-page>
+              <h3 class="mx-menu__group-title">{group.title}</h3>
+              <ul class="mx-menu__items">
+                {group.items.map((item) => (
+                  <li>
+                    <span class="mx-menu__name">{item.name}</span>
+                    <span class="mx-menu__dots" aria-hidden="true"></span>
+                    <span class="mx-menu__price">{item.price}</span>
+                    {item.note && <span class="mx-menu__note">{item.note}</span>}
+                  </li>
+                ))}
+              </ul>
+              {group.note && <p class="mx-menu__group-note">{group.note}</p>}
+            </div>
           ))}
         </div>
-      )}
-      <div class="mx-menu__pages">
-        {groups.map((group, i) => (
-          <div class:list={['mx-menu__page', i === 0 && 'is-current']} id={`menu-page-${i}`} role={book ? 'tabpanel' : undefined} aria-labelledby={book ? `menu-tab-${i}` : undefined} data-menu-page>
-            <h3 class="mx-menu__group-title">{group.title}</h3>
-            <ul class="mx-menu__items">
-              {group.items.map((item) => (
-                <li>
-                  <span class="mx-menu__name">{item.name}</span>
-                  <span class="mx-menu__dots" aria-hidden="true"></span>
-                  <span class="mx-menu__price">{item.price}</span>
-                  {item.note && <span class="mx-menu__note">{item.note}</span>}
-                </li>
-              ))}
-            </ul>
-            {group.note && <p class="mx-menu__group-note">{group.note}</p>}
+        {book && (
+          <div class="mx-menu__foot" hidden>
+            <button class="mx-menu__turn" type="button" data-menu-prev aria-label="Vorherige Seite" set:html={prevIcon} />
+            <span class="mx-menu__count" data-menu-count>1 / {groups.length}</span>
+            <button class="mx-menu__turn" type="button" data-menu-next aria-label="Nächste Seite" set:html={nextIcon} />
           </div>
-        ))}
-      </div>
-      {book && (
-        <div class="mx-menu__foot" hidden>
-          <button class="mx-menu__turn" type="button" data-menu-prev aria-label="Vorherige Seite"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <span class="mx-menu__count" data-menu-count>1 / {groups.length}</span>
-          <button class="mx-menu__turn" type="button" data-menu-next aria-label="Nächste Seite"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        </div>
-      )}
-    </>
-  )}
+        )}
+      </>
+    )}
+  </Dynamic>
+  <PhpTemplate name="menu-soon"><p class="mx-menu__soon">{soon}</p></PhpTemplate>
+  <PhpTemplate name="menu-tabs"><div class="mx-menu__tabs" role="tablist" aria-label="Seiten der Speisekarte" hidden>%%!tabs%%</div></PhpTemplate>
+  <PhpTemplate name="menu-tab"><button class="mx-menu__tab" type="button" role="tab" id="menu-tab-%%i%%" aria-controls="menu-page-%%i%%" {...filled({ 'aria-selected': '%%selected%%' })} tabindex="%%tabindex%%" data-menu-tab>%%title%%</button></PhpTemplate>
+  <PhpTemplate name="menu-pages"><div class="mx-menu__pages">%%!pages%%</div></PhpTemplate>
+  <PhpTemplate name="menu-page">
+    <div class="mx-menu__page %%current%%" id="menu-page-%%i%%" {...filled({ role: '%%role%%' })} aria-labelledby="%%labelledby%%" data-menu-page>
+      <h3 class="mx-menu__group-title">%%title%%</h3>
+      <ul class="mx-menu__items">%%!items%%</ul>
+      %%!note%%
+    </div>
+  </PhpTemplate>
+  <PhpTemplate name="menu-item">
+    <li>
+      <span class="mx-menu__name">%%name%%</span>
+      <span class="mx-menu__dots" aria-hidden="true"></span>
+      <span class="mx-menu__price">%%price%%</span>
+      %%!note%%
+    </li>
+  </PhpTemplate>
+  <PhpTemplate name="menu-item-note"><span class="mx-menu__note">%%note%%</span></PhpTemplate>
+  <PhpTemplate name="menu-group-note"><p class="mx-menu__group-note">%%note%%</p></PhpTemplate>
+  <PhpTemplate name="menu-foot">
+    <div class="mx-menu__foot" hidden>
+      <button class="mx-menu__turn" type="button" data-menu-prev aria-label="Vorherige Seite" set:html={prevIcon} />
+      <span class="mx-menu__count" data-menu-count>1 / %%total%%</span>
+      <button class="mx-menu__turn" type="button" data-menu-next aria-label="Nächste Seite" set:html={nextIcon} />
+    </div>
+  </PhpTemplate>
   {pdf && <Button href={pdf} size="sm" variant="outline" target="_blank" rel="noopener">Speisekarte als PDF</Button>}
 </section>
 
 <script>
-  document.querySelectorAll<HTMLElement>('[data-menu-book]').forEach((book) => {
+  document.querySelectorAll<HTMLElement>('[data-menu]').forEach((book) => {
     const tabs = [...book.querySelectorAll<HTMLButtonElement>('[data-menu-tab]')];
     const pages = [...book.querySelectorAll<HTMLElement>('[data-menu-page]')];
+    if (pages.length < 2) return;
     const prev = book.querySelector<HTMLButtonElement>('[data-menu-prev]')!;
     const next = book.querySelector<HTMLButtonElement>('[data-menu-next]')!;
     const count = book.querySelector<HTMLElement>('[data-menu-count]')!;

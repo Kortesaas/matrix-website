@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Matrix\Render;
 
-use function Matrix\{e, hours as hours_data, team as team_data, notice as notice_data, flyers as flyers_data, order_flyers, settings, in_window, current_program, month_label};
+use function Matrix\{e, menu as menu_data, hours as hours_data, team as team_data, notice as notice_data, flyers as flyers_data, order_flyers, settings, in_window, current_program, month_label};
 
 function template(string $name): string
 {
@@ -37,6 +37,42 @@ function hours(): void
     foreach (hours_data() as $row) {
         echo fill('hours-item', ['days' => $row['days'] ?? '', 'time' => $row['time'] ?? '']);
     }
+}
+
+/** The Speisekarte booklet on Theke & Küche: tabs, one page per group, arrows. */
+function menu(): void
+{
+    $groups = array_values(array_filter(menu_data(), fn ($g) => !empty($g['items'])));
+    if (!$groups) {
+        echo template('menu-soon');
+        return;
+    }
+    $book = count($groups) > 1;
+    $tabs = '';
+    $pages = '';
+    foreach ($groups as $i => $group) {
+        $tabs .= fill('menu-tab', ['i' => $i, 'title' => $group['title'], 'selected' => $i === 0 ? 'true' : 'false', 'tabindex' => $i === 0 ? '0' : '-1']);
+        $items = '';
+        foreach ($group['items'] as $item) {
+            $items .= fill('menu-item', [
+                'name' => $item['name'],
+                'price' => $item['price'],
+                'note' => ($item['note'] ?? '') !== '' ? fill('menu-item-note', ['note' => $item['note']]) : '',
+            ]);
+        }
+        $pages .= fill('menu-page', [
+            'i' => $i,
+            'current' => $i === 0 ? 'is-current' : '',
+            'role' => $book ? 'tabpanel' : '',
+            'labelledby' => $book ? "menu-tab-$i" : '',
+            'title' => $group['title'],
+            'items' => $items,
+            'note' => ($group['note'] ?? '') !== '' ? fill('menu-group-note', ['note' => $group['note']]) : '',
+        ]);
+    }
+    if ($book) echo fill('menu-tabs', ['tabs' => $tabs]);
+    echo fill('menu-pages', ['pages' => $pages]);
+    if ($book) echo fill('menu-foot', ['total' => count($groups)]);
 }
 
 function team(string $group): void

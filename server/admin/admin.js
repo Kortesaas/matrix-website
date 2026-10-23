@@ -89,24 +89,49 @@ document.querySelectorAll('[data-upload]').forEach((upload) => {
   });
 });
 
-// Opening hours: add and remove rows.
-const rows = document.querySelector('[data-rows]');
-if (rows) {
-  document.querySelector('[data-add-row]')?.addEventListener('click', () => {
+// Rows (opening hours, Speisekarte): add, remove and move them. Buttons act
+// on the rows of their [data-row-scope], else on the page's [data-rows].
+const rowsFor = (button) => button.closest('[data-row-scope]')?.querySelector('[data-rows]') ?? document.querySelector('[data-rows]');
+const clear = (row) => row.querySelectorAll('input').forEach((input) => (input.value = ''));
+// Moves an element past its next or previous sibling of the same kind.
+const move = (element, selector, by) => {
+  const siblings = [...element.parentElement.querySelectorAll(`:scope > ${selector}`)];
+  const target = siblings[siblings.indexOf(element) + by];
+  if (target) target[by < 0 ? 'before' : 'after'](element);
+};
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.matches('[data-add-row]')) {
+    const rows = rowsFor(button);
     const all = rows.querySelectorAll('[data-row]');
     const row = all[all.length - 1].cloneNode(true);
-    row.querySelectorAll('input').forEach((input) => (input.value = ''));
+    clear(row);
     rows.append(row);
     row.querySelector('input').focus();
-  });
-  rows.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-remove-row]');
-    if (!button) return;
+  } else if (button.matches('[data-remove-row]')) {
     const row = button.closest('[data-row]');
-    if (rows.querySelectorAll('[data-row]').length > 1) row.remove();
-    else row.querySelectorAll('input').forEach((input) => (input.value = ''));
-  });
-}
+    if (row.parentElement.querySelectorAll(':scope > [data-row]').length > 1) row.remove();
+    else clear(row);
+  } else if (button.matches('[data-move-row]')) {
+    move(button.closest('[data-row]'), '[data-row]', Number(button.dataset.moveRow));
+    button.focus();
+  } else if (button.matches('[data-move-group]')) {
+    move(button.closest('[data-group]'), '[data-group]', Number(button.dataset.moveGroup));
+    button.focus();
+  } else if (button.matches('[data-remove-group]')) {
+    const group = button.closest('[data-group]');
+    if (group.parentElement.querySelectorAll(':scope > [data-group]').length > 1) group.remove();
+    else clear(group);
+  } else if (button.matches('[data-add-group]')) {
+    const template = document.querySelector('[data-group-template]');
+    const holder = document.createElement('div');
+    holder.innerHTML = template.innerHTML.replaceAll('__G__', `new${Date.now()}`);
+    const group = holder.firstElementChild;
+    document.querySelector('[data-groups]').append(group);
+    group.querySelector('input').focus();
+  }
+});
 
 // Notice: templates and live preview.
 const noticeForm = document.querySelector('[data-notice-form]');

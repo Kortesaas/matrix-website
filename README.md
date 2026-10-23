@@ -1,6 +1,6 @@
 # Die MatriX – Website
 
-Website des Jugendzentrums **Die MatriX** in Königsbrunn. Gebaut mit [Astro](https://astro.build); auf dem Webspace läuft sie mit PHP 8.4, damit das Team Öffnungszeiten, Team, Hinweis-Banner und Flyer im Verwaltungsbereich unter `/admin/` selbst pflegen kann. Termine kommen live aus Google Calendar.
+Website des Jugendzentrums **Die MatriX** in Königsbrunn. Gebaut mit [Astro](https://astro.build); auf dem Webspace läuft sie mit PHP 8.4, damit das Team Öffnungszeiten, Team, Hinweis-Banner, Flyer und Speisekarte im Verwaltungsbereich unter `/admin/` selbst pflegen kann. Termine kommen live aus Google Calendar.
 
 ## Entwicklung
 
@@ -29,7 +29,7 @@ npm test          # Tests
 ```
 src/
   pages/        eine Datei pro Seite (index, angebot, raeume, werkstatt, team, aktuelles, mitmachen, impressum, 404)
-                matrix-seed.json.ts: Startinhalte (Öffnungszeiten, Team) für die Verwaltung
+                matrix-seed.json.ts: Startinhalte (Öffnungszeiten, Team, Speisekarte) für die Verwaltung
   layouts/      BaseLayout: <head>, Navigation, Footer
   components/   wiederverwendbare Bausteine (Button, PageHero, PhotoFrame, FeatureRow, Campus3D …)
     php/        Dynamic + PhpTemplate: Stellen, die PHP mit gepflegten Inhalten füllt
@@ -66,8 +66,8 @@ Das Aussehen steht weiterhin nur in den Astro-Komponenten. Stellen mit gepflegte
 
 ### Inhalte pflegen
 
-- **Im Verwaltungsbereich (`/admin/`):** Öffnungszeiten, Team (inklusive FSJler und Fotos), Hinweis-Banner auf der Startseite, Flyer auf „Aktuelles“. Jede Person hat ein eigenes Konto, der **Verlauf** zeigt, wer was geändert hat. Rollen: *Redaktion* pflegt Inhalte, *Admin* zusätzlich Konten und Kalender.
-- **Texte, Angebote, Räume:** in `src/data/*.ts` – die Seiten lesen von dort. `site.ts` (Öffnungszeiten) und `team.ts` sind nur noch die Startdaten, bis jemand in der Verwaltung speichert.
+- **Im Verwaltungsbereich (`/admin/`):** Öffnungszeiten, Team (inklusive FSJler und Fotos), Hinweis-Banner auf der Startseite, Flyer auf „Aktuelles“, Speisekarte auf „Theke & Küche“. Jede Person hat ein eigenes Konto, der **Verlauf** zeigt, wer was geändert hat. Rollen: *Redaktion* pflegt Inhalte, *Admin* zusätzlich Konten und Kalender.
+- **Texte, Angebote, Räume:** in `src/data/*.ts` – die Seiten lesen von dort. `site.ts` (Öffnungszeiten), `team.ts` und `menu.ts` sind nur noch die Startdaten, bis jemand in der Verwaltung speichert.
 - **Schreibstil:** Website-Texte verwenden keine Gedankenstriche. Stattdessen passende Punkte, Kommas, Doppelpunkte oder neue Sätze setzen. Uhrzeiten mit „bis“ verbinden.
 - **Termine:** kommen aus einem Online-Kalender, siehe „Kalender“ unten.
 - **Fotos austauschen:** neue Datei nach `src/assets/photos/` legen und den Import in der passenden Datei in `src/data/` (bzw. der Seite) anpassen. Zuschnitt und Rahmen ergeben sich aus der Komponente.
